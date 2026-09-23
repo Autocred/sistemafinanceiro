@@ -1,0 +1,752 @@
+'use client';
+
+import { useState, useEffect, useCallback } from 'react';
+import { getConfiguracoes, salvarConfiguracoes } from '@/lib/storage';
+import { getFirebaseAuth } from '@/lib/auth';
+import { ConfiguracaoApp } from '@/lib/types';
+import { getUserProfile, AppUser } from '@/lib/auth';
+import { Check, Eye, EyeOff, Key, Bell, Shield, Palette, User, Info, Save, MessageCircle, LogOut, Zap, Trash2 } from 'lucide-react';
+import { getDb } from '@/lib/firebase';
+import { doc, setDoc } from 'firebase/firestore';
+import { updatePassword } from 'firebase/auth';
+
+import { playSound, isAudioEnabled, getAudioVolume, setAudioConfig } from '@/lib/audio';
+
+export default function Configuracoes() {
+  const [audioAtivo, setAudioAtivo] = useState(true);
+  const [audioVolume, setAudioVolume] = useState(0.3);
+  const [cfg, setCfg] = useState<ConfiguracaoApp>({
+    nomeUsuario: '',
+    moeda: 'BRL',
+    provedorIA: 'offline',
+    notificacoesAtivas: true,
+    backupAutomatico: true,
+    tema: 'dark',
+  });
+  const [mostrarKey, setMostrarKey] = useState(false);
+  const [salvo, setSalvo] = useState(false);
+  const [loading, setLoading] = useState(true);
+  
+  const [profile, setProfile] = useState<AppUser | null>(null);
+  const [novaSenha, setNovaSenha] = useState('');
+  const [erroSenha, setErroSenha] = useState('');
+  const [novoCargo, setNovoCargo] = useState('');
+  const isMasterOrAdmin = profile?.role === 'admin' || (typeof window !== 'undefined' && localStorage.getItem('master_bypass') === 'true');
+  
+  const TELAS_DISPONIVEIS = ['dashboard', 'lancamentos', 'relatorios', 'contas', 'cadastros', 'chat', 'configuracoes', 'admin'];
+  const NOMES_TELAS: Record<string, string> = {
+    dashboard: 'Dashboard', lancamentos: 'Lançamentos', relatorios: 'Relatórios',
+    contas: 'Contas & Cartões', cadastros: 'Cadastros', chat: 'IA Analista',
+    configuracoes: 'Configurações', admin: 'Administração'
+  };
+
+  useEffect(() => {
+    (async () => {
+      const auth = getFirebaseAuth();
+      const isBypassAtivo = typeof window !== 'undefined' && localStorage.getItem('master_bypass') === 'true';
+      const uid = isBypassAtivo ? 'clovis-master-bypass' : (auth.currentUser?.uid || 'app');
+      const configDB = await getConfiguracoes(uid);
+      setCfg(configDB);
+      
+      if (!isBypassAtivo && auth.currentUser) {
+         const p = await getUserProfile(auth.currentUser.uid);
+         setProfile(p);
+      }
+      
+      setAudioAtivo(isAudioEnabled());
+      setAudioVolume(getAudioVolume());
+      setLoading(false);
+    })();
+  }, []);
+
+  const salvar = async () => {
+    const auth = getFirebaseAuth();
+    const isBypassAtivo = typeof window !== 'undefined' && localStorage.getItem('master_bypass') === 'true';
+    const uid = isBypassAtivo ? 'clovis-master-bypass' : (auth.currentUser?.uid || 'app');
+    await salvarConfiguracoes(cfg, uid);
+    
+    if (profile && !isBypassAtivo) {
+       await setDoc(doc(getDb(), 'users', profile.uid), profile, { merge: true });
+    }
+    
+    if (novaSenha && !isBypassAtivo && auth.currentUser) {
+       try {
+          await updatePassword(auth.currentUser, novaSenha);
+          setNovaSenha('');
+          setErroSenha('');
+       } catch (err: any) {
+          console.error(err);
+          setErroSenha('Erro ao atualizar senha. Talvez seja necessário deslogar e logar novamente.');
+       }
+    }
+    
+    setSalvo(true);
+    
+    const targetTheme = cfg.tema || 'dark';
+    document.documentElement.setAttribute('data-theme', targetTheme);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('theme_preference', targetTheme);
+    }
+    
+    setTimeout(() => {
+      setSalvo(false);
+    }, 2000);
+  };
+
+  if (loading) {
+    return <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>Carregando...</div>;
+  }
+
+  return (
+    <div style={{ maxWidth: 700, margin: '0 auto', paddingBottom: 60 }}>
+      <h1 style={{ fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.5px', marginBottom: 28 }}>Configurações</h1>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        {/* Perfil */}
+        <SecaoConfig titulo="Meu Perfil" icone={<User size={18} color="var(--blue)" />}>
+          <div>
+            <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>Seu Nome</label>
+            <input
+              className="input-field"
+              value={profile?.nome || cfg.nomeUsuario || ''}
+              onChange={e => {
+                 setCfg(c => ({ ...c, nomeUsuario: e.target.value }));
+                 if (profile) setProfile({ ...profile, nome: e.target.value });
+              }}
+              placeholder="Como quer ser chamado?"
+            />
+          </div>
+          <div className="grid-responsive-2">
+            <div>
+              <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>Telefone</label>
+              <input
+                className="input-field"
+                value={profile?.telefone || ''}
+                onChange={e => profile && setProfile({ ...profile, telefone: e.target.value })}
+                placeholder="Seu telefone"
+                disabled={!profile}
+              />
+            </div>
+            <div>
+              <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>Empresa</label>
+              <input
+                className="input-field"
+                value={profile?.empresa || ''}
+                onChange={e => profile && setProfile({ ...profile, empresa: e.target.value })}
+                placeholder="Sua empresa"
+                disabled={!profile}
+              />
+            </div>
+          </div>
+          
+          <div style={{ background: 'var(--bg-glass)', borderRadius: 10, padding: 16, border: '1px solid var(--border)' }}>
+             <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 12 }}>Informações da Conta (Somente Leitura)</p>
+             <div className="grid-responsive-3">
+               <div>
+                 <label style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', display: 'block', marginBottom: 4 }}>UID</label>
+                 <div style={{ fontSize: 13, background: 'var(--bg-primary)', padding: '8px 12px', borderRadius: 6, color: 'var(--text-secondary)', fontFamily: 'monospace', wordBreak: 'break-all' }}>{profile?.uid || 'N/A'}</div>
+               </div>
+               <div>
+                 <label style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', display: 'block', marginBottom: 4 }}>Permissão (Role)</label>
+                 <div style={{ fontSize: 13, background: 'var(--bg-primary)', padding: '8px 12px', borderRadius: 6, color: 'var(--text-secondary)', textTransform: 'capitalize' }}>{profile?.role || 'N/A'}</div>
+               </div>
+               <div>
+                 <label style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', display: 'block', marginBottom: 4 }}>Status</label>
+                 <div style={{ fontSize: 13, background: 'var(--bg-primary)', padding: '8px 12px', borderRadius: 6, color: profile?.status === 'aprovado' ? '#10b981' : '#f59e0b', textTransform: 'capitalize', fontWeight: 600 }}>{profile?.status || 'N/A'}</div>
+               </div>
+             </div>
+          </div>
+
+          <div>
+             <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>Alterar Senha de Acesso</label>
+             <input
+               className="input-field"
+               type="password"
+               value={novaSenha}
+               onChange={e => { setNovaSenha(e.target.value); setErroSenha(''); }}
+               placeholder="Digite uma nova senha para alterar (min. 8 caracteres)"
+             />
+             {erroSenha && <p style={{ color: '#ef4444', fontSize: 12, marginTop: 4 }}>{erroSenha}</p>}
+          </div>
+          <div>
+            <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>Nome do Sistema</label>
+            <input
+              className="input-field"
+              value={cfg.nomeSistema || ''}
+              onChange={e => setCfg(c => ({ ...c, nomeSistema: e.target.value }))}
+              placeholder="Ex: Minhas Finanças"
+            />
+          </div>
+          <div>
+            <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>Foto de Perfil</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              {cfg.fotoPerfil ? (
+                <img src={cfg.fotoPerfil} alt="Perfil" style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover' }} />
+              ) : (
+                <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--bg-glass)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <User size={24} color="var(--text-muted)" />
+                </div>
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={e => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => setCfg(c => ({ ...c, fotoPerfil: reader.result as string }));
+                    reader.readAsDataURL(file);
+                  }
+                }}
+                style={{ fontSize: 13, color: 'var(--text-secondary)' }}
+              />
+            </div>
+          </div>
+          <div>
+            <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>Moeda</label>
+            <select className="input-field" value={cfg.moeda} onChange={e => setCfg(c => ({ ...c, moeda: e.target.value }))}>
+              <option value="BRL">🇧🇷 BRL - Real Brasileiro</option>
+              <option value="USD">🇺🇸 USD - Dólar Americano</option>
+              <option value="EUR">🇪🇺 EUR - Euro</option>
+            </select>
+          </div>
+        </SecaoConfig>
+
+        {/* Aparência */}
+        <SecaoConfig titulo="APARÊNCIA & DESIGN SYSTEM" icone={<Palette size={18} color="#3b82f6" />}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div>
+              <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 8 }}>
+                Modo de Aparência
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCfg(c => ({ ...c, tema: 'light' }));
+                    document.documentElement.setAttribute('data-theme', 'light');
+                  }}
+                  style={{
+                    padding: '12px 10px', borderRadius: 12, cursor: 'pointer',
+                    border: `2px solid ${cfg.tema === 'light' ? '#cc0000' : 'var(--border)'}`,
+                    background: cfg.tema === 'light' ? 'rgba(204,0,0,0.1)' : 'var(--bg-glass)',
+                    color: cfg.tema === 'light' ? '#cc0000' : 'var(--text-primary)', textAlign: 'center',
+                    fontWeight: 700, fontSize: 13, transition: 'all 0.2s ease'
+                  }}>
+                  ☀️ Claro
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCfg(c => ({ ...c, tema: 'dark' }));
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                  }}
+                  style={{
+                    padding: '12px 10px', borderRadius: 12, cursor: 'pointer',
+                    border: `2px solid ${cfg.tema === 'dark' || !cfg.tema ? '#cc0000' : 'var(--border)'}`,
+                    background: cfg.tema === 'dark' || !cfg.tema ? 'rgba(204,0,0,0.1)' : 'var(--bg-glass)',
+                    color: cfg.tema === 'dark' || !cfg.tema ? '#cc0000' : 'var(--text-primary)', textAlign: 'center',
+                    fontWeight: 700, fontSize: 13, transition: 'all 0.2s ease'
+                  }}>
+                  🌙 Escuro
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCfg(c => ({ ...c, tema: 'auto' }));
+                    document.documentElement.setAttribute('data-theme', 'auto');
+                  }}
+                  style={{
+                    padding: '12px 10px', borderRadius: 12, cursor: 'pointer',
+                    border: `2px solid ${cfg.tema === 'auto' ? '#cc0000' : 'var(--border)'}`,
+                    background: cfg.tema === 'auto' ? 'rgba(204,0,0,0.1)' : 'var(--bg-glass)',
+                    color: cfg.tema === 'auto' ? '#cc0000' : 'var(--text-primary)', textAlign: 'center',
+                    fontWeight: 700, fontSize: 13, transition: 'all 0.2s ease'
+                  }}>
+                  🤖 Automático
+                </button>
+              </div>
+            </div>
+
+            <div style={{ borderTop: '1px solid var(--border)', paddingTop: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <p style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Ajustes Visuais Avançados
+              </p>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-primary)', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={cfg.mostrarAnimacoes ?? true}
+                    onChange={e => setCfg(c => ({ ...c, mostrarAnimacoes: e.target.checked }))}
+                    style={{ accentColor: '#cc0000', width: 16, height: 16 }}
+                  />
+                  <span>Mostrar animações</span>
+                </label>
+
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-primary)', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={cfg.reduzirAnimacoes ?? false}
+                    onChange={e => setCfg(c => ({ ...c, reduzirAnimacoes: e.target.checked }))}
+                    style={{ accentColor: '#cc0000', width: 16, height: 16 }}
+                  />
+                  <span>Reduzir animações</span>
+                </label>
+
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-primary)', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={cfg.altoContraste ?? false}
+                    onChange={e => setCfg(c => ({ ...c, altoContraste: e.target.checked }))}
+                    style={{ accentColor: '#cc0000', width: 16, height: 16 }}
+                  />
+                  <span>Alto contraste (WCAG)</span>
+                </label>
+
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-primary)', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={cfg.compactarInterface ?? false}
+                    onChange={e => setCfg(c => ({ ...c, compactarInterface: e.target.checked }))}
+                    style={{ accentColor: '#cc0000', width: 16, height: 16 }}
+                  />
+                  <span>Compactar interface</span>
+                </label>
+
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-primary)', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={cfg.mostrarSombras ?? true}
+                    onChange={e => setCfg(c => ({ ...c, mostrarSombras: e.target.checked }))}
+                    style={{ accentColor: '#cc0000', width: 16, height: 16 }}
+                  />
+                  <span>Mostrar sombras</span>
+                </label>
+
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-primary)', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={cfg.transparencias ?? true}
+                    onChange={e => setCfg(c => ({ ...c, transparencias: e.target.checked }))}
+                    style={{ accentColor: '#cc0000', width: 16, height: 16 }}
+                  />
+                  <span>Transparências / Glassmorphic</span>
+                </label>
+
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-primary)', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={cfg.bordasArredondadas ?? true}
+                    onChange={e => setCfg(c => ({ ...c, bordasArredondadas: e.target.checked }))}
+                    style={{ accentColor: '#cc0000', width: 16, height: 16 }}
+                  />
+                  <span>Bordas arredondadas</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </SecaoConfig>
+
+        {/* Alertas Sonoros Bancários */}
+        <SecaoConfig titulo="Alertas Sonoros Bancários" icone={<Bell size={18} color="#f59e0b" />}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>Efeitos Sonoros do Sistema</p>
+                <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>Ativar toques de confirmação, receitas, despesas e alertas</p>
+              </div>
+              <input
+                type="checkbox"
+                checked={audioAtivo}
+                onChange={e => {
+                  setAudioAtivo(e.target.checked);
+                  setAudioConfig(e.target.checked, audioVolume);
+                }}
+                style={{ accentColor: '#10b981', width: 18, height: 18, cursor: 'pointer' }}
+              />
+            </div>
+
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, alignItems: 'center' }}>
+                <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>
+                  Volume dos Sons ({Math.round(audioVolume * 100)}%)
+                </label>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button
+                    type="button"
+                    onClick={() => playSound('sucesso')}
+                    className="btn-secondary"
+                    style={{ padding: '3px 10px', fontSize: 11 }}
+                  >
+                    🔊 Testar Sucesso
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => playSound('recebimento')}
+                    className="btn-secondary"
+                    style={{ padding: '3px 10px', fontSize: 11 }}
+                  >
+                    💰 Testar Receita
+                  </button>
+                </div>
+              </div>
+              <input
+                type="range"
+                min="0.05"
+                max="1"
+                step="0.05"
+                value={audioVolume}
+                onChange={e => {
+                  const val = parseFloat(e.target.value);
+                  setAudioVolume(val);
+                  setAudioConfig(audioAtivo, val);
+                }}
+                style={{ width: '100%', accentColor: '#3b82f6' }}
+              />
+            </div>
+          </div>
+        </SecaoConfig>
+
+        {/* Segurança e Sessão */}
+        <SecaoConfig titulo="Segurança e Sessão" icone={<Shield size={18} color="#cc0000" />}>
+          <div>
+            <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>
+              Tempo de Inatividade para Logoff Automático
+            </label>
+            <select
+              className="input-field"
+              value={cfg.tempoInatividade ?? 0}
+              onChange={e => setCfg(c => ({ ...c, tempoInatividade: parseInt(e.target.value, 10) }))}>
+              <option value="0">Desativado (Manter logado)</option>
+              <option value="5">5 Minutos</option>
+              <option value="10">10 Minutos</option>
+              <option value="15">15 Minutos (Recomendado)</option>
+              <option value="30">30 Minutos</option>
+              <option value="60">60 Minutos (1 Hora)</option>
+            </select>
+            <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
+              O sistema deslogará automaticamente caso fique sem nenhuma interação durante o tempo estipulado.
+            </p>
+          </div>
+
+          <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
+            <button
+              onClick={async () => {
+                if (confirm('Deseja realmente sair do sistema?')) {
+                  const { logout } = await import('@/lib/auth');
+                  await logout();
+                  window.location.reload();
+                }
+              }}
+              style={{
+                width: '100%',
+                padding: '12px',
+                borderRadius: 10,
+                background: 'rgba(239, 68, 68, 0.1)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                color: '#ef4444',
+                fontWeight: 700,
+                fontSize: 14,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8
+              }}>
+              <LogOut size={16} color="#ef4444" />
+              Sair da Conta (Fazer Logoff)
+            </button>
+          </div>
+        </SecaoConfig>
+
+        {/* IA */}
+        <SecaoConfig titulo="Inteligência Artificial" icone={<Key size={18} color="#10b981" />}>
+          <div>
+            <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>Provedor de IA</label>
+            <div className="grid-responsive-3">
+              {[
+                { id: 'offline' as const, label: '🔒 Offline', desc: 'Motor de Regras (Gratuito)' },
+                { id: 'openai' as const, label: '🤖 OpenAI', desc: 'GPT-4 (Mais inteligente)' },
+                { id: 'gemini' as const, label: '✨ Gemini', desc: 'Google (Alternativa)' },
+              ].map(op => (
+                <button key={op.id}
+                  onClick={() => setCfg(c => ({ ...c, provedorIA: op.id }))}
+                  style={{
+                    padding: '12px 10px', borderRadius: 10, cursor: 'pointer',
+                    border: `1px solid ${cfg.provedorIA === op.id ? 'rgba(16,185,129,0.4)' : 'var(--border)'}`,
+                    background: cfg.provedorIA === op.id ? 'rgba(16,185,129,0.1)' : 'var(--bg-glass)',
+                    color: cfg.provedorIA === op.id ? '#10b981' : 'var(--text-secondary)', textAlign: 'center',
+                    transition: 'all 0.15s',
+                  }}>
+                  <p style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>{op.label}</p>
+                  <p style={{ fontSize: 10, opacity: 0.7 }}>{op.desc}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {cfg.provedorIA === 'openai' && (
+            <div>
+              <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>OpenAI API Key</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  className="input-field"
+                  type={mostrarKey ? 'text' : 'password'}
+                  value={cfg.openaiApiKey || ''}
+                  onChange={e => setCfg(c => ({ ...c, openaiApiKey: e.target.value }))}
+                  placeholder="sk-..."
+                  style={{ paddingRight: 44 }}
+                />
+                <button onClick={() => setMostrarKey(!mostrarKey)}
+                  style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
+                  {mostrarKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+              <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 6 }}>
+                Obtenha sua chave em <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" style={{ color: '#818cf8' }}>platform.openai.com</a>. Ela fica salva apenas no seu dispositivo.
+              </p>
+            </div>
+          )}
+
+          {cfg.provedorIA === 'gemini' && (
+            <div>
+              <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>Google Gemini API Key</label>
+              <input
+                className="input-field"
+                type="password"
+                value={cfg.geminiApiKey || ''}
+                onChange={e => setCfg(c => ({ ...c, geminiApiKey: e.target.value }))}
+                placeholder="AIza..."
+              />
+              <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 6 }}>
+                Obtenha sua chave em <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" style={{ color: '#818cf8' }}>aistudio.google.com</a>.
+              </p>
+            </div>
+          )}
+
+          {cfg.provedorIA === 'offline' && (
+            <div style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.15)', borderRadius: 10, padding: '12px 14px' }}>
+              <p style={{ fontSize: 12, color: '#34d399', fontWeight: 600, marginBottom: 4 }}>✅ Modo Offline Ativo</p>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.6 }}>
+                O motor de regras inteligente interpreta seus lançamentos automaticamente, offline e sem custo. Reconhece mais de 200 padrões de categorias, fornecedores, formas de pagamento e muito mais.
+              </p>
+            </div>
+          )}
+        </SecaoConfig>
+
+        {/* Notificações e Lembretes */}
+        <SecaoConfig titulo="Notificações e Lembretes" icone={<Bell size={18} color="#f59e0b" />}>
+          <ToggleConfig
+            label="Alertas Pop-up Diários"
+            descricao="Mostra um aviso na tela inicial sobre as contas vencendo hoje"
+            ativo={cfg.lembretesPopup ?? true}
+            onChange={v => setCfg(c => ({ ...c, lembretesPopup: v }))}
+          />
+          <ToggleConfig
+            label="Central de Alertas (Sino)"
+            descricao="Habilita a central de notificações no topo da tela"
+            ativo={cfg.lembretesSino ?? true}
+            onChange={v => setCfg(c => ({ ...c, lembretesSino: v }))}
+          />
+        </SecaoConfig>
+
+        {/* Automação de WhatsApp */}
+        <SecaoConfig titulo="Automação de WhatsApp" icone={<MessageCircle size={18} color="#10b981" />}>
+          <ToggleConfig
+            label="Enviar Resumo Diário"
+            descricao="Você receberá um resumo financeiro e alertas de vencimento todos os dias"
+            ativo={cfg.whatsappAtivo ?? false}
+            onChange={v => setCfg(c => ({ ...c, whatsappAtivo: v }))}
+          />
+          
+          {cfg.whatsappAtivo && (
+            <div style={{ background: 'var(--bg-glass)', border: '1px solid var(--border)', borderRadius: 10, padding: 16, marginTop: 12, display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div>
+                <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>Números de WhatsApp</label>
+                <input
+                  className="input-field"
+                  placeholder="Ex: 11999999999, 11888888888"
+                  value={cfg.whatsappNumeros || ''}
+                  onChange={e => setCfg(c => ({ ...c, whatsappNumeros: e.target.value }))}
+                />
+                <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>Separe os números por vírgula (com DDD).</p>
+              </div>
+              <div>
+                <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>Horário do Envio</label>
+                <input
+                  type="time"
+                  className="input-field"
+                  value={cfg.whatsappHorario || '09:00'}
+                  onChange={e => setCfg(c => ({ ...c, whatsappHorario: e.target.value }))}
+                />
+              </div>
+              <div style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.15)', borderRadius: 8, padding: 12, marginTop: 4 }}>
+                <p style={{ fontSize: 12, color: '#34d399', fontWeight: 600, marginBottom: 4 }}>💡 Como funciona?</p>
+                <p style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                  Todos os dias no horário configurado, o sistema gerará automaticamente um resumo do que vence hoje e nos próximos dias, além de um panorama rápido do seu saldo.
+                </p>
+              </div>
+            </div>
+          )}
+        </SecaoConfig>
+
+        {/* Dados */}
+        <SecaoConfig titulo="Dados & Privacidade" icone={<Shield size={18} color="#06b6d4" />}>
+          <ToggleConfig
+            label="Backup Automático"
+            descricao="Exporta os dados automaticamente (em breve)"
+            ativo={cfg.backupAutomatico}
+            onChange={v => setCfg(c => ({ ...c, backupAutomatico: v }))}
+          />
+
+          <div style={{ background: 'rgba(6,182,212,0.06)', border: '1px solid rgba(6,182,212,0.15)', borderRadius: 10, padding: '12px 14px' }}>
+            <p style={{ fontSize: 12, color: '#67e8f9', fontWeight: 600, marginBottom: 4 }}>🔒 Dados 100% Privados</p>
+            <p style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.6 }}>
+              Todos os seus dados são armazenados localmente no seu navegador (IndexedDB). Nenhuma informação financeira é enviada para servidores externos, exceto quando você usa uma API de IA e envia explicitamente o contexto.
+            </p>
+          </div>
+
+          {/* Zerar Dados */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid var(--bg-glass)' }}>
+            <div>
+              <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 2 }}>Zerar Sistema (Reset)</p>
+              <p style={{ fontSize: 12, color: '#ef4444' }}>Apaga todos os seus dados. Não pode ser desfeito!</p>
+            </div>
+            <button
+              className="btn-primary"
+              style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', padding: '8px 12px', fontSize: 12 }}
+              onClick={() => {
+                if (window.confirm('Tem certeza absoluta que deseja apagar TODOS os seus lançamentos, cartões, contas e cadastros? Essa ação não pode ser desfeita.')) {
+                  const req = indexedDB.deleteDatabase('financeapp');
+                  req.onsuccess = () => {
+                    window.location.reload();
+                  };
+                  req.onerror = () => {
+                    alert('Erro ao apagar banco de dados. Tente limpar os dados do navegador manualmente.');
+                  };
+                }
+              }}
+            >
+              Apagar Tudo
+            </button>
+          </div>
+
+          {/* Exportar dados */}
+          <div>
+            <p style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 10 }}>Exportar dados</p>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button className="btn-secondary" onClick={async () => {
+                const { getTransacoes } = await import('@/lib/storage');
+                const t = await getTransacoes();
+                const json = JSON.stringify(t, null, 2);
+                const blob = new Blob([json], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a'); a.href = url; a.download = 'financeai-backup.json'; a.click();
+              }}>
+                💾 JSON
+              </button>
+              <button className="btn-secondary" onClick={async () => {
+                const { getTransacoes, formatarMoeda } = await import('@/lib/storage');
+                const t = await getTransacoes();
+                const header = 'Tipo,Descrição,Valor,Data,Categoria,Fornecedor,Conta,Forma de Pagamento,Status\n';
+                const rows = t.map(tx => `${tx.tipo},"${tx.descricao}",${tx.valor},${tx.data},"${tx.categoriaNome || ''}","${tx.fornecedorNome || ''}","${tx.contaNome || ''}",${tx.formaPagamento},${tx.status}`).join('\n');
+                const blob = new Blob([header + rows], { type: 'text/csv;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a'); a.href = url; a.download = 'financeai-lancamentos.csv'; a.click();
+              }}>
+                📊 CSV
+              </button>
+            </div>
+          </div>
+        </SecaoConfig>
+
+        {/* Funcionalidades Avançadas */}
+        <SecaoConfig titulo="Funcionalidades Avançadas" icone={<Zap size={18} color="#eab308" />}>
+          <ToggleConfig
+            label="Integração Open Finance"
+            descricao="Importa extratos e faturas automaticamente via conexão bancária (Simulação)"
+            ativo={cfg.openFinanceAtivo ?? false}
+            onChange={v => setCfg(c => ({ ...c, openFinanceAtivo: v }))}
+          />
+          <ToggleConfig
+            label="Relatórios Automáticos por E-mail"
+            descricao="Receba um balanço financeiro semanal/mensal no e-mail cadastrado"
+            ativo={cfg.relatoriosEmail ?? false}
+            onChange={v => setCfg(c => ({ ...c, relatoriosEmail: v }))}
+          />
+          <ToggleConfig
+            label="Fechamento de Mês Automático"
+            descricao="Bloqueia edição de lançamentos em meses já encerrados para evitar fraude ou divergências na DRE"
+            ativo={cfg.fechamentoAutomatico ?? false}
+            onChange={v => setCfg(c => ({ ...c, fechamentoAutomatico: v }))}
+          />
+        </SecaoConfig>
+
+        {/* Sobre */}
+        <SecaoConfig titulo="Sobre" icone={<Info size={18} color="#8b5cf6" />}>
+          <div className="grid-responsive-2">
+            {[
+              { label: 'Versão', valor: '1.0.0' },
+              { label: 'Tecnologia', valor: 'Next.js + TypeScript' },
+              { label: 'Storage', valor: 'IndexedDB (Local)' },
+              { label: 'IA Motor', valor: 'Regras + OpenAI' },
+              { label: 'Gráficos', valor: 'Recharts' },
+              { label: 'PWA', valor: 'Suportado ✅' },
+            ].map((item, i) => (
+              <div key={i} style={{ background: 'var(--bg-glass)', borderRadius: 8, padding: '10px 12px' }}>
+                <p style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600, marginBottom: 3 }}>{item.label}</p>
+                <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{item.valor}</p>
+              </div>
+            ))}
+          </div>
+        </SecaoConfig>
+
+        {/* Botão salvar */}
+        <button onClick={salvar} className="btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '14px' }}>
+          {salvo ? <><Check size={18} /> Salvo com sucesso!</> : <><Save size={18} /> Salvar Configurações</>}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function SecaoConfig({ titulo, icone, children }: { titulo: string; icone: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <div className="glass" style={{ padding: '20px 24px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20, paddingBottom: 14, borderBottom: '1px solid var(--border)' }}>
+        <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {icone}
+        </div>
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>{titulo}</h2>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function ToggleConfig({ label, descricao, ativo, onChange }: { label: string; descricao: string; ativo: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16 }}>
+      <div>
+        <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 2 }}>{label}</p>
+        <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>{descricao}</p>
+      </div>
+      <button
+        onClick={() => onChange(!ativo)}
+        style={{
+          width: 48, height: 26, borderRadius: 99, border: 'none', cursor: 'pointer', flexShrink: 0,
+          background: ativo ? '#10b981' : 'var(--border-hover)',
+          position: 'relative', transition: 'background 0.2s',
+        }}>
+        <div style={{
+          width: 20, height: 20, borderRadius: '50%', background: 'white',
+          position: 'absolute', top: 3, transition: 'left 0.2s',
+          left: ativo ? 'calc(100% - 23px)' : '3px',
+        }} />
+      </button>
+    </div>
+  );
+}

@@ -1,0 +1,455 @@
+'use client';
+
+import { useState, useEffect, useCallback } from 'react';
+import {
+  AreaChart, Area, PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
+} from 'recharts';
+import {
+  getTransacoesByMes, getTransacoes, getContas, formatarMoeda, getFaturas
+} from '@/lib/storage';
+import { Transacao, Conta, Fatura } from '@/lib/types';
+import { format, subMonths } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import {
+  PlusCircle, RefreshCw, Clock, ArrowDownCircle, AlertCircle
+} from 'lucide-react';
+import { STATUS_LABELS } from '@/lib/defaults';
+import { ModalDetalhesFatura, ModalPagarFatura } from './FaturaModals';
+
+interface Props {
+  onNovoLancamento: () => void;
+}
+
+export default function Dashboard({ onNovoLancamento }: Props) {
+  const [transacoes, setTransacoes] = useState<Transacao[]>([]);
+  const [todasTransacoes, setTodasTransacoes] = useState<Transacao[]>([]);
+  const [contas, setContas] = useState<Conta[]>([]);
+  const [faturas, setFaturas] = useState<Fatura[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [mesAtual] = useState(new Date());
+  
+  const [modalDetalhesFatura, setModalDetalhesFatura] = useState<Fatura | null>(null);
+  const [modalPagarFatura, setModalPagarFatura] = useState<Fatura | null>(null);
+
+  const carregar = useCallback(async () => {
+    setLoading(true);
+    const [trans, todas, conts, fats] = await Promise.all([
+      getTransacoesByMes(mesAtual.getFullYear(), mesAtual.getMonth() + 1),
+      getTransacoes(),
+      getContas(),
+      getFaturas(),
+    ]);
+    setTransacoes(trans);
+    setTodasTransacoes(todas);
+    setContas(conts);
+    setFaturas(fats);
+    setLoading(false);
+  }, [mesAtual]);
+
+  useEffect(() => { carregar(); }, [carregar]);
+
+  // Função para verificar se é um gasto de cartão pendente
+  const isCartaoPendente = (t: typeof transacoes[0]) => {
+    if (t.formaPagamento !== 'cartao_credito') return false;
+    if (!t.faturaId) return true;
+    const fatura = faturas.find(f => f.id === t.faturaId);
+    return fatura ? (fatura.status === 'aberta' || fatura.status === 'parcial') : true;
+  };
+
+  // Faturas Pendentes (usado para o card Cartão Mês a Pagar e Contas a Pagar)
+  const faturasPendentes = faturas.filter(f => f.status === 'aberta' || f.status === 'parcial');
+
+  // Cálculos de Resumo
+  const totalReceitas = transacoes.filter(t => t.tipo === 'receita').reduce((s, t) => s + t.valor, 0);
+  const totalDespesas = transacoes.filter(t => t.tipo === 'despesa' && !isCartaoPendente(t)).reduce((s, t) => s + t.valor, 0);
+  
+  const totalCartao = faturasPendentes.reduce((s, f) => {
+    const pago = f.pagamentos?.reduce((acc, p) => acc + p.valor, 0) || 0;
+    return s + (f.valorTotal - pago);
+  }, 0);
+  const comprasCartao = faturasPendentes.reduce((s, f) => s + (f.transacaoIds?.length || 1), 0);
+  
+  const saldo = totalReceitas - totalDespesas;
+  const saldoBancario = contas.reduce((s, c) => s + c.saldo, 0);
+  const economia = totalReceitas > 0 ? (saldo / totalReceitas) * 100 : 0;
+
+  // Últimas transações do mês
+  const ultimasTransacoes = [...transacoes]
+    .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())
+    .slice(0, 6);
+
+  // CONTAS A PAGAR (Faturas Abertas + Despesas Pendentes)
+  const despesasPendentes = todasTransacoes.filter(t => t.tipo === 'despesa' && (t.status === 'pendente' || t.status === 'atrasado'));
+  
+  const contasAPagar = [
+    ...despesasPendentes.map(t => ({
+      id: t.id,
+      titulo: t.descricao,
+      subtitulo: t.fornecedorNome || t.categoriaNome || 'Despesa',
+      valor: t.valor,
+      data: t.data,
+      tipo: 'despesa' as const,
+      status: t.status,
+      cor: t.categoriaCor || 'var(--text-muted)',
+      icone: t.categoriaIcone || '📦',
+    })),
+    ...faturasPendentes.map(f => {
+      const pago = f.pagamentos?.reduce((acc, p) => acc + p.valor, 0) || 0;
+      return {
+        id: f.id,
+        titulo: `Fatura ${f.cartaoNome}`,
+        subtitulo: f.mesReferencia,
+        valor: f.valorTotal - pago,
+        data: f.dataVencimento,
+        tipo: 'fatura' as const,
+        status: f.status,
+        cor: f.cartaoCor,
+        icone: '💳',
+        faturaOriginal: f
+      };
+    })
+  ].sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
+
+  const totalAPagar = contasAPagar.reduce((s, item) => s + item.valor, 0);
+
+  // Dados do gráfico mensal (últimos 6 meses)
+  const dadosMensais = Array.from({ length: 6 }, (_, i) => {
+    const data = subMonths(mesAtual, 5 - i);
+    const mesStr = format(data, 'yyyy-MM');
+    const transMes = todasTransacoes.filter(t => t.data.startsWith(mesStr));
+    return {
+      mes: format(data, 'MMM', { locale: ptBR }),
+      receitas: transMes.filter(t => t.tipo === 'receita').reduce((s, t) => s + t.valor, 0),
+      despesas: transMes.filter(t => t.tipo === 'despesa' && !isCartaoPendente(t)).reduce((s, t) => s + t.valor, 0),
+    };
+  });
+
+  // Gastos por categoria
+  const porCategoria: Record<string, { valor: number; icone: string; cor: string }> = {};
+  for (const t of transacoes.filter(t => t.tipo === 'despesa')) {
+    const cat = t.categoriaNome || 'Outros';
+    if (!porCategoria[cat]) porCategoria[cat] = { valor: 0, icone: t.categoriaIcone || '📦', cor: t.categoriaCor || 'var(--text-muted)' };
+    porCategoria[cat].valor += t.valor;
+  }
+  const categoriaChart = Object.entries(porCategoria)
+    .sort((a, b) => b[1].valor - a[1].valor)
+    .slice(0, 5)
+    .map(([name, d]) => ({ name, value: d.valor, icone: d.icone, cor: d.cor }));
+
+  const hojeStr = format(new Date(), 'yyyy-MM-dd');
+  const fmt = formatarMoeda;
+
+  if (loading) return <DashboardSkeleton />;
+
+  return (
+    <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
+        <div>
+          <h1 style={{ fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>
+            Dashboard
+          </h1>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>
+            {format(mesAtual, "MMMM 'de' yyyy", { locale: ptBR })}
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button onClick={carregar} className="btn-secondary" style={{ padding: '10px 12px' }}>
+            <RefreshCw size={15} />
+          </button>
+          <button onClick={onNovoLancamento} className="btn-primary">
+            <PlusCircle size={16} />
+            <span>Novo Lançamento</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Cards de Resumo */}
+      <div className="grid-responsive-4" style={{ marginBottom: 24 }}>
+        <StatCard
+          titulo="Saldo do Mês"
+          valor={fmt(saldo)}
+          icone="⚖️"
+          cor={saldo >= 0 ? '#10b981' : '#ef4444'}
+          badge={`${saldo >= 0 ? '↑' : '↓'} ${Math.abs(economia).toFixed(1)}% de economia`}
+          badgeTipo={saldo >= 0 ? 'green' : 'red'}
+        />
+        <StatCard
+          titulo="Total Receitas"
+          valor={fmt(totalReceitas)}
+          icone="💚"
+          cor="#10b981"
+          badge={`${transacoes.filter(t => t.tipo === 'receita').length} lançamentos`}
+          badgeTipo="green"
+        />
+        <StatCard
+          titulo="Total Despesas"
+          valor={fmt(totalDespesas)}
+          icone="❤️"
+          cor="#ef4444"
+          badge={`${transacoes.filter(t => t.tipo === 'despesa' && !isCartaoPendente(t)).length} lançamentos`}
+          badgeTipo="red"
+        />
+        <StatCard
+          titulo="Cartão a Pagar"
+          valor={fmt(totalCartao)}
+          icone="💳"
+          cor="#f97316"
+          badge={`${comprasCartao} compras`}
+          badgeTipo="orange"
+        />
+      </div>
+
+      {/* PAINÉIS INFERIORES: CONTAS A PAGAR, ÚLTIMAS TRANSAÇÕES E CONTAS BANCÁRIAS */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 24 }}>
+        
+        {/* Contas a Pagar (Faturas + Pendentes) */}
+        <div className="glass" style={{ padding: 24, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Clock size={16} color="#f59e0b" /> Contas a Pagar
+            </h2>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
+            {contasAPagar.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)', fontSize: 13 }}>
+                <div style={{ fontSize: 32, marginBottom: 8 }}>✅</div>
+                Tudo em dia!<br />
+                Nenhuma conta a pagar.
+              </div>
+            ) : (
+              contasAPagar.slice(0, 6).map(item => {
+                const isAtrasado = item.data < hojeStr;
+                return (
+                  <div key={item.id} style={{
+                    display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px',
+                    borderRadius: 10, background: 'var(--bg-glass)', border: `1px solid ${item.cor}30`,
+                    cursor: item.tipo === 'fatura' ? 'pointer' : 'default'
+                  }} onClick={() => { if (item.tipo === 'fatura' && item.faturaOriginal) setModalDetalhesFatura(item.faturaOriginal); }}
+                  className={item.tipo === 'fatura' ? 'glass-hover' : ''}>
+                    <div style={{ width: 34, height: 34, borderRadius: 8, background: item.cor + '22', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>
+                      {item.icone}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.titulo}</p>
+                      <p style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
+                        {item.subtitulo} · Venc: {item.data.split('-').reverse().join('/')}
+                      </p>
+                    </div>
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                      <p style={{ fontSize: 14, fontWeight: 800, color: '#ef4444' }}>{fmt(item.valor)}</p>
+                      {isAtrasado ? (
+                        <span style={{ fontSize: 9, color: '#ef4444', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 3 }}>
+                          <AlertCircle size={10} /> Atrasada
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: 9, color: '#f59e0b', fontWeight: 600 }}>{item.status === 'parcial' ? 'Parcial' : 'Pendente'}</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+
+        {/* Últimas transações */}
+        <div className="glass table-responsive" style={{ padding: 24 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>⚡ Últimas Transações</h2>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {ultimasTransacoes.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)', fontSize: 13 }}>
+                <div style={{ fontSize: 32, marginBottom: 8 }}>💸</div>
+                Nenhum lançamento.<br />
+                <button onClick={onNovoLancamento} style={{ color: '#10b981', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, marginTop: 8, fontWeight: 600 }}>
+                  Adicionar lançamento →
+                </button>
+              </div>
+            ) : (
+              ultimasTransacoes.map(t => (
+                <TransacaoRow key={t.id} transacao={t} />
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Contas Bancárias (Saldo) */}
+        <div className="glass" style={{ padding: 24, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>🏦 Minhas Contas</h2>
+            <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--blue)' }}>{fmt(saldoBancario)}</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1, overflowY: 'auto' }}>
+            {contas.filter(c => c.ativo).map(conta => (
+              <div key={conta.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: 'var(--bg-glass)', borderRadius: 10, border: '1px solid var(--border)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ width: 32, height: 32, borderRadius: 8, background: conta.cor + '22', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>
+                    {conta.icone}
+                  </div>
+                  <div>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{conta.nome}</p>
+                    <p style={{ fontSize: 10, color: 'var(--text-muted)' }}>{conta.tipo}</p>
+                  </div>
+                </div>
+                <span style={{ fontSize: 13, fontWeight: 700, color: conta.saldo >= 0 ? '#10b981' : '#ef4444' }}>
+                  {fmt(conta.saldo)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Filtros Rapidos */}
+      <div className="grid-responsive-3" style={{ marginBottom: 24 }}>
+        {/* Gráfico Mensal */}
+        <div className="glass" style={{ padding: 24 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>📈 Fluxo de Caixa — 6 meses</h2>
+          </div>
+          <ResponsiveContainer width="100%" height={220}>
+            <AreaChart data={dadosMensais}>
+              <defs>
+                <linearGradient id="gradReceit" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id="gradDesp" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--bg-glass)" />
+              <XAxis dataKey="mes" tick={{ fill: 'var(--text-muted)', fontSize: 12 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: 'var(--text-muted)', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => `R$${(v / 1000).toFixed(0)}k`} />
+              <Tooltip
+                contentStyle={{ background: '#1f2937', border: '1px solid var(--border-hover)', borderRadius: 10, color: 'var(--text-primary)' }}
+                formatter={(v: unknown) => [fmt(Number(v))]}
+              />
+              <Area type="monotone" dataKey="receitas" stroke="#10b981" strokeWidth={2} fill="url(#gradReceit)" name="Receitas" />
+              <Area type="monotone" dataKey="despesas" stroke="#ef4444" strokeWidth={2} fill="url(#gradDesp)" name="Despesas" />
+              <Legend wrapperStyle={{ fontSize: 12, color: 'var(--text-secondary)' }} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Pie chart categorias */}
+        <div className="glass" style={{ padding: 24 }}>
+          <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 20 }}>🍕 Categoria (Despesas)</h2>
+          {categoriaChart.length > 0 ? (
+            <>
+              <ResponsiveContainer width="100%" height={140}>
+                <PieChart>
+                  <Pie data={categoriaChart} dataKey="value" cx="50%" cy="50%" innerRadius={36} outerRadius={64} paddingAngle={3}>
+                    {categoriaChart.map((entry, index) => (
+                      <Cell key={index} fill={entry.cor} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{ background: '#1f2937', border: '1px solid var(--border-hover)', borderRadius: 10, color: 'var(--text-primary)' }}
+                    formatter={(v: unknown) => [fmt(Number(v))]}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
+                {categoriaChart.map((c, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: c.cor }} />
+                      <span style={{ fontSize: 12, color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 120 }}>{c.icone} {c.name}</span>
+                    </div>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>{fmt(c.value)}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)', fontSize: 13 }}>
+              Sem despesas ainda
+            </div>
+          )}
+        </div>
+      </div>
+
+      {modalDetalhesFatura && (
+        <ModalDetalhesFatura
+          fatura={modalDetalhesFatura}
+          transacoes={todasTransacoes.filter(t => t.faturaId === modalDetalhesFatura.id)}
+          onClose={() => setModalDetalhesFatura(null)}
+          onPagar={() => { setModalDetalhesFatura(null); setModalPagarFatura(modalDetalhesFatura); }}
+        />
+      )}
+      
+      {modalPagarFatura && (
+        <ModalPagarFatura
+          fatura={modalPagarFatura}
+          contas={contas}
+          onClose={() => setModalPagarFatura(null)}
+          onPago={() => { setModalPagarFatura(null); carregar(); }}
+        />
+      )}
+    </div>
+  );
+}
+
+function StatCard({ titulo, valor, icone, cor, badge, badgeTipo }: {
+  titulo: string; valor: string; icone: string; cor: string;
+  badge: string; badgeTipo: 'green' | 'red' | 'blue' | 'yellow' | 'purple' | 'orange';
+}) {
+  return (
+    <div className="stat-card">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+        <p style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{titulo}</p>
+        <div style={{ width: 36, height: 36, borderRadius: 10, background: cor + '18', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>
+          {icone}
+        </div>
+      </div>
+      <p style={{ fontSize: 24, fontWeight: 800, color: cor, letterSpacing: '-0.5px', marginBottom: 8, overflow: 'hidden', textOverflow: 'ellipsis' }}>{valor}</p>
+      <span className={`badge badge-${badgeTipo}`}>{badge}</span>
+    </div>
+  );
+}
+
+function TransacaoRow({ transacao: t }: { transacao: Transacao }) {
+  const fmt = formatarMoeda;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 8px', borderRadius: 10, transition: 'background 0.15s', cursor: 'default' }}
+      onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-glass)')}
+      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+      <div style={{ width: 34, height: 34, borderRadius: 10, background: (t.categoriaCor || 'var(--text-muted)') + '20', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>
+        {t.tipo === 'receita' ? '💰' : (t.categoriaIcone || '📦')}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.descricao}</p>
+        <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+          {t.data.split('-').reverse().join('/')}
+        </p>
+      </div>
+      <div style={{ textAlign: 'right', flexShrink: 0 }}>
+        <p style={{ fontSize: 14, fontWeight: 700, color: t.tipo === 'receita' ? '#10b981' : '#ef4444' }}>
+          {t.tipo === 'despesa' ? '−' : '+'}{fmt(t.valor)}
+        </p>
+        <span className={`badge ${t.status === 'pago' ? 'badge-green' : t.status === 'atrasado' ? 'badge-red' : 'badge-yellow'}`} style={{ fontSize: 9 }}>
+          {STATUS_LABELS[t.tipo]?.[t.status] || t.status}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function DashboardSkeleton() {
+  return (
+    <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+      <div style={{ height: 40, background: 'var(--bg-glass)', borderRadius: 10, marginBottom: 28 }} className="shimmer" />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
+        {[...Array(4)].map((_, i) => (
+          <div key={i} style={{ height: 100, background: 'var(--bg-glass)', borderRadius: 16 }} className="shimmer" />
+        ))}
+      </div>
+      <div style={{ height: 280, background: 'var(--bg-glass)', borderRadius: 16 }} className="shimmer" />
+    </div>
+  );
+}

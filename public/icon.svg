@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFE082"/>
+      <stop offset="30%" stop-color="#FFD54F"/>
+      <stop offset="70%" stop-color="#FFB300"/>
+      <stop offset="100%" stop-color="#FF8F00"/>
+    </linearGradient>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1a0000"/>
+      <stop offset="100%" stop-color="#800000"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="128" fill="url(#bgGrad)"/>
+  <circle cx="256" cy="256" r="210" fill="none" stroke="url(#goldGrad)" stroke-width="12" stroke-dasharray="12 12" opacity="0.4"/>
+  <g filter="url(#shadow)">
+    <!-- Bank Building & Diamond Shield Motif -->
+    <path d="M256 90 L390 175 L390 200 L122 200 L122 175 Z" fill="url(#goldGrad)"/>
+    <rect x="150" y="215" width="32" height="150" rx="6" fill="url(#goldGrad)"/>
+    <rect x="218" y="215" width="32" height="150" rx="6" fill="url(#goldGrad)"/>
+    <rect x="262" y="215" width="32" height="150" rx="6" fill="url(#goldGrad)"/>
+    <rect x="330" y="215" width="32" height="150" rx="6" fill="url(#goldGrad)"/>
+    <rect x="110" y="375" width="292" height="35" rx="8" fill="url(#goldGrad)"/>
+    <!-- Growth Arrow -->
+    <path d="M330 130 L410 130 L410 210 L370 170 L280 260 L220 200 L140 280 L115 255 L220 150 L280 210 L370 120 Z" fill="url(#goldGrad)"/>
+  </g>
+</svg>

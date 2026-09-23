@@ -1,0 +1,650 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
+import { ConfiguracaoApp } from '@/lib/types';
+import { NotificationCenter } from '@/components/NotificationCenter';
+import { DailyReminderPopup } from '@/components/DailyReminderPopup';
+import { DashboardHeader } from '@/components/NewMobileBankApp';
+import {
+  LayoutDashboard, ListOrdered, BarChart3, CreditCard,
+  Settings, Bot, PlusCircle, BookOpen, LogOut, ShieldCheck,
+  BrainCircuit, Calendar, RefreshCw, Zap, Users, TrendingUp, Target
+} from 'lucide-react';
+import { setTenantId } from '@/lib/storage';
+
+type Pagina = 'dashboard' | 'cfo' | 'extrato' | 'lancamentos' | 'calendario' | 'conciliacao' | 'aprovacoes' | 'regras' | 'relatorios' | 'contas' | 'cadastros' | 'equipe' | 'chat' | 'configuracoes' | 'admin' | 'auditoria' | 'licencas' | 'metas' | 'investimentos';
+
+// ─── Todos os componentes que usam Firebase carregam APENAS no browser ────────
+const Dashboard     = dynamic(() => import('@/components/Dashboard'),     { ssr: false });
+const GerenciamentoClientes = dynamic(() => import('@/components/GerenciamentoClientes'), { ssr: false });
+const ModuloLicencas = dynamic(() => import('@/components/ModuloLicencas'), { ssr: false });
+const Equipe = dynamic(() => import('@/components/Equipe'), { ssr: false });
+const CFOExecutiveDashboard = dynamic(() => import('@/components/CFOExecutiveDashboard').then(m => ({ default: m.CFOExecutiveDashboard })), { ssr: false });
+const CalendarioFinanceiro = dynamic(() => import('@/components/CalendarioFinanceiro').then(m => ({ default: m.CalendarioFinanceiro })), { ssr: false });
+const CentralConciliacao = dynamic(() => import('@/components/CentralConciliacao').then(m => ({ default: m.CentralConciliacao })), { ssr: false });
+const CentralAprovacoes = dynamic(() => import('@/components/CentralAprovacoes').then(m => ({ default: m.CentralAprovacoes })), { ssr: false });
+const RegrasAutomacaoTab = dynamic(() => import('@/components/RegrasAutomacaoTab').then(m => ({ default: m.RegrasAutomacaoTab })), { ssr: false });
+const ExtratoBancario = dynamic(() => import('@/components/ExtratoBancario'), { ssr: false });
+const Lancamentos   = dynamic(() => import('@/components/Lancamentos'),   { ssr: false });
+const Relatorios    = dynamic(() => import('@/components/Relatorios'),    { ssr: false });
+const Contas        = dynamic(() => import('@/components/Contas'),        { ssr: false });
+const Cadastros     = dynamic(() => import('@/components/Cadastros'),     { ssr: false });
+const ChatIA        = dynamic(() => import('@/components/ChatIA'),        { ssr: false });
+const Configuracoes = dynamic(() => import('@/components/Configuracoes'), { ssr: false });
+const AuditoriaTab  = dynamic(() => import('@/components/AuditoriaTab'),  { ssr: false });
+const ModalLancamento = dynamic(() => import('@/components/ModalLancamento'), { ssr: false });
+const Login = dynamic(() => import('@/components/Login').then(m => ({ default: m.Login })), { ssr: false });
+const AdminPanel = dynamic(() => import('@/components/AdminPanel'), { ssr: false });
+const ToastContainer = dynamic(() => import('@/components/ToastContainer').then(m => ({ default: m.ToastContainer })), { ssr: false });
+const NotificationDrawer = dynamic(() => import('@/components/NotificationDrawer').then(m => ({ default: m.NotificationDrawer })), { ssr: false });
+const LockScreen = dynamic(() => import('@/components/LockScreen').then(m => ({ default: m.LockScreen })), { ssr: false });
+const MetasGamificadas = dynamic(() => import('@/components/MetasGamificadas').then(m => ({ default: m.MetasGamificadas })), { ssr: false });
+const HubInvestimentos = dynamic(() => import('@/components/HubInvestimentos').then(m => ({ default: m.HubInvestimentos })), { ssr: false });
+
+const NAV_ITEMS = [
+  { id: 'dashboard'    as Pagina, label: 'Dashboard',        icon: LayoutDashboard },
+  { id: 'cfo'          as Pagina, label: 'Cockpit CFO',      icon: BrainCircuit },
+  { id: 'investimentos'as Pagina, label: 'Hub Patrimônio',   icon: TrendingUp },
+  { id: 'metas'        as Pagina, label: 'Metas & Orçamentos', icon: Target },
+  { id: 'extrato'      as Pagina, label: 'Extrato Bancário', icon: BookOpen },
+  { id: 'lancamentos'  as Pagina, label: 'Lançamentos',      icon: ListOrdered },
+  { id: 'calendario'   as Pagina, label: 'Calendário ERP',   icon: Calendar },
+  { id: 'conciliacao'  as Pagina, label: 'Conciliação OFX',  icon: RefreshCw },
+  { id: 'aprovacoes'   as Pagina, label: 'Aprovações',       icon: ShieldCheck },
+  { id: 'regras'       as Pagina, label: 'Automações',       icon: Zap },
+  { id: 'relatorios'   as Pagina, label: 'Relatórios',       icon: BarChart3 },
+  { id: 'contas'       as Pagina, label: 'Contas & Cartões', icon: CreditCard },
+  { id: 'cadastros'    as Pagina, label: 'Cadastros',        icon: BookOpen },
+  { id: 'equipe'       as Pagina, label: 'Minha Equipe',     icon: Users },
+  { id: 'chat'         as Pagina, label: 'IA Analista',      icon: Bot },
+  { id: 'configuracoes'as Pagina, label: 'Configurações',    icon: Settings },
+  { id: 'auditoria'    as Pagina, label: 'Auditoria',        icon: ShieldCheck },
+];
+
+export default function Home() {
+  const [paginaAtual, setPaginaAtual] = useState<Pagina>(
+    typeof window !== 'undefined' ? ((sessionStorage.getItem('paginaAtual') as Pagina) || 'dashboard') : 'dashboard'
+  );
+  const [modalAberto, setModalAberto] = useState(false);
+  const [tenantBloqueadoData, setTenantBloqueadoData] = useState<any>(null);
+  const [transacaoEditar, setTransacaoEditar] = useState<any>(null);
+  const [mounted, setMounted] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [cfg, setCfg] = useState<ConfiguracaoApp | null>(null);
+  const [drawerNotificacoesAberto, setDrawerNotificacoesAberto] = useState(false);
+  const [bloqueadoInatividade, setBloqueadoInatividade] = useState(false);
+  
+  // Auth states
+  const [autenticado, setAutenticado] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [userProfile, setUserProfile] = useState<any>(null); // AppUser
+  const [filtroRapidoLancamentos, setFiltroRapidoLancamentos] = useState<string>('');
+  const [dataAcesso, setDataAcesso] = useState('');
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [appInfo, setAppInfo] = useState<any>(null);
+
+  useEffect(() => {
+    setTenantId(userProfile?.tenantId || null);
+  }, [userProfile]);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      // Auto-trigger PWA install prompt for browser
+      setTimeout(() => {
+        try { e.prompt(); } catch (err) {}
+      }, 1000);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      const { logout } = await import('@/lib/auth');
+      await logout();
+    } catch (e) {
+      console.error("Erro ao fazer logout:", e);
+    }
+    
+    // Clear session info on logout
+    localStorage.removeItem('current_session_start');
+    localStorage.removeItem('current_user_name');
+    localStorage.removeItem('current_user_email');
+    localStorage.removeItem('current_user_role');
+    localStorage.removeItem('master_lastLogin');
+    
+    setAutenticado(false);
+    setUserProfile(null);
+    setCfg(null);
+    sessionStorage.removeItem('active_session_auth');
+    localStorage.removeItem('last_activity_timestamp');
+  };
+
+  // ─── MONITOREAMENTO DE INATIVIDADE (DESLOGAR SOZINHO) E SESSÃO INICIAL ─────────────────────────
+  
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+       const navs = performance.getEntriesByType("navigation") as PerformanceNavigationTiming[];
+       const isReload = navs.length > 0 && navs[0].type === 'reload';
+       
+       // Se não for um reload (F5), significa que é uma abertura nova do App (cold start)
+       // Então exigimos a senha forçando o logout
+       if (!isReload) {
+         console.log("Abertura do app detectada. Forçando logout para exigir credenciais.");
+         localStorage.removeItem('master_bypass');
+         sessionStorage.removeItem('active_session_auth');
+         import('@/lib/auth').then(m => m.logout());
+       }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!autenticado || !cfg?.tempoInatividade || cfg.tempoInatividade <= 0) return;
+
+    const timeoutMs = cfg.tempoInatividade * 60 * 1000;
+
+    const checkInactivity = () => {
+      const lastStr = localStorage.getItem('last_activity_timestamp');
+      if (lastStr) {
+        const last = parseInt(lastStr, 10);
+        if (Date.now() - last >= timeoutMs) {
+          alert(`🔒 Sessão encerrada automaticamente após ${cfg.tempoInatividade} minutos de inatividade.`);
+          handleLogout();
+          return true; // foi deslogado
+        }
+      }
+      return false;
+    };
+
+    const resetTimer = () => {
+      localStorage.setItem('last_activity_timestamp', Date.now().toString());
+    };
+    
+    // Confere inatividade ANTES de resetar o timer ao montar/focar
+    if (!checkInactivity()) {
+      resetTimer();
+    }
+
+
+
+    const eventos = ['mousemove', 'keydown', 'click', 'touchstart', 'scroll'];
+    eventos.forEach(ev => window.addEventListener(ev, resetTimer, { passive: true }));
+    
+    const onVisibilityChange = () => {
+       if (document.visibilityState === 'visible') checkInactivity();
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    const intervalCheck = setInterval(checkInactivity, 10000);
+
+    return () => {
+      clearInterval(intervalCheck);
+      eventos.forEach(ev => window.removeEventListener(ev, resetTimer));
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [autenticado, cfg?.tempoInatividade]);
+
+  const handleInstallPWA = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const choiceResult = await deferredPrompt.userChoice;
+      if (choiceResult.outcome === 'accepted') {
+        setDeferredPrompt(null);
+      }
+    } else {
+      alert("📲 Para instalar o App no seu Computador ou Celular:\n\n1. No Chrome ou Edge, clique no ícone de instalação (💻 ou ➕) localizado no canto superior direito da barra de endereço.\n\n2. Clique em 'Instalar'. O aplicativo funcionará como um programa nativo com o novo ícone Dourado!");
+    }
+  };
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const { subscribeAuth } = await import('@/lib/auth');
+        const { getConfiguracoes, seedDadosPadraoSeVazio } = await import('@/lib/storage');
+        
+        subscribeAuth(async (user, profile) => {
+          // ==========================================
+          // MASTER BYPASS VERIFICATION
+          // ==========================================
+          const isBypassAtivo = typeof window !== 'undefined' && localStorage.getItem('master_bypass') === 'true';
+          
+          if (isBypassAtivo) {
+             setAutenticado(true);
+             setUserProfile({
+                uid: 'clovis-master-bypass',
+                nome: 'Administrador (Master)',
+                email: 'clovis@financeai.com',
+                role: 'admin',
+                status: 'aprovado',
+                lastLogin: new Date().toISOString()
+             });
+             
+             // Try to load custom config if any, otherwise default
+             const c = await getConfiguracoes('clovis-master-bypass').catch(() => null);
+             setCfg(c);
+             await seedDadosPadraoSeVazio();
+             
+             const temaAtivo = c?.tema || (typeof window !== 'undefined' ? localStorage.getItem('theme_preference') : null) || 'dark';
+             document.documentElement.setAttribute('data-theme', temaAtivo);
+             
+             const storedLogin = localStorage.getItem('master_lastLogin');
+             const agora = storedLogin ? new Date(storedLogin) : new Date();
+             setDataAcesso(`${agora.toLocaleDateString('pt-BR')} - ${agora.getHours().toString().padStart(2,'0')}h${agora.getMinutes().toString().padStart(2,'0')}`);
+             
+             sessionStorage.setItem('current_user_name', 'Clovis (Master)');
+             sessionStorage.setItem('current_user_email', 'clovis@financeai.com');
+             sessionStorage.setItem('current_user_role', 'admin');
+             sessionStorage.setItem('current_session_start', agora.toISOString());
+             
+             localStorage.setItem('current_user_name', 'Clovis (Master)');
+             localStorage.setItem('current_user_email', 'clovis@financeai.com');
+             localStorage.setItem('current_user_role', 'admin');
+             localStorage.setItem('current_session_start', agora.toISOString());
+             setAuthLoading(false);
+             return; // Pula o resto da validação do Firebase!
+          }
+
+          if (user) {
+            // Profile não veio? Busca novamente
+            let p = profile;
+            if (!p) {
+               const { getUserProfile } = await import('@/lib/auth');
+               p = await getUserProfile(user.uid);
+            }
+            
+            const email = user.email || '';
+            const isAdminEmail = email === 'clovis@financeai.com' || email === 'clovis@email.com' || email === 'clovis';
+            
+            if (!p && isAdminEmail) {
+               // Admin não tem perfil, criar
+               console.log("[page.tsx] Master não tem perfil, criando automático");
+               const { doc, setDoc } = await import('firebase/firestore');
+               const { getDb } = await import('@/lib/firebase');
+               p = {
+                 uid: user.uid,
+                 nome: 'Administrador (Master)',
+                 email: email,
+                 role: 'admin',
+                 status: 'aprovado',
+                 createdAt: new Date().toISOString(),
+                 lastLogin: new Date().toISOString()
+               } as any;
+               await setDoc(doc(getDb(), 'users', user.uid), p);
+            }
+
+            if (p) {
+               // ─── SaaS TENANT BLOCK CHECK ────────────────────────────────
+               let tenantAcessoPermitido = true;
+               let tenantMensagem = "";
+               if (p.tenantId && p.tenantId !== 'master') {
+                 const { getDoc, doc } = await import('firebase/firestore');
+                 const { getDb } = await import('@/lib/firebase');
+                 const tenantSnap = await getDoc(doc(getDb(), 'tenants', p.tenantId!));
+                 if (tenantSnap.exists()) {
+                   const tData = tenantSnap.data();
+                   if (tData.status === 'Bloqueado') {
+                     tenantAcessoPermitido = false;
+                     tenantMensagem = "O acesso desta empresa está suspenso. Contate o suporte.";
+                   } else if (tData.dataVencimentoBloqueio) {
+                     if (new Date() > new Date(tData.dataVencimentoBloqueio)) {
+                       tenantAcessoPermitido = false;
+                       tenantMensagem = "Assinatura vencida. O acesso foi bloqueado automaticamente.";
+                     }
+                   }
+                 }
+               }
+               
+               if (!tenantAcessoPermitido) {
+                 // Seta os dados para mostrar a tela de bloqueio
+                 const { getDoc, doc } = await import('firebase/firestore');
+                 const { getDb } = await import('@/lib/firebase');
+                 const tenantSnap = await getDoc(doc(getDb(), 'tenants', p.tenantId!));
+                 setTenantBloqueadoData({
+                   ...tenantSnap.data(),
+                   mensagem: tenantMensagem,
+                   id: p.tenantId
+                 });
+                 setAutenticado(true);
+                 setUserProfile(p);
+                 setAuthLoading(false);
+               } else if (p.role === 'admin' || p.status === 'aprovado') {
+                 setAutenticado(true);
+                 setUserProfile(p);
+                 
+                  let sessionStart = p.lastLogin;
+                  if (!sessionStart) {
+                    sessionStart = new Date().toISOString();
+                    p.lastLogin = sessionStart;
+                    // Salva no banco de dados para que seja persistente a partir de agora
+                    import('firebase/firestore').then(({ doc, setDoc }) => {
+                       import('@/lib/firebase').then(({ getDb }) => {
+                           setDoc(doc(getDb(), 'users', user.uid), { lastLogin: sessionStart }, { merge: true });
+                       });
+                    });
+                  }
+                  
+                  const d = new Date(sessionStart);
+                  setDataAcesso(`${d.toLocaleDateString('pt-BR')} - ${d.getHours().toString().padStart(2,'0')}h${d.getMinutes().toString().padStart(2,'0')}`);
+                  
+                  localStorage.setItem('current_session_start', sessionStart);
+                  localStorage.setItem('current_user_name', p.nome || 'Sistema');
+                  localStorage.setItem('current_user_email', p.email || '');
+                  localStorage.setItem('current_user_role', p.role || 'usuario');
+                  
+                  // Also set in sessionStorage just in case other parts still use it
+                  sessionStorage.setItem('current_session_start', sessionStart);
+                  sessionStorage.setItem('current_user_name', p.nome || 'Sistema');
+                  sessionStorage.setItem('current_user_email', p.email || '');
+                  sessionStorage.setItem('current_user_role', p.role || 'usuario');
+
+                 const c = await getConfiguracoes(user.uid);
+                 setCfg(c);
+                 await seedDadosPadraoSeVazio();
+                 
+                 const temaAtivo = c?.tema || (typeof window !== 'undefined' ? localStorage.getItem('theme_preference') : null) || 'dark';
+                 document.documentElement.setAttribute('data-theme', temaAtivo);
+               } else {
+                 // user but not aprovado
+                 setAutenticado(false);
+                 setUserProfile(null);
+                 setCfg(null);
+                 const { getFirebaseAuth } = await import('@/lib/auth');
+                 await getFirebaseAuth().signOut();
+               }
+            } else {
+               // User exists in auth but no profile in firestore, force logout
+               setAutenticado(false);
+               setUserProfile(null);
+               setCfg(null);
+               const { getFirebaseAuth } = await import('@/lib/auth');
+               await getFirebaseAuth().signOut();
+            }
+          } else {
+            // Nenhum user logado (e sem bypass)
+            setAutenticado(false);
+            setUserProfile(null);
+            setCfg(null);
+          }
+          setAuthLoading(false);
+        });
+
+      } catch (error) {
+        console.error('Erro na autenticação:', error);
+        setAuthLoading(false);
+      } finally {
+          // Removemos o setDataAcesso do finally para não sobrescrever o horário do login
+        setMounted(true);
+      }
+    })();
+  }, [refreshKey]);
+
+  // Persistir paginaAtual
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('paginaAtual', paginaAtual);
+    }
+  }, [paginaAtual]);
+
+  // Hook de inatividade global
+  useEffect(() => {
+    if (!autenticado || !cfg?.tempoInatividade || cfg.tempoInatividade <= 0) return;
+
+    let timeoutId: NodeJS.Timeout;
+
+    const resetarTimer = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        setBloqueadoInatividade(true);
+        handleLogout();
+      }, cfg.tempoInatividade! * 60 * 1000);
+    };
+
+    const eventos = ['mousemove', 'keydown', 'wheel', 'touchstart', 'click'];
+    
+    eventos.forEach(evento => window.addEventListener(evento, resetarTimer));
+    resetarTimer(); // Inicializa o timer
+
+    return () => {
+      clearTimeout(timeoutId);
+      eventos.forEach(evento => window.removeEventListener(evento, resetarTimer));
+    };
+  }, [autenticado, cfg?.tempoInatividade]);
+
+  // ─── Tela de loading (renderizada no servidor também — sem Firebase) ─────────
+  if (!mounted || authLoading) {
+    return (
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', background:'#0f0a0a' }}>
+        <div style={{ textAlign:'center' }}>
+          <img src="/icon.svg" alt="ERP Logo Dourado" style={{ width: 84, height: 84, marginBottom: 16, filter: 'drop-shadow(0 6px 16px rgba(255,215,0,0.35))' }} />
+          <div style={{ color:'#ffffff', fontSize:22, fontWeight:800, letterSpacing:'-0.5px' }}>Sistema Financeiro ERP Pro</div>
+          <div style={{ color:'#ffd700', fontSize:13, fontWeight:600, marginTop:8 }}>Iniciando ambiente bancário seguro...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!autenticado) {
+    return (
+      <>
+        <DailyReminderPopup />
+        <Login configuracoes={cfg || { nomeSistema: 'FinanceAI' } as any} onLogin={async (profile) => {
+          // Força o login instantâneo na UI para não depender do delay do subscribeAuth
+          setAutenticado(true);
+          setUserProfile(profile);
+          const c = await import('@/lib/storage').then(m => m.getConfiguracoes(profile.uid));
+          setCfg(c);
+          await import('@/lib/storage').then(m => m.seedDadosPadraoSeVazio());
+        }} />
+      </>
+    );
+  }
+
+  let navItemsFiltrados = [...NAV_ITEMS];
+  const isMasterOrAdmin = userProfile?.role === 'admin' || (typeof window !== 'undefined' && localStorage.getItem('master_bypass') === 'true');
+  
+  // ─── PERMISSION-BASED NAV FILTERING ──────────────────────────────────
+  // Uses MENU_PERMISSION_MAP: each nav page maps to a single menu_* toggle.
+  // If the toggle is false/missing, the menu is completely hidden.
+  const { MENU_PERMISSION_MAP } = require('@/lib/permissions');
+
+  if (isMasterOrAdmin) {
+    // Admin/Master sees everything
+    navItemsFiltrados.push(
+      { id: 'licencas' as Pagina, label: 'Licenças', icon: BookOpen }
+    );
+  } else {
+    // Non-admin: filter nav items based on user's menu_* permissions
+    const perms = userProfile?.permissoes || {};
+    navItemsFiltrados = navItemsFiltrados.filter(item => {
+      const menuPermKey = MENU_PERMISSION_MAP[item.id];
+      if (!menuPermKey) return false; // Unknown page = hide
+      return perms[menuPermKey] === true;
+    });
+  }
+
+  const renderPagina = () => {
+    switch (paginaAtual) {
+      case 'dashboard':     return <Dashboard     key={refreshKey} onNovoLancamento={() => { setTransacaoEditar(null); setModalAberto(true); }} onEditarLancamento={(t) => { setTransacaoEditar(t); setModalAberto(true); }} onNavigateToLancamentos={(filtro?: string) => { setFiltroRapidoLancamentos(filtro || ''); setPaginaAtual('lancamentos'); }} />;
+      case 'cfo':           return <CFOExecutiveDashboard key={refreshKey} />;
+      case 'extrato':       return <ExtratoBancario key={refreshKey} />;
+      case 'lancamentos':   return <Lancamentos   key={refreshKey} onNovoLancamento={() => { setTransacaoEditar(null); setModalAberto(true); }} onEditarLancamento={(t) => { setTransacaoEditar(t); setModalAberto(true); }} filtroRapido={filtroRapidoLancamentos} />;
+      case 'calendario':    return <CalendarioFinanceiro key={refreshKey} />;
+      case 'conciliacao':   return <CentralConciliacao key={refreshKey} />;
+      case 'aprovacoes':    return <CentralAprovacoes key={refreshKey} />;
+      case 'regras':        return <RegrasAutomacaoTab key={refreshKey} />;
+      case 'relatorios':    return <Relatorios    key={refreshKey} />;
+      case 'contas':        return <Contas        key={refreshKey} />;
+      case 'cadastros':     return <Cadastros     key={refreshKey} />;
+      case 'chat':          return <ChatIA        key={refreshKey} />;
+      case 'configuracoes': return <Configuracoes key={refreshKey} />;
+      case 'admin':         return <AdminPanel    key={refreshKey} />;
+      case 'auditoria':     return <AuditoriaTab  key={refreshKey} />;
+      case 'licencas':      return <ModuloLicencas key={refreshKey} />;
+      case 'equipe':        return <Equipe        key={refreshKey} />;
+      case 'metas':         return <MetasGamificadas key={refreshKey} />;
+      case 'investimentos': return <HubInvestimentos key={refreshKey} />;
+      default:              return <Dashboard     key={refreshKey} onNovoLancamento={() => setModalAberto(true)} onNavigateToLancamentos={(filtro?: string) => { setFiltroRapidoLancamentos(filtro || ''); setPaginaAtual('lancamentos'); }} />;
+    }
+  };
+
+  return (
+    <>
+      <ToastContainer />
+      <NotificationDrawer aberto={drawerNotificacoesAberto} onClose={() => setDrawerNotificacoesAberto(false)} />
+      {bloqueadoInatividade && (
+        <LockScreen
+          usuarioNome={cfg?.nomeUsuario || userProfile?.nome || 'Usuário'}
+          onDesbloquear={async () => {
+            setBloqueadoInatividade(false);
+            return true;
+          }}
+          onLogout={handleLogout}
+        />
+      )}
+
+      {tenantBloqueadoData ? (
+        <div className="flex h-screen w-screen bg-[#0f172a] items-center justify-center p-4">
+          <div className="bg-[#1e293b] border border-red-500/30 rounded-3xl p-8 max-w-lg w-full text-center shadow-2xl shadow-red-900/20">
+            <div className="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+              <LogOut size={40} className="text-red-500" />
+            </div>
+            <h1 className="text-3xl font-bold text-white mb-2">Acesso Suspenso</h1>
+            <p className="text-gray-400 mb-6">{tenantBloqueadoData.mensagem}</p>
+            
+            <div className="bg-[#0f172a] rounded-xl p-5 mb-6 text-left border border-[#334155]">
+              <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-4">Detalhes da Assinatura</h3>
+              <div className="flex justify-between mb-2">
+                <span className="text-gray-400">Empresa</span>
+                <span className="text-white font-medium">{tenantBloqueadoData.nome}</span>
+              </div>
+              <div className="flex justify-between mb-4">
+                <span className="text-gray-400">Plano</span>
+                <span className="text-white font-medium capitalize">{tenantBloqueadoData.plano}</span>
+              </div>
+              <div className="flex justify-between border-t border-[#334155] pt-4 mt-2">
+                <span className="text-gray-400">Valor Pendente</span>
+                <span className="text-green-400 font-bold text-xl">R$ {tenantBloqueadoData.valorAssinatura?.toFixed(2).replace('.',',')}</span>
+              </div>
+            </div>
+
+            {/* Simulação de Código Pix */}
+            <div className="bg-white p-2 rounded-xl inline-block mb-4">
+               <img src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=00020101021126580014br.gov.bcb.pix0136${tenantBloqueadoData.id}5204000053039865405${tenantBloqueadoData.valorAssinatura?.toFixed(2)}5802BR5913${tenantBloqueadoData.nome.substring(0, 13)}6009Sao Paulo62070503***6304`} alt="QR Code PIX" className="w-32 h-32" />
+            </div>
+            <div className="bg-[#0f172a] border border-[#334155] rounded-lg p-3 relative flex items-center mb-6">
+              <input readOnly value={`00020101021126580014br.gov.bcb.pix0136${tenantBloqueadoData.id}5204000053039865405${tenantBloqueadoData.valorAssinatura?.toFixed(2)}5802BR5913${tenantBloqueadoData.nome.substring(0, 13)}6009Sao Paulo62070503***6304`} className="bg-transparent text-xs text-gray-400 w-full outline-none font-mono" />
+              <button onClick={() => {
+                navigator.clipboard.writeText(`00020101021126580014br.gov.bcb.pix0136${tenantBloqueadoData.id}5204000053039865405${tenantBloqueadoData.valorAssinatura?.toFixed(2)}5802BR5913${tenantBloqueadoData.nome.substring(0, 13)}6009Sao Paulo62070503***6304`);
+                alert('Código PIX Copiado!');
+              }} className="text-blue-400 hover:text-blue-300 text-sm font-semibold ml-2">Copiar</button>
+            </div>
+
+            <div className="flex gap-4">
+              <button onClick={() => {
+                 setAutenticado(false);
+                 setUserProfile(null);
+                 setTenantBloqueadoData(null);
+                 import('@/lib/auth').then(m => m.getFirebaseAuth().signOut());
+              }} className="flex-1 px-4 py-3 bg-[#334155] text-white rounded-xl font-medium hover:bg-[#475569] transition-colors">
+                Sair
+              </button>
+              <button onClick={() => alert('Administrador notificado! O sistema será liberado em instantes.')} className="flex-1 px-4 py-3 bg-green-600 text-white rounded-xl font-medium hover:bg-green-500 transition-colors">
+                Já paguei
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+      <div className="app-layout-root" style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', maxWidth: '100vw', overflow: 'hidden' }}>
+        
+        {userProfile?.uid && (
+          <DailyReminderPopup userId={userProfile.uid} setActiveTab={tab => setPaginaAtual(tab as Pagina)} />
+        )}
+
+        {/* HEADER BANCÁRIO NUBANK/INTER (RED #cc0000) */}
+        <DashboardHeader cfg={cfg} userProfile={userProfile} dataAcesso={dataAcesso} onLogout={handleLogout} />
+
+        {/* BODY CONTAINER (SIDEBAR + MAIN) */}
+        <div className="app-body-container" style={{ display: 'flex', flex: 1, width: '100%', maxWidth: '100vw', overflow: 'hidden', position: 'relative' }}>
+          {/* SIDEBAR */}
+          <aside className="sidebar">
+            <button className="btn-primary" style={{ width:'100%', justifyContent:'center', marginBottom:20, borderRadius:10, padding:'10px 16px' }}
+              onClick={() => { setTransacaoEditar(null); setModalAberto(true); }}>
+              <PlusCircle size={16} />
+              Novo Lançamento
+            </button>
+            <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto', paddingRight: 4 }}>
+              {navItemsFiltrados.map(item => {
+                const Icon = item.icon;
+                return (
+                  <button key={item.id}
+                    className={`sidebar-link ${paginaAtual === item.id ? 'active' : ''}`}
+                    onClick={() => setPaginaAtual(item.id)}>
+                    <Icon size={17} />
+                    {item.label}
+                  </button>
+                );
+              })}
+            </nav>
+            <div style={{ marginTop: 'auto', paddingTop: 12, borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
+              <button
+                className="sidebar-link"
+                style={{ color: '#ef4444', fontWeight: 700 }}
+                onClick={handleLogout}>
+                <LogOut size={17} color="#ef4444" />
+                Sair do Sistema
+              </button>
+              <div style={{ fontSize: 10, color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.4 }}>
+                FinanceAI v1.0 • Firebase • Vercel
+              </div>
+            </div>
+          </aside>
+
+          {/* MAIN */}
+          <main className="main-content" style={{ flex: 1, height: '100%', overflowY: 'auto', overflowX: 'hidden' }}>
+            {renderPagina()}
+          </main>
+        </div>
+
+        {/* BOTTOM NAV MOBILE */}
+        <nav className="bottom-nav">
+          {navItemsFiltrados.map(item => {
+            const Icon = item.icon;
+            return (
+              <button key={item.id}
+                className={`bottom-nav-item ${paginaAtual === item.id ? 'active' : ''}`}
+                onClick={() => setPaginaAtual(item.id)}>
+                <Icon size={20} />
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+
+      {/* MOBILE FAB */}
+      <button className="mobile-fab" onClick={() => { setTransacaoEditar(null); setModalAberto(true); }}>
+        <PlusCircle size={24} />
+      </button>
+
+      {modalAberto && (
+        <ModalLancamento
+          onClose={() => { setModalAberto(false); setTransacaoEditar(null); }}
+          onSalvo={() => { setModalAberto(false); setTransacaoEditar(null); setRefreshKey(k => k + 1); }}
+          transacaoEditar={transacaoEditar}
+        />
+      )}
+      </div>
+      )}
+
+      <style>{`
+        @media (max-width: 768px) {
+          #mobile-header { display: flex !important; }
+          .main-content { padding-top: 64px !important; }
+        }
+      `}</style>
+    </>
+  );
+}

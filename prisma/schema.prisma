@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Categoria {
+  id            String   @id @default(cuid())
+  nome          String
+  icone         String
+  cor           String
+  tipo          String   // 'despesa' | 'receita' | 'ambos'
+  subcategorias String?  // JSON string
+}
+
+model CentroCusto {
+  id        String  @id @default(cuid())
+  nome      String
+  icone     String
+  cor       String
+  descricao String?
+}
+
+model Conta {
+  id      String  @id @default(cuid())
+  nome    String
+  tipo    String  // 'corrente' | 'poupanca' | ...
+  saldo   Float
+  cor     String
+  icone   String
+  banco   String?
+  agencia String?
+  numero  String?
+  ativo   Boolean @default(true)
+}
+
+model Cartao {
+  id               String  @id @default(cuid())
+  nome             String
+  bandeira         String
+  limite           Float
+  limiteDisponivel Float
+  melhorDia        Int
+  dataFechamento   Int
+  dataVencimento   Int
+  cor              String
+  contaId          String?
+  ativo            Boolean @default(true)
+}
+
+model Transacao {
+  id                    String  @id @default(cuid())
+  tipo                  String  // 'despesa' | 'receita' | 'transferencia'
+  descricao             String
+  valor                 Float
+  data                  String
+  dataCompetencia       String
+  status                String  // 'pago' | 'pendente' | ...
+  categoriaId           String
+  categoriaNome         String?
+  categoriaIcone        String?
+  categoriaCor          String?
+  centroCustoId         String?
+  centroCustoNome       String?
+  fornecedorId          String?
+  fornecedorNome        String?
+  clienteId             String?
+  clienteNome           String?
+  contaId               String
+  contaNome             String?
+  cartaoId              String?
+  cartaoNome            String?
+  formaPagamento        String
+  observacoes           String?
+  recorrente            Boolean @default(false)
+  frequenciaRecorrencia String?
+  quantidadeRecorrencias Int?
+  grupoRecorrencia      String?
+  faturaId              String?
+  parcelado             Boolean @default(false)
+  totalParcelas         Int?
+  parcelaAtual          Int?
+  grupoParcelamento     String?
+  criadoEm              String
+  atualizadoEm          String
+}
+
+model Fatura {
+  id             String  @id @default(cuid())
+  cartaoId       String
+  cartaoNome     String
+  cartaoCor      String
+  mesReferencia  String
+  dataFechamento String
+  dataVencimento String
+  valorTotal     Float
+  status         String  // 'aberta' | 'parcial' | 'paga'
+  pagamentos     String? // JSON string
+  transacaoIds   String? // JSON string
+}
+
+model ConfiguracaoApp {
+  id                 String  @id @default("config")
+  nomeUsuario        String
+  moeda              String
+  tema               String
+  provedorIA         String
+  notificacoesAtivas Boolean @default(true)
+  backupAutomatico   Boolean @default(true)
+  openaiApiKey       String?
+  geminiApiKey       String?
+  nomeSistema        String?
+  fotoPerfil         String?
+  exigirSenha        Boolean @default(false)
+  loginUsuario       String?
+  senha              String?
+}
