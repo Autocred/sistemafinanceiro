@@ -592,7 +592,7 @@ const openSafeAttachment = (url: string) => {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <h1 style={{ fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>Lancamentos</h1>
         <div style={{ display: 'flex', gap: 6 }}>
-          <button className="btn-secondary" style={{ borderColor: '#ef4444', color: '#ef4444', fontWeight: 600, fontSize: 13, padding: '4px 8px', fontSize: 11 }} onClick={async () => {
+          <button className="btn-secondary" style={{ borderColor: '#ef4444', color: '#ef4444', fontWeight: 600, , fontSize: 11 }} onClick={async () => {
              if (confirm('Deseja corrigir a sincronização? Isso forçará o download dos dados reais do servidor. Use isso se os valores estiverem diferentes do Dashboard.')) {
                 try {
                    indexedDB.deleteDatabase('firestore/[DEFAULT]/sistemafinan/main');
@@ -809,15 +809,15 @@ const openSafeAttachment = (url: string) => {
         {/* Linha 4: Filtros Específicos */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', paddingTop: 16, borderTop: '1px solid var(--border)', marginTop: 8 }}>
             <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', minWidth: 60 }}>Filtros</span>
-            <select value={filtroCategoria} onChange={e => setFiltroCategoria(e.target.value)} style={{ padding: '4px 6px', fontSize: 11, fontSize: 13, fontWeight: 600, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg-body)', color: 'var(--text-primary)', outline: 'none', minWidth: 180 }}>
+            <select value={filtroCategoria} onChange={e => setFiltroCategoria(e.target.value)} style={{ padding: '4px 6px', fontSize: 11, fontWeight: 600, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg-body)', color: 'var(--text-primary)', outline: 'none', minWidth: 180 }}>
                 <option value="">Todas as Categorias</option>
                 {categoriasDropdown.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
-            <select value={filtroCC} onChange={e => setFiltroCC(e.target.value)} style={{ padding: '4px 6px', fontSize: 11, fontSize: 13, fontWeight: 600, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg-body)', color: 'var(--text-primary)', outline: 'none', minWidth: 180 }}>
+            <select value={filtroCC} onChange={e => setFiltroCC(e.target.value)} style={{ padding: '4px 6px', fontSize: 11, fontWeight: 600, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg-body)', color: 'var(--text-primary)', outline: 'none', minWidth: 180 }}>
                 <option value="">Todos os C. de Custo</option>
                 {ccDropdown.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
-            <select value={filtroContato} onChange={e => setFiltroContato(e.target.value)} style={{ padding: '4px 6px', fontSize: 11, fontSize: 13, fontWeight: 600, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg-body)', color: 'var(--text-primary)', outline: 'none', minWidth: 180 }}>
+            <select value={filtroContato} onChange={e => setFiltroContato(e.target.value)} style={{ padding: '4px 6px', fontSize: 11, fontWeight: 600, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg-body)', color: 'var(--text-primary)', outline: 'none', minWidth: 180 }}>
                 <option value="">Todos Fornecedores/Clientes</option>
                 {contatosDropdown.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
@@ -1049,7 +1049,7 @@ const openSafeAttachment = (url: string) => {
                          </>
                        )}
                        {['master', '9yxuafoC0AV9BrIKem05ponbmgn2', 'autocred-promotora-de-credito'].includes(getTenantId()) && t.comportamento && (
-                         <span style={{ background: t.comportamento === 'fixa' ? 'rgba(139,92,246,0.15)' : 'rgba(245,158,11,0.15)', color: t.comportamento === 'fixa' ? '#6d28d9' : '#b45309', border: `1px solid ${t.comportamento === 'fixa' ? '#8b5cf6' : '#f59e0b'}`, padding: '4px 8px', fontSize: 11, borderRadius: 8, fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0, textTransform: 'uppercase', fontSize: 9 }}>
+                         <span style={{ background: t.comportamento === 'fixa' ? 'rgba(139,92,246,0.15)' : 'rgba(245,158,11,0.15)', color: t.comportamento === 'fixa' ? '#6d28d9' : '#b45309', border: `1px solid ${t.comportamento === 'fixa' ? '#8b5cf6' : '#f59e0b'}`, padding: '4px 8px', , fontSize: 11 }}>
                            {t.comportamento === 'fixa' ? 'Fixa' : 'Variável'}
                          </span>
                        )}
@@ -1089,37 +1089,37 @@ const openSafeAttachment = (url: string) => {
                      </div>
                      <div className="lancamento-actions">
                          {!checkCartaoPendente(t) && t.status !== 'pago' && t.formaPagamento !== 'cartao_credito' && (
-                           <button onClick={() => handleMarcarPago(t)} style={{ background: 'var(--primary-light)', border: '1px solid var(--primary-light)', borderRadius: 10, padding: '4px 8px', fontSize: 11, cursor: 'pointer', color: 'var(--primary)', display: 'flex', gap: 4, alignItems: 'center', fontSize: 11, fontWeight: 600, transition: 'all 0.15s' }}>
+                           <button onClick={() => handleMarcarPago(t)} style={{ background: 'var(--primary-light)', border: '1px solid var(--primary-light)', borderRadius: 10, padding: '4px 8px', , fontSize: 11, fontWeight: 600, transition: 'all 0.15s' }}>
                              <CheckCircle2 size={13} /> Baixar
                            </button>
                          )}
                          {isReceita && t.status !== 'pago' && (
-                           <button onClick={() => alert('Emissão de QRCode PIX disponível apenas com VAPID configurado na Vercel.')} style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: 10, padding: '4px 8px', fontSize: 11, cursor: 'pointer', color: '#10b981', display: 'flex', gap: 4, alignItems: 'center', fontSize: 11, fontWeight: 600, transition: 'all 0.15s' }}>
+                           <button onClick={() => alert('Emissão de QRCode PIX disponível apenas com VAPID configurado na Vercel.')} style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: 10, padding: '4px 8px', , fontSize: 11, fontWeight: 600, transition: 'all 0.15s' }}>
                              <Zap size={13} /> Cobrar
                            </button>
                          )}
                          
                            {t.comprovanteBase64 && !t.anexos && (
                              <button onClick={(e) => { e.stopPropagation(); openSafeAttachment(t.comprovanteBase64 as string); }} 
-                               style={{ background: '#dcfce7', border: '1px solid #bbf7d0', borderRadius: 10, padding: '4px 8px', fontSize: 11, cursor: 'pointer', color: '#16a34a', display: 'flex', gap: 4, alignItems: 'center', fontSize: 11, fontWeight: 600, transition: 'all 0.15s' }} title="Ver Anexo">
+                               style={{ background: '#dcfce7', border: '1px solid #bbf7d0', borderRadius: 10, padding: '4px 8px', , fontSize: 11, fontWeight: 600, transition: 'all 0.15s' }} title="Ver Anexo">
                                <Paperclip size={13} /> Anexo
                              </button>
                            )}
                            {t.anexos && t.anexos.map((a, idx) => (
                              <button key={idx} onClick={(e) => { e.stopPropagation(); openSafeAttachment(a.url); }} 
-                               style={{ background: '#dcfce7', border: '1px solid #bbf7d0', borderRadius: 10, padding: '4px 8px', fontSize: 11, cursor: 'pointer', color: '#16a34a', display: 'flex', gap: 4, alignItems: 'center', fontSize: 11, fontWeight: 600, transition: 'all 0.15s' }} title={a.nome}>
+                               style={{ background: '#dcfce7', border: '1px solid #bbf7d0', borderRadius: 10, padding: '4px 8px', , fontSize: 11, fontWeight: 600, transition: 'all 0.15s' }} title={a.nome}>
                                <Paperclip size={13} /> {t.anexos!.length > 1 ? 'Anexo ' + (idx + 1) : 'Anexo'}
                              </button>
                            ))}
 
 
-<button onClick={() => import('@/lib/pdf-generator').then(m => m.gerarReciboPDF(t))} style={{ background: 'var(--bg-active)', border: '1px solid var(--border)', borderRadius: 10, padding: '4px 8px', fontSize: 11, cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex', gap: 4, alignItems: 'center', fontSize: 11, fontWeight: 600, transition: 'all 0.15s' }}>
+<button onClick={() => import('@/lib/pdf-generator').then(m => m.gerarReciboPDF(t))} style={{ background: 'var(--bg-active)', border: '1px solid var(--border)', borderRadius: 10, padding: '4px 8px', , fontSize: 11, fontWeight: 600, transition: 'all 0.15s' }}>
   <Download size={13} /> Recibo
 </button>
-<button onClick={() => onDuplicarLancamento && onDuplicarLancamento(t)} style={{ background: 'var(--bg-active)', border: '1px solid var(--border)', borderRadius: 10, padding: '4px 8px', fontSize: 11, cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex', gap: 4, alignItems: 'center', fontSize: 11, fontWeight: 600, transition: 'all 0.15s' }}>
+<button onClick={() => onDuplicarLancamento && onDuplicarLancamento(t)} style={{ background: 'var(--bg-active)', border: '1px solid var(--border)', borderRadius: 10, padding: '4px 8px', , fontSize: 11, fontWeight: 600, transition: 'all 0.15s' }}>
   <Repeat size={13} /> Duplicar
 </button>
-<button onClick={() => handleEditar(t)} style={{ background: 'var(--bg-active)', border: '1px solid var(--border)', borderRadius: 10, padding: '4px 8px', fontSize: 11, cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex', gap: 4, alignItems: 'center', fontSize: 11, fontWeight: 600, transition: 'all 0.15s' }}>
+<button onClick={() => handleEditar(t)} style={{ background: 'var(--bg-active)', border: '1px solid var(--border)', borderRadius: 10, padding: '4px 8px', , fontSize: 11, fontWeight: 600, transition: 'all 0.15s' }}>
   <Edit3 size={13} /> Editar
 </button>
 
