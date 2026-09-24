@@ -6,7 +6,7 @@ import { Categoria, Conta, Fatura, Transacao } from '@/lib/types';
 import { calcularTotais, isCartaoPendente, normalizeDate } from '@/lib/financialEngine';
 import { FORMAS_PAGAMENTO_LABELS, STATUS_LABELS } from '@/lib/defaults';
 import { DynamicIcon } from '@/components/DynamicIcon';
-import { format, subMonths, addMonths } from 'date-fns';
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subMonths, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { PlusCircle, Search, Filter, ChevronLeft, ChevronRight, Trash2, Edit3, Download, RefreshCw, ArrowUpCircle, ArrowDownCircle, CheckSquare, Square, XCircle, AlertTriangle, DollarSign, ChevronDown, ChevronUp, Clock, Zap, Calendar as CalendarIcon, List, Repeat, Paperclip, CheckCircle2, Mic } from 'lucide-react';
 import { ordenarMovimentacoesDesc, ordenarVencimentosAsc } from '@/lib/sorting';
@@ -291,17 +291,20 @@ const openSafeAttachment = (url: string) => {
     if (periodoFiltro === 'hoje') {
       naoPeriodo = dataRef === hojeStr;
     } else if (periodoFiltro === '2dias') {
+      const hoje = format(hojeData, 'yyyy-MM-dd');
       const doisDiasFrente = format(new Date(hojeData.getTime() + 2 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
-        const doisDiasAtras = format(new Date(hojeData.getTime() - 2 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
-        naoPeriodo = dataRef >= doisDiasAtras && dataRef <= doisDiasFrente;
+      naoPeriodo = dataRef >= hoje && dataRef <= doisDiasFrente;
     } else if (periodoFiltro === 'semana') {
-      const umaSemanaAtras = format(new Date(hojeData.getTime() - 7 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
-      const umaSemanaFrente = format(new Date(hojeData.getTime() + 7 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
-      naoPeriodo = dataRef >= umaSemanaAtras && dataRef <= umaSemanaFrente;
+      const inicioSemana = format(startOfWeek(hojeData, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+      const fimSemana = format(endOfWeek(hojeData, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+      naoPeriodo = dataRef >= inicioSemana && dataRef <= fimSemana;
     } else if (periodoFiltro === 'mes') {
-      naoPeriodo = String(dataRef || '').startsWith(mesStr);
+      const inicioMes = format(startOfMonth(hojeData), 'yyyy-MM-dd');
+      const fimMes = format(endOfMonth(hojeData), 'yyyy-MM-dd');
+      naoPeriodo = dataRef >= inicioMes && dataRef <= fimMes;
     } else if (periodoFiltro === 'ano') {
-      naoPeriodo = String(dataRef || '').startsWith(mesStr.substring(0, 4));
+      const anoAtual = format(hojeData, 'yyyy');
+      naoPeriodo = String(dataRef || '').startsWith(anoAtual);
     } else if (periodoFiltro === 'data_especifica') {
       const dataItem = dataRef || '';
       if (dataEspecificaInicio && dataEspecificaFim) {

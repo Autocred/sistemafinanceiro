@@ -1,53 +1,25 @@
 const fs = require('fs');
-let content = fs.readFileSync('src/components/DashboardMensal.tsx', 'utf-8');
 
-const oldFilters = `const txAno = useMemo(() => {
-    return transacoes.filter(t => {
-      if (!t.data) return false;
-      const d = parseISO(t.data);
-      return getYear(d) === ano;
-    });
-  }, [transacoes, ano]);
+['src/components/Lancamentos.tsx', 'src/components/LancamentosV2.tsx'].forEach(f => {
+  let c = fs.readFileSync(f, 'utf8');
 
-  const txMes = useMemo(() => {
-    return txAno.filter(t => {
-      const d = parseISO(t.data);
-      return getMonth(d) === mes;
-    });
-  }, [txAno, mes]);
+  // Replace 2dias, semana, and mes
+  const regex = /\} else if \(periodoFiltro === '2dias'\) \{[\s\S]*?\} else if \(periodoFiltro === 'ano'\)/;
 
-  const txMesPassado = useMemo(() => {
-    const prevMes = mes === 0 ? 11 : mes - 1;
-    const prevAno = mes === 0 ? ano - 1 : ano;
-    return transacoes.filter(t => {
-      if (!t.data) return false;
-      const d = parseISO(t.data);
-      return getYear(d) === prevAno && getMonth(d) === prevMes;
-    });
-  }, [transacoes, ano, mes]);`;
+  const newLogic = `} else if (periodoFiltro === '2dias') {
+      const hoje = format(hojeData, 'yyyy-MM-dd');
+      const doisDiasFrente = format(new Date(hojeData.getTime() + 2 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
+      naoPeriodo = dataRef >= hoje && dataRef <= doisDiasFrente;
+    } else if (periodoFiltro === 'semana') {
+      const inicioSemana = format(startOfWeek(hojeData, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+      const fimSemana = format(endOfWeek(hojeData, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+      naoPeriodo = dataRef >= inicioSemana && dataRef <= fimSemana;
+    } else if (periodoFiltro === 'mes') {
+      const inicioMes = format(startOfMonth(hojeData), 'yyyy-MM-dd');
+      const fimMes = format(endOfMonth(hojeData), 'yyyy-MM-dd');
+      naoPeriodo = dataRef >= inicioMes && dataRef <= fimMes;
+    } else if (periodoFiltro === 'ano')`;
 
-const newFilters = `const txAno = useMemo(() => {
-    const anoStr = String(ano);
-    return transacoes.filter(t => String(t.data || '').startsWith(anoStr));
-  }, [transacoes, ano]);
-
-  const txMes = useMemo(() => {
-    const mesStr = \`\${ano}-\${String(mes + 1).padStart(2, '0')}\`;
-    return transacoes.filter(t => String(t.data || '').startsWith(mesStr));
-  }, [transacoes, ano, mes]);
-
-  const txMesPassado = useMemo(() => {
-    const prevM = mes === 0 ? 12 : mes; // mes is 0-indexed. If mes=0 (Jan), prevM=12 (Dec).
-    const prevAno = mes === 0 ? ano - 1 : ano;
-    const mesStr = \`\${prevAno}-\${String(prevM).padStart(2, '0')}\`;
-    return transacoes.filter(t => String(t.data || '').startsWith(mesStr));
-  }, [transacoes, ano, mes]);`;
-
-content = content.replace(oldFilters, newFilters);
-
-const oldDespesas = `const despesas = txMes.filter(t => t.tipo === 'despesa');`;
-const newDespesas = `const despesas = txMes.filter(t => t.tipo === 'despesa' && t.categoriaNome !== 'Pagamento de Fatura');`;
-content = content.replace(oldDespesas, newDespesas);
-
-fs.writeFileSync('src/components/DashboardMensal.tsx', content);
-console.log('Filters updated');
+  c = c.replace(regex, newLogic);
+  fs.writeFileSync(f, c);
+});

@@ -15,13 +15,14 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 async function seed() {
-  const release8 = {
-    versao: 'v3.6.8',
-    titulo: 'Isolamento de Aplicativos PWA por Licenca',
-    descricao: 'Os aplicativos instalados no computador ou celular agora sao completamente isolados pelo sistema. Cada icone abrira estritamente a licenca e tela de login correspondentes.',
+  const release = {
+    versao: 'v3.6.9',
+    titulo: 'Filtros de Data Precisos',
+    descricao: 'Ajuste na lógica dos botões de filtro de período da tela de Lançamentos para respeitarem fielmente o calendário ao invés de intervalos relativos de tempo.',
     changes: [
-      { tipo: 'melhoria', texto: 'Inclusao de IDs unicos (PWA Manifest ID) baseados no tenant, forçando o sistema operacional a tratar a Autocred e o Master como softwares instalados separados.' },
-      { tipo: 'correcao', texto: 'A URL de inicio (start_url) agora é amarrada estritamente à licença no momento da instalacao, impedindo que o ultimo acesso sobrescreva o atalho do aplicativo.' }
+      { tipo: 'correcao', texto: 'O botão "Semana" agora filtra rigidamente os dias de Segunda-feira até Domingo da semana em curso, ao invés de puxar os últimos 7 dias.' },
+      { tipo: 'correcao', texto: 'O botão "Mês" filtra do dia 1 ao último dia do mês atual do calendário.' },
+      { tipo: 'correcao', texto: 'O botão "Até 2 dias" calcula precisamente da data de hoje até depois de amanhã.' }
     ],
     dataLancamento: new Date().toISOString(),
     status: 'publicado',
@@ -31,7 +32,7 @@ async function seed() {
     createdAt: Date.now()
   };
 
-  await setDoc(doc(db, 'saas_releases', 'v3.6.8-pwa-isolation'), release8);
+  await setDoc(doc(db, 'saas_releases', 'v3.6.9-filtros-data'), release);
   console.log('Seed das atualizacoes com sucesso!');
 }
 
