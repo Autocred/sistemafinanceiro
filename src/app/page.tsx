@@ -910,6 +910,7 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
 
           setAutenticado(true);
           setUserProfile(profile);
+          setPaginaAtual('dashboard');
           setDataAcesso(new Date().toLocaleString('pt-BR'));
           
           // Refetch configuracoes com base no novo tenantId

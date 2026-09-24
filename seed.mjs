@@ -16,11 +16,11 @@ const db = getFirestore(app);
 
 async function seed() {
   const release = {
-    versao: 'v3.6.13',
-    titulo: 'Redirecionamento para o Dashboard no Login',
-    descricao: 'Atendendo a pedidos, o sistema agora irá sempre te jogar direto para a tela inicial (Dashboard) após realizar o login, zerando a memória da última aba que você tinha acessado na sessão anterior.',
+    versao: 'v3.6.14',
+    titulo: 'Fix: Redirecionamento Definitivo para o Dashboard',
+    descricao: 'Corrigido um comportamento onde o React guardava na própria memória da tela (Estado interno) a última aba acessada, ignorando o comando de limpeza de cache.',
     changes: [
-      { tipo: 'melhoria', texto: 'Injetado comando de redirecionamento global no motor de Login. Sempre que houver uma nova autenticação, a aba (paginaAtual) será automaticamente cravada como "dashboard", forçando o usuário a começar da visão global.' }
+      { tipo: 'correcao', texto: 'Agora o aplicativo força uma mudança imediata de estado interno (setPaginaAtual) no momento exato em que a senha é validada, teletransportando a visão obrigatoriamente para a tela inicial do Dashboard.' }
     ],
     dataLancamento: new Date().toISOString(),
     status: 'publicado',
@@ -30,7 +30,7 @@ async function seed() {
     createdAt: Date.now()
   };
 
-  await setDoc(doc(db, 'saas_releases', 'v3.6.13-login-redirect'), release);
+  await setDoc(doc(db, 'saas_releases', 'v3.6.14-login-redirect-state'), release);
   console.log('Seed das atualizacoes com sucesso!');
 }
 
