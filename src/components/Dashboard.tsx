@@ -122,11 +122,11 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
       .reduce((acc, t) => acc + getValorFinal(t), 0);
       
     // Transações de despesa pagas hoje
-    // Exclui transações originais de cartão de crédito (formaPagamento='cartao_crédito') 
+    // Exclui transações originais de cartão de crédito (formaPagamento='cartao_credito') 
     // pois ao pagar a fatura, o sistema cria débitos bancários separados + marca as originais como pagas,
     // o que causaria duplicidade. Apenas os débitos bancários devem ser contabilizados.
     const pagosHoje = todasTransacoes
-      .filter(t => t.tipo === 'despesa' && t.status === 'pago' && t.formaPagamento !== 'cartao_crédito' && (isDataHoje(t.dataPagamento) || (!t.dataPagamento && t.data === hojeStrDashboard)))
+      .filter(t => t.tipo === 'despesa' && t.status === 'pago' && t.formaPagamento !== 'cartao_credito' && (isDataHoje(t.dataPagamento) || (!t.dataPagamento && t.data === hojeStrDashboard)))
       .reduce((acc, t) => acc + getValorFinal(t), 0);
 
     const inicioSemana = format(startOfWeek(hojeDataDashboard, { weekStartsOn: 1 }), 'yyyy-MM-dd');
@@ -142,7 +142,7 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
       .reduce((acc, t) => acc + getValorFinal(t), 0);
 
     const pagosSemana = todasTransacoes
-      .filter(t => t.tipo === 'despesa' && t.status === 'pago' && t.formaPagamento !== 'cartao_crédito')
+      .filter(t => t.tipo === 'despesa' && t.status === 'pago' && t.formaPagamento !== 'cartao_credito')
       .filter(t => {
         const d = (t.dataPagamento || t.data || '').split('T')[0];
         return d >= inicioSemana && d <= fimSemana;
@@ -158,7 +158,7 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
       .reduce((acc, t) => acc + getValorFinal(t), 0);
 
     const pagosMes = todasTransacoes
-      .filter(t => t.tipo === 'despesa' && t.status === 'pago' && t.formaPagamento !== 'cartao_crédito')
+      .filter(t => t.tipo === 'despesa' && t.status === 'pago' && t.formaPagamento !== 'cartao_credito')
       .filter(t => {
         const d = (t.dataPagamento || t.data || '').split('T')[0];
         return d.startsWith(mesAtualStrDashboard);
@@ -168,7 +168,7 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
     const pendentesGlobais = todasTransacoes.filter(t => {
     if (t.status === 'pago') return false;
     // Compras individuais de cartão de crédito são pagas na fatura consolidada
-    if (t.formaPagamento === 'cartao_crédito' && !t.descricao.toLowerCase().includes('fatura')) return false;
+    if (t.formaPagamento === 'cartao_credito' && !t.descricao.toLowerCase().includes('fatura')) return false;
     return true;
   });
 
@@ -299,7 +299,7 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
 
   // 3. Dados para Distribuição por Forma de Pagamento
   const fmtPagto: Record<string, string> = { 
-    pix: 'PIX', cartao_crédito: 'Cartão Crédito', cartao_debito: 'Cartão Débito', 
+    pix: 'PIX', cartao_credito: 'Cartão Crédito', cartao_debito: 'Cartão Débito', 
     dinheiro: 'Dinheiro', boleto: 'Boleto', transferencia: 'Transferência', cheque: 'Cheque', outro: 'Outro' 
   };
 

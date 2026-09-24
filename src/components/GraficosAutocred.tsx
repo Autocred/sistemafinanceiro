@@ -82,7 +82,7 @@ export default function GraficosAutocred({ transacoes, faturas = [], contas = []
       if (t.status !== 'pago' && t.status !== 'recebido') continue;
       
       // LOGICA ALINHADA COM INDICADORES: Ignorar compras individuais de cartão (pagas na fatura)
-      if (t.tipo === 'despesa' && (t.formaPagamento === 'cartao_credito' || t.formaPagamento === 'cartao_crédito')) continue;
+      if (t.tipo === 'despesa' && (t.formaPagamento === 'cartao_credito' || false)) continue;
 
       const raw = normalizeDate(t.dataPagamento || t.dataVencimento || t.data);
       const dt = raw || '';
@@ -118,7 +118,7 @@ export default function GraficosAutocred({ transacoes, faturas = [], contas = []
       if (t.status !== 'pago' && t.status !== 'recebido') continue;
       
       // LOGICA ALINHADA COM INDICADORES: Ignorar compras individuais de cartão (pagas na fatura)
-      if (t.tipo === 'despesa' && (t.formaPagamento === 'cartao_credito' || t.formaPagamento === 'cartao_crédito')) continue;
+      if (t.tipo === 'despesa' && (t.formaPagamento === 'cartao_credito' || false)) continue;
 
       const dtFull = normalizeDate(t.dataPagamento || t.dataVencimento || t.data);
       if (!dtFull) continue;

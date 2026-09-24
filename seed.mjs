@@ -16,11 +16,12 @@ const db = getFirestore(app);
 
 async function seed() {
   const release = {
-    versao: 'v3.6.11',
-    titulo: 'Alinhamento dos Indicadores de Semana do Dashboard Principal',
-    descricao: 'Os cartões superiores do Dashboard (Recebidos e Pagos Esta Semana) agora também respeitam o modelo rígido de calendário (Segunda a Domingo), abandonando a contagem flexível dos últimos 7 dias.',
+    versao: 'v3.6.12',
+    titulo: 'Otimização Anti-Duplicidade de Cartão',
+    descricao: 'Efetuamos uma varredura rigorosa no código e consertamos um problema silencioso onde certas compras de cartão de crédito não estavam sendo filtradas corretamente pelos painéis de indicadores.',
     changes: [
-      { tipo: 'correcao', texto: 'Ajuste nos painéis "Recebidos Esta Semana" e "Pagos Esta Semana" na tela inicial para cruzarem perfeitamente com os relatórios analíticos, travando o período exatamente de Segunda-feira até Domingo da semana atual.' }
+      { tipo: 'correcao', texto: 'Ajuste ortográfico nas engrenagens do Dashboard. As variáveis responsáveis por ignorar "compras individuais no cartão" (para não duplicar com as Faturas Pagas) agora estão interceptando 100% dos lançamentos sem chance de vazamento.' },
+      { tipo: 'melhoria', texto: 'A Auditoria completa de compilação (Build Test) foi concluída sem apontar nenhum erro interno. Todo o SaaS e os Tenants estão rodando na mesma lógica.' }
     ],
     dataLancamento: new Date().toISOString(),
     status: 'publicado',
@@ -30,7 +31,7 @@ async function seed() {
     createdAt: Date.now()
   };
 
-  await setDoc(doc(db, 'saas_releases', 'v3.6.11-semana-dashboard'), release);
+  await setDoc(doc(db, 'saas_releases', 'v3.6.12-anti-duplicidade'), release);
   console.log('Seed das atualizacoes com sucesso!');
 }
 

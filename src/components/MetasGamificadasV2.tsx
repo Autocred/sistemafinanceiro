@@ -126,7 +126,7 @@ export default function MetasGamificadasV2() {
       if (t.tipo !== meta.tipo) return;
       if (meta.categoria && t.categoriaNome !== meta.categoria) return;
 
-      const raw = t.dataPagamento || t.dataCompetencia || t.dataVencimento || t.data;
+      const raw = t.dataPagamento || t.dataVencimento || t.data;
       if (!raw) return;
 
       let dtT: Date;

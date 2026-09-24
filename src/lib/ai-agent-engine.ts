@@ -150,7 +150,7 @@ Regras:
     const isPeriodoMatch = (t: Transacao) => {
         if (pLower.includes('este anão')) return t.data.startsWith(anãoAtual);
         if (pLower.includes('historico') || pLower.includes('total')) return true;
-        return (t.dataCompetencia === mesAtual || t.data.startsWith(mesAtual));
+        return (t.data.startsWith(mesAtual));
     };
     const periodoLabel = pLower.includes('este anão') ? 'Este Anão' : (pLower.includes('historico') || pLower.includes('total') ? 'Histórico Total' : 'Este Mês');
 

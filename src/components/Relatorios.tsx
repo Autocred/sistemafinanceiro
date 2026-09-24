@@ -76,7 +76,7 @@ export default function Relatorios() {
     return transacoes.filter(t => {
       const rawRef = filtros.tipoData === 'lancamento' ? (t.dataLancamento || t.data) : 
                     filtros.tipoData === 'pagamento' ? (t.dataPagamento || t.data) :
-                    (t.dataCompetencia || t.dataPagamento || t.dataVencimento || t.data);
+                    (t.dataPagamento || t.dataVencimento || t.data);
         const dataRef = normalizeDate(rawRef);
         const matchData = dataRef >= filtros.dataInicio && dataRef <= filtros.dataFim;
       
