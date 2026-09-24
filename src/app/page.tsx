@@ -232,9 +232,7 @@ function CommandPalette({ isOpen, onClose, onSelect, tenantId }: { isOpen: boole
 }
 
 export default function Home() {
-  const [paginaAtual, setPaginaAtual] = useState<Pagina>(
-    typeof window !== 'undefined' ? ((sessionStorage.getItem('paginaAtual') as Pagina) || 'dashboard') : 'dashboard'
-  );
+  const [paginaAtual, setPaginaAtual] = useState<Pagina>('dashboard');
   const [modalAberto, setModalAberto] = useState(false);
 
   
@@ -609,7 +607,8 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
              localStorage.setItem('current_user_email', 'clovis@financeai.com');
              localStorage.setItem('current_user_role', 'admin');
              localStorage.setItem('current_session_start', agora.toISOString());
-             setAuthLoading(false);
+             setPaginaAtual('dashboard');
+          setAuthLoading(false);
              return; // Pula o resto da validação do Firebase!
           }
 
