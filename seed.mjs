@@ -16,12 +16,11 @@ const db = getFirestore(app);
 
 async function seed() {
   const release = {
-    versao: 'v3.6.10',
-    titulo: 'Alinhamento dos Indicadores de Receitas/Despesas Pagas',
-    descricao: 'Os painéis de Inteligência e Gráficos (Dashboard Mensal) foram reajustados para refletir perfeitamente o saldo de contas "Realmente Pagas" e "Recebidas", priorizando sempre a data efetiva de pagamento, cruzando os dados exatamente com o Dashboard principal.',
+    versao: 'v3.6.11',
+    titulo: 'Alinhamento dos Indicadores de Semana do Dashboard Principal',
+    descricao: 'Os cartões superiores do Dashboard (Recebidos e Pagos Esta Semana) agora também respeitam o modelo rígido de calendário (Segunda a Domingo), abandonando a contagem flexível dos últimos 7 dias.',
     changes: [
-      { tipo: 'correcao', texto: 'A regra do Painel "Análise Mensal" foi mudada. Antes algumas contas fugiam do mês devido ao campo "Data de Competência". Agora, se uma conta de agosto for paga em setembro, o sistema registrará a despesa estritamente dentro da estatística de Setembro.' },
-      { tipo: 'melhoria', texto: 'Os totais de Indicadores Automáticos do relatório mensal passaram a somar EXCLUSIVAMENTE os valores que já estão "Pagos" (Efetivados), não misturando mais com contas futuras/pendentes.' }
+      { tipo: 'correcao', texto: 'Ajuste nos painéis "Recebidos Esta Semana" e "Pagos Esta Semana" na tela inicial para cruzarem perfeitamente com os relatórios analíticos, travando o período exatamente de Segunda-feira até Domingo da semana atual.' }
     ],
     dataLancamento: new Date().toISOString(),
     status: 'publicado',
@@ -31,7 +30,7 @@ async function seed() {
     createdAt: Date.now()
   };
 
-  await setDoc(doc(db, 'saas_releases', 'v3.6.10-indicadores-pagamento'), release);
+  await setDoc(doc(db, 'saas_releases', 'v3.6.11-semana-dashboard'), release);
   console.log('Seed das atualizacoes com sucesso!');
 }
 

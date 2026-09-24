@@ -8,7 +8,7 @@ import {
 import { formatarMoeda, subscribeTransacoes, subscribeTransacoesByMes, subscribeContas, subscribeFaturas, getTenantId } from '@/lib/storage';
 import { Transacao, Conta, Fatura } from '@/lib/types';
 import { getValorFinal } from '@/lib/financialEngine';
-import { format, subDays } from 'date-fns';
+import { format, subDays, startOfWeek, endOfWeek } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ordenarMovimentacoesDesc } from '@/lib/sorting';
 import { 
@@ -129,14 +129,15 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
       .filter(t => t.tipo === 'despesa' && t.status === 'pago' && t.formaPagamento !== 'cartao_crédito' && (isDataHoje(t.dataPagamento) || (!t.dataPagamento && t.data === hojeStrDashboard)))
       .reduce((acc, t) => acc + getValorFinal(t), 0);
 
-    const seteDiasAtrasStrDashboard = format(subDays(hojeDataDashboard, 7), 'yyyy-MM-dd');
+    const inicioSemana = format(startOfWeek(hojeDataDashboard, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+    const fimSemana = format(endOfWeek(hojeDataDashboard, { weekStartsOn: 1 }), 'yyyy-MM-dd');
     const mesAtualStrDashboard = format(hojeDataDashboard, 'yyyy-MM');
 
     const recebidosSemana = todasTransacoes
       .filter(t => t.tipo === 'receita' && t.status === 'pago')
       .filter(t => {
         const d = (t.dataPagamento || t.data || '').split('T')[0];
-        return d >= seteDiasAtrasStrDashboard && d <= hojeStrDashboard;
+        return d >= inicioSemana && d <= fimSemana;
       })
       .reduce((acc, t) => acc + getValorFinal(t), 0);
 
@@ -144,7 +145,7 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
       .filter(t => t.tipo === 'despesa' && t.status === 'pago' && t.formaPagamento !== 'cartao_crédito')
       .filter(t => {
         const d = (t.dataPagamento || t.data || '').split('T')[0];
-        return d >= seteDiasAtrasStrDashboard && d <= hojeStrDashboard;
+        return d >= inicioSemana && d <= fimSemana;
       })
       .reduce((acc, t) => acc + getValorFinal(t), 0);
 
