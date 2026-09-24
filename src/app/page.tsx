@@ -9,7 +9,7 @@ import { DashboardHeader } from '@/components/NewMobileBankApp';
 import {
   LayoutDashboard, ListOrdered, BarChart3, CreditCard,
   Settings, Server, Bot, PlusCircle, BookOpen, LogOut, ShieldCheck,
-  BrainCircuit, Calendar, RefreshCw, Zap, Users, TrendingUp, Target, ChevronDown, ChevronRight, Menu, Search
+  BrainCircuit, Calendar, RefreshCw, Zap, Users, TrendingUp, Target, ChevronDown, ChevronRight, Menu, Search, Download
 } from 'lucide-react';
 import { setTenantId } from '@/lib/storage';
 import { MENU_PERMISSION_MAP } from '@/lib/permissions';
@@ -1414,6 +1414,24 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
                 });
               })()}
             </nav>
+
+            {/* INSTALL APP BUTTON MANUAL NO SIDEBAR */}
+            <div className="px-2 pb-2 mt-4">
+              <button 
+                onClick={() => {
+                  alert("Para instalar:\n\nNo Android:\nToque nos 3 pontinhos do navegador (canto superior direito) e escolha 'Instalar Aplicativo'.\n\nNo iPhone:\nToque no ícone de Compartilhar (no rodapé, quadrado com seta) e escolha 'Adicionar à Tela de Início'.");
+                }}
+                className="w-full py-3 px-4 rounded-xl flex items-center justify-center gap-2 font-bold text-[13px] text-white transition-all shadow-[0_4px_0_rgba(0,0,0,0.2)] hover:-translate-y-0.5 active:translate-y-1 active:shadow-none"
+                style={{
+                  background: 'linear-gradient(135deg, #2563eb, #4f46e5)',
+                  border: '1px solid rgba(255,255,255,0.1)'
+                }}
+              >
+                <Download size={16} strokeWidth={2.5} />
+                <span>Baixar o App</span>
+              </button>
+            </div>
+
             <div style={{ marginTop: 'auto', paddingTop: 12, borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
               <button
                 style={{ 

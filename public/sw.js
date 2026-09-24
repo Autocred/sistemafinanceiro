@@ -1,11 +1,26 @@
+const CACHE_NAME = 'pwa-cache-v3';
+
+self.addEventListener('install', (event) => {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(clients.claim());
+});
+
+self.addEventListener('fetch', (event) => {
+  // O navegador exige um evento fetch para habilitar o "Instalar App"
+  // Um event.respondWith vazio é suficiente.
+});
+
 self.addEventListener('push', function (event) {
   if (event.data) {
     try {
       const data = event.data.json();
       const options = {
-        body: data.body || 'Você tem uma nova notificação do Sistema ERP Pro.',
-        icon: data.icon || '/icon.png',
-        badge: '/icon.png',
+        body: data.body || 'Você tem uma nova notificação do Sistema.',
+        icon: data.icon || '/icon-192.png',
+        badge: '/icon-192.png',
         vibrate: [200, 100, 200, 100, 200, 100, 200],
         data: {
           url: data.url || '/'
@@ -13,16 +28,15 @@ self.addEventListener('push', function (event) {
       };
 
       event.waitUntil(
-        self.registration.showNotification(data.title || 'Sistema ERP Pro', options)
+        self.registration.showNotification(data.title || 'Sistema', options)
       );
     } catch (e) {
-      // Fallback
       const options = {
         body: event.data.text(),
-        icon: '/icon.png'
+        icon: '/icon-192.png'
       };
       event.waitUntil(
-        self.registration.showNotification('Sistema ERP Pro', options)
+        self.registration.showNotification('Sistema', options)
       );
     }
   }
