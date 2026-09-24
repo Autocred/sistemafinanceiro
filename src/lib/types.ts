@@ -487,3 +487,21 @@ export interface LogBackup {
   acao: 'backup_criado' | 'restaurado' | 'desfeito';
   detalhes: string;
 }
+
+export interface MetaFinanceira {
+  id: string;
+  nome: string;
+  descricao?: string;
+  tipo: 'receita' | 'despesa';
+  valorAlvo: number;
+  dataInicio: string; // YYYY-MM-DD
+  dataTermino: string; // YYYY-MM-DD
+  categoria?: string; 
+  centroDeCusto?: string; 
+  frequencia: 'unica' | 'mensal' | 'anual';
+  status: 'ativa' | 'concluida' | 'cancelada';
+  alertaPercentual?: number; 
+  padraoNome?: string;
+  padraoDescricao?: string;
+  createdAt: number;
+}

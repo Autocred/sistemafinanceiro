@@ -751,7 +751,11 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
             // Nenhum user logado (e sem bypass)
               setAutenticado(false);
               setUserProfile(null);
-              const { getConfiguracoes } = await import('@/lib/storage');
+              const { getConfiguracoes, setTenantId } = await import('@/lib/storage');
+              const lastTenantId = typeof window !== 'undefined' ? localStorage.getItem('last_logged_tenantId') : null;
+              if (lastTenantId) {
+                setTenantId(lastTenantId);
+              }
               const c = await getConfiguracoes('app').catch(() => null);
               setCfg(c);
               if (c?.tema && typeof document !== 'undefined') {
@@ -921,6 +925,7 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
           if (efectiveTenantId) {
             const { setTenantId } = await import('@/lib/storage');
             setTenantId(efectiveTenantId);
+            localStorage.setItem('last_logged_tenantId', efectiveTenantId);
           }
 
           setAutenticado(true);
@@ -1299,8 +1304,43 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
 
           {/* SIDEBAR */}
           <aside className={`sidebar ${mobileMenuAberto ? 'mobile-open' : ''}`}>
-            <button className="flex items-center justify-center gap-2 w-full mb-6 bg-white py-3 rounded-2xl font-black text-sm transition-all border-b-[5px] border-gray-300 active:border-b-0 active:translate-y-[5px] shadow-[0_6px_15px_rgba(0,0,0,0.2)] hover:shadow-[0_8px_25px_rgba(0,0,0,0.3)] hover:brightness-95" style={{ letterSpacing: '0.5px', color: 'var(--primary)' }}
-              onClick={() => { setMobileMenuAberto(false); setTransacaoEditar(null); setModalAberto(true); }}>
+            <button 
+              className="flex items-center justify-center gap-2 w-full mb-6 py-3.5 px-4 transition-all"
+              style={{
+                background: 'linear-gradient(180deg, #10b981 0%, #059669 100%)',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '12px',
+                borderBottom: '5px solid #047857',
+                boxShadow: '0 4px 20px rgba(16, 185, 129, 0.4)',
+                fontSize: '15px',
+                fontWeight: 900,
+                cursor: 'pointer',
+                letterSpacing: '0.5px',
+                textShadow: '0 1px 2px rgba(0,0,0,0.2)',
+                transform: 'translateY(0)',
+              }}
+              onMouseOver={e => {
+                e.currentTarget.style.filter = 'brightness(1.1)';
+              }}
+              onMouseOut={e => {
+                e.currentTarget.style.filter = 'brightness(1)';
+                e.currentTarget.style.borderBottomWidth = '5px';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 20px rgba(16, 185, 129, 0.4)';
+              }}
+              onMouseDown={e => {
+                e.currentTarget.style.borderBottomWidth = '0px';
+                e.currentTarget.style.transform = 'translateY(5px)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+              onMouseUp={e => {
+                e.currentTarget.style.borderBottomWidth = '5px';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 20px rgba(16, 185, 129, 0.4)';
+              }}
+              onClick={() => { setMobileMenuAberto(false); setTransacaoEditar(null); setModalAberto(true); }}
+            >
               <PlusCircle size={20} strokeWidth={2.5} />
               <span>Novo Lançamento</span>
             </button>

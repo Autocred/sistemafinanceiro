@@ -31,12 +31,12 @@ export default function Configuracoes() {
   const handleEnableWebPush = async () => {
     try {
       if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-        alert('Seu navegador nao suporta notificaÃ§Ãµes Push.');
+        alert('Seu navegador nao suporta notificações Push.');
         return;
       }
       const perm = await Notification.requestPermission();
       if (perm !== 'granted') {
-        alert('PermissÃƒÂ£o de notificaÃƒÂ§ÃƒÂ£o negada! Verifique as configuraÃƒÂ§ÃƒÂµes do navegador e do celular.');
+        alert('Permissão de notificação negada! Verifique as configurações do navegador e do celular.');
         return;
       }
       const reg = await navigator.serviceWorker.ready;
@@ -46,10 +46,10 @@ export default function Configuracoes() {
         applicationServerKey: urlBase64ToUint8Array(pubKey)
       });
       setCfg(c => ({ ...c, webPushSubscription: JSON.stringify(sub) }));
-      alert('notificaÃ§Ãµes ativadas com sucesso neste dispositivo! O sistema tentarÃƒÂ¡ entregar os pop-ups nativos quando o app estiver fechado. Lembre-se de clicar no botÃƒÂ£o Salvar ConfiguraÃƒÂ§ÃƒÂµes no topo!');
+      alert('notificações ativadas com sucesso neste dispositivo! O sistema tentará entregar os pop-ups nativos quando o app estiver fechado. Lembre-se de clicar no botão Salvar Configurações no topo!');
     } catch (e) {
       console.error(e);
-      alert('Erro ao ativar notificaÃ§Ãµes: ' + e);
+      alert('Erro ao ativar notificações: ' + e);
     }
   };
 
@@ -88,9 +88,9 @@ export default function Configuracoes() {
   
   const TELAS_DISPONIVEIS = ['dashboard', 'lancamentos', 'relatorios', 'contas', 'cadastros', 'chat', 'configuracoes', 'admin'];
   const NOMES_TELAS: Record<string, string> = {
-    dashboard: 'Dashboard', lancamentos: 'LanÃƒÂ§amentos', relatorios: 'RelatÃƒÂ³rios',
-    contas: 'Contas & CartÃƒÂµes', cadastros: 'Cadastros', chat: 'IA Analista',
-    configuracoes: 'ConfiguraÃƒÂ§ÃƒÂµes', admin: 'AdministraÃƒÂ§ÃƒÂ£o'
+    dashboard: 'Dashboard', lancamentos: 'Lançamentos', relatorios: 'Relatórios',
+    contas: 'Contas & Cartões', cadastros: 'Cadastros', chat: 'IA Analista',
+    configuracoes: 'Configurações', admin: 'Administração'
   };
 
   useEffect(() => {
@@ -125,7 +125,7 @@ export default function Configuracoes() {
     })();
   }, []);
 
-//   // AplicaÃƒÂ§ÃƒÂ£o DinÃƒÂ¢mica de Cores Local (Feedback Imediato)
+//   // Aplicação Dinâmica de Cores Local (Feedback Imediato)
 //   useEffect(() => {
 //     if (typeof window === 'undefined') return;
 //     if (cfg?.corPrimaria) {
@@ -180,7 +180,7 @@ export default function Configuracoes() {
           setErroSenha('');
        } catch (err: any) {
           console.error(err);
-          setErroSenha('Erro ao atualizar senha. Talvez seja necessÃƒÂ¡rio deslogar e logar novamente.');
+          setErroSenha('Erro ao atualizar senha. Talvez seja necessário deslogar e logar novamente.');
        }
     }
     
@@ -219,7 +219,7 @@ export default function Configuracoes() {
   };
 
   const handleRestaurar = async (id: string) => {
-    if (!confirm('Tem certeza? Isso farÃƒÂ¡ um backup atual por seguranÃƒÂ§a, e depois sobrescreverÃƒÂ¡ todos os seus dados atuais com os do backup selecionado. A pÃƒÂ¡gina serÃƒÂ¡ recarregada.')) return;
+    if (!confirm('Tem certeza? Isso fará um backup atual por segurança, e depois sobrescreverá todos os seus dados atuais com os do backup selecionado. A página será recarregada.')) return;
     setBackupLoading(true);
     try {
       await restaurarBackup(id);
@@ -259,14 +259,14 @@ export default function Configuracoes() {
           const contents = ev.target?.result as string;
           const parsedData = JSON.parse(contents);
           
-          if (!confirm('Tem certeza? Isso farÃƒÂ¡ um backup atual por seguranÃƒÂ§a, e depois sobrescreverÃƒÂ¡ todos os seus dados atuais com os do arquivo selecionado. A pÃƒÂ¡gina serÃƒÂ¡ recarregada.')) return;
+          if (!confirm('Tem certeza? Isso fará um backup atual por segurança, e depois sobrescreverá todos os seus dados atuais com os do arquivo selecionado. A página será recarregada.')) return;
           
           setBackupLoading(true);
           await restaurarBackupDeJSON(parsedData);
           alert('Backup restaurado com sucesso a partir do arquivo.');
           window.location.reload();
         } catch (err: any) {
-          alert('Erro ao processar o arquivo de backup: Arquivo invÃƒÂ¡lido ou corrompido.');
+          alert('Erro ao processar o arquivo de backup: Arquivo inválido ou corrompido.');
           setBackupLoading(false);
         }
       };
@@ -276,11 +276,11 @@ export default function Configuracoes() {
   };
 
   const handleDesfazerRestauracao = async () => {
-    if (!confirm('Deseja realmente desfazer a ÃƒÂºltima restauraÃƒÂ§ÃƒÂ£o e voltar ao estado original?')) return;
+    if (!confirm('Deseja realmente desfazer a íºltima restauração e voltar ao estado original?')) return;
     setBackupLoading(true);
     try {
       await desfazerRestauracao();
-      alert('RestauraÃƒÂ§ÃƒÂ£o desfeita com sucesso! A pÃƒÂ¡gina serÃƒÂ¡ recarregada.');
+      alert('Restauração desfeita com sucesso! A página será recarregada.');
       window.location.reload();
     } catch (e: any) {
       console.error(e);
@@ -304,30 +304,30 @@ export default function Configuracoes() {
       `}</style>
       <div style={{ marginBottom: 36, textAlign: 'center' }}>
         <h1 style={{ fontSize: 28, fontWeight: 900, color: 'var(--text-primary)', letterSpacing: '-0.8px', marginBottom: 8 }}>Ajustes do Sistema</h1>
-        <p style={{ fontSize: 14, color: 'var(--text-muted)' }}>Configure suas preferÃƒÂªncias, IA e parÃƒÂ¢metros globais</p>
+        <p style={{ fontSize: 14, color: 'var(--text-muted)' }}>Configure suas preferências, IA e parâmetros globais</p>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-        {/* Seletor de VersÃƒÂ£o de Interface (Rollback) */}
+        {/* Seletor de Versão de Interface (Rollback) */}
         <div style={{ background: 'linear-gradient(135deg, rgba(139,92,246,0.1) 0%, rgba(56,189,248,0.1) 100%)', borderRadius: 16, padding: 24, border: '1px solid rgba(139,92,246,0.3)', display: 'flex', flexDirection: 'column', gap: 16, animation: 'fadeIn 0.6s ease-out' }}>
           <div>
-            <h2 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 4 }}>Ã¯Â¿Â½SÃ¯Â¿Â½ VersÃƒÂ£o da Interface</h2>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>VocÃƒÂª pode alternar entre a versÃƒÂ£o ClÃƒÂ¡ssica e a nova versÃƒÂ£o Ultra Premium livremente. Serve como um "desfazer" da atualizaÃƒÂ§ÃƒÂ£o visual. Nenhuma transaÃƒÂ§ÃƒÂ£o serÃƒÂ¡ perdida.</p>
+            <h2 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 4 }}>Versão da Interface</h2>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Você pode alternar entre a versão Clássica e a nova versão Ultra Premium livremente. Serve como um "desfazer" da atualização visual. Nenhuma transação será perdida.</p>
           </div>
           <div className="grid-responsive-2" style={{ gap: 12 }}>
             <button 
               onClick={() => { localStorage.setItem('versao_ui', 'v1'); window.location.reload(); }}
               style={{ padding: '16px', borderRadius: 12, border: versaoUi === 'v1' ? '2px solid #8b5cf6' : '1px solid var(--border)', background: versaoUi === 'v1' ? 'rgba(139,92,246,0.1)' : 'var(--bg-secondary)', color: 'var(--text-primary)', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 4 }}
             >
-              <span style={{ fontSize: 14 }}>Versão 2.0 Ultra Premium âœ¨</span>
-              <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 400 }}>Tabelas padrÃƒÂ£o, sem efeitos 3D ou vidro.</span>
+              <span style={{ fontSize: 14 }}>Versão 2.0 Ultra Premium ✨</span>
+              <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 400 }}>Tabelas padrão, sem efeitos 3D ou vidro.</span>
             </button>
             <button 
               onClick={() => { localStorage.setItem('versao_ui', 'v2'); window.location.reload(); }}
               style={{ padding: '16px', borderRadius: 12, border: versaoUi === 'v2' ? '2px solid #0ea5e9' : '1px solid var(--border)', background: versaoUi === 'v2' ? 'rgba(14,165,233,0.15)' : 'var(--bg-secondary)', color: 'var(--text-primary)', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 4 }}
             >
-              <span style={{ fontSize: 14 }}>Versão 2.0 Ultra Premium âœ¨</span>
-              <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 400 }}>Novo design Bento Box, FÃ­sica elÃ¡stica, Fundo Aurora e Timeline.</span>
+              <span style={{ fontSize: 14 }}>Versão 2.0 Ultra Premium ✨</span>
+              <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 400 }}>Novo design Bento Box, Física elástica, Fundo Aurora e Timeline.</span>
             </button>
           </div>
         </div>
@@ -338,10 +338,10 @@ export default function Configuracoes() {
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', paddingBottom: 12, marginBottom: 20, borderBottom: '1px solid var(--border)', scrollbarWidth: 'none' }}>
           {[
             { id: 'perfil', label: 'Perfil & Conta', icon: <User size={16} /> },
-            { id: 'aparencia', label: 'AparÃƒÂªncia & Design', icon: <Palette size={16} /> },
-            { id: 'sons', label: 'notificaÃ§Ãµes & Sons', icon: <Bell size={16} /> },
-            { id: 'ia', label: 'InteligÃƒÂªncia Artificial', icon: <Zap size={16} /> },
-            { id: 'seguranca', label: 'SeguranÃƒÂ§a & Backups', icon: <Shield size={16} /> }
+            { id: 'aparencia', label: 'Aparência & Design', icon: <Palette size={16} /> },
+            { id: 'sons', label: 'notificações & Sons', icon: <Bell size={16} /> },
+            { id: 'ia', label: 'Inteligência Artificial', icon: <Zap size={16} /> },
+            { id: 'seguranca', label: 'Segurança & Backups', icon: <Shield size={16} /> }
           ].map(aba => (
             <button
               key={aba.id}
@@ -396,14 +396,14 @@ export default function Configuracoes() {
           </div>
           
           <div style={{ background: 'var(--bg-glass)', borderRadius: 10, padding: 16, border: '1px solid var(--border)' }}>
-             <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 12 }}>InformaÃƒÂ§ÃƒÂµes da Conta (Somente Leitura)</p>
+             <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 12 }}>Informações da Conta (Somente Leitura)</p>
              <div className="grid-responsive-3">
                <div>
                  <label style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', display: 'block', marginBottom: 4 }}>UID</label>
                  <div style={{ fontSize: 13, background: 'var(--bg-primary)', padding: '8px 12px', borderRadius: 6, color: 'var(--text-secondary)', fontFamily: 'monaospace', wordBreak: 'break-all' }}>{profile?.uid || 'N/A'}</div>
                </div>
                <div>
-                 <label style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', display: 'block', marginBottom: 4 }}>PermissÃƒÂ£o (Role)</label>
+                 <label style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', display: 'block', marginBottom: 4 }}>Permissão (Role)</label>
                  <div style={{ fontSize: 13, background: 'var(--bg-primary)', padding: '8px 12px', borderRadius: 6, color: 'var(--text-secondary)', textTransform: 'capitalize' }}>{profile?.role || 'N/A'}</div>
                </div>
                <div>
@@ -430,7 +430,7 @@ export default function Configuracoes() {
               className="input-field"
               value={cfg.nomeSistema || ''}
               onChange={e => setCfg(c => ({ ...c, nomeSistema: e.target.value }))}
-              placeholder="Ex: Minhas FinanÃƒÂ§as"
+              placeholder="Ex: Minhas Finanças"
             />
           </div>
           <div>
@@ -476,29 +476,29 @@ export default function Configuracoes() {
           <div>
             <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>Moeda</label>
             <select className="input-field" value={cfg.moeda} onChange={e => setCfg(c => ({ ...c, moeda: e.target.value }))}>
-              <option value="BRL">Ã¯Â¿Â½x!Ã¯Â¿Â½Ã¯Â¿Â½x!Ã¯Â¿Â½ BRL - Real Brasileiro</option>
-              <option value="USD">Ã¯Â¿Â½x!Ã¯Â¿Â½Ã¯Â¿Â½x!Ã¯Â¿Â½ USD - DÃƒÂ³lar Americanao</option>
-              <option value="EUR">Ã¯Â¿Â½x!Ã¯Â¿Â½Ã¯Â¿Â½x!Ã¯Â¿Â½ EUR - Euro</option>
+              <option value="BRL">x!x! BRL - Real Brasileiro</option>
+              <option value="USD">x!x! USD - Dólar Americanao</option>
+              <option value="EUR">x!x! EUR - Euro</option>
             </select>
           
-          {/* AutomaÃƒÂ§ÃƒÂ£o de Push notificaÃ§Ãµes */}
+          {/* Automação de Push notificações */}
           <div style={{ marginTop: 24, borderTop: '1px solid var(--border)', paddingTop: 24 }}>
-            <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>notificaÃ§Ãµes Push (Pop-up do Celular)</h3>
+            <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>notificações Push (Pop-up do Celular)</h3>
             <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12 }}>
-              Receba os alertas de vencimento diÃƒÂ¡rios direto na tela do seu celular, como um aplicativo normal, mesmo com o sistema fechado (via CRON).
+              Receba os alertas de vencimento diários direto na tela do seu celular, como um aplicativo normal, mesmo com o sistema fechado (via CRON).
             </p>
             <button 
               onClick={handleEnableWebPush} 
               className="btn-primary" 
               style={{ padding: '10px 16px', background: cfg.webPushSubscription ? '#10b981' : 'var(--primary)', border: 'none', borderRadius: 8, cursor: 'pointer', color: 'white', fontWeight: 700 }}
             >
-              {cfg.webPushSubscription ? 'Ã¯Â¿Â½S& Push Ativo Neste Dispositivo' : 'Ã¯Â¿Â½xÃ¯Â¿Â½ Ativar notificaÃ§Ãµes Pop-up'}
+              {cfg.webPushSubscription ? 'S& Push Ativo Neste Dispositivo' : 'x Ativar notificações Pop-up'}
               </button>
 
               <div style={{ marginTop: 24 }}>
                 <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 8 }}>Dias da Semana</label>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'SÃƒÂ¡b'].map((dia, i) => {
+                  {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((dia, i) => {
                     const ativo = !cfg.pushDias || cfg.pushDias.includes(i.toString());
                     return (
                       <button 
@@ -533,7 +533,7 @@ export default function Configuracoes() {
               </div>
 
               <div style={{ marginTop: 16 }}>
-                <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 8 }}>HorÃƒÂ¡rio do Alerta DiÃ¡rio</label>
+                <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 8 }}>Horário do Alerta Diário</label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <input 
                     type="time" 
@@ -543,7 +543,7 @@ export default function Configuracoes() {
                     onChange={e => setCfg(c => ({ ...c, pushHorario: e.target.value }))} 
                   />
                   <span style={{ fontSize: 11, color: 'var(--text-muted)', background: 'var(--bg-active)', padding: '6px 10px', borderRadius: 6 }}>
-                    Nota: O Vercel CRON (gratuito) agrupa os disparos automÃƒÂ¡ticos pela manhÃƒÂ£, mas o horÃƒÂ¡rio serÃƒÂ¡ respeitado localmente quando possÃƒÂ­vel.
+                    Nota: O Vercel CRON (gratuito) agrupa os disparos automáticos pela manhã, mas o horário será respeitado localmente quando possível.
                   </span>
                 </div>
               </div>
@@ -553,13 +553,13 @@ export default function Configuracoes() {
         </SecaoConfig>
         )}
 
-        {/* AparÃƒÂªncia */}
+        {/* Aparência */}
         {abaAtiva === 'aparencia' && (
-        <SecaoConfig titulo="APARÃ¯Â¿Â½`NCIA & DESIGN SYSTEM" icone={<Palette size={18} color="#3b82f6" />}>
+        <SecaoConfig titulo="APARÊNCIA & DESIGN SYSTEM" icone={<Palette size={18} color="#3b82f6" />}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div>
               <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 8 }}>
-                Modo de AparÃƒÂªncia
+                Modo de Aparência
               </label>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
                 <button
@@ -572,7 +572,7 @@ export default function Configuracoes() {
                     color: cfg.tema === 'light' ? '#cc0000' : 'var(--text-primary)', textAlign: 'center',
                     fontWeight: 700, fontSize: 13, transition: 'all 0.2s ease'
                   }}>
-                  Ã¯Â¿Â½ÃœÂ¬Ã¯Â¸Â Claro
+                  ☀️ Claro
                 </button>
                 <button
                   type="button"
@@ -584,7 +584,7 @@ export default function Configuracoes() {
                     color: cfg.tema === 'dark' || !cfg.tema ? '#cc0000' : 'var(--text-primary)', textAlign: 'center',
                     fontWeight: 700, fontSize: 13, transition: 'all 0.2s ease'
                   }}>
-                  Ã¯Â¿Â½xR" Escuro
+                  🌙 Escuro
                 </button>
                 <button
                   type="button"
@@ -596,14 +596,14 @@ export default function Configuracoes() {
                     color: cfg.tema === 'auto' ? '#cc0000' : 'var(--text-primary)', textAlign: 'center',
                     fontWeight: 700, fontSize: 13, transition: 'all 0.2s ease'
                   }}>
-                  Ã¯Â¿Â½xÃ¯Â¿Â½ AutomÃƒÂ¡tico
+                  ⚙️ Automático
                 </button>
               </div>
             </div>
 
             <div style={{ borderTop: '1px solid var(--border)', paddingTop: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
               <p style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                Ajustes Visuais AvanÃƒÂ§ados
+                Ajustes Visuais Avançados
               </p>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
@@ -614,7 +614,7 @@ export default function Configuracoes() {
                     onChange={e => setCfg(c => ({ ...c, mostrarAnimacoes: e.target.checked }))}
                     style={{ accentColor: '#cc0000', width: 16, height: 16 }}
                   />
-                  <span>Mostrar animaÃƒÂ§ÃƒÂµes</span>
+                  <span>Mostrar animações</span>
                 </label>
 
                 <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-primary)', cursor: 'pointer' }}>
@@ -624,7 +624,7 @@ export default function Configuracoes() {
                     onChange={e => setCfg(c => ({ ...c, reduzirAnimacoes: e.target.checked }))}
                     style={{ accentColor: '#cc0000', width: 16, height: 16 }}
                   />
-                  <span>Reduzir animaÃƒÂ§ÃƒÂµes</span>
+                  <span>Reduzir animações</span>
                 </label>
 
                 <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-primary)', cursor: 'pointer' }}>
@@ -664,7 +664,7 @@ export default function Configuracoes() {
                     onChange={e => setCfg(c => ({ ...c, transparencias: e.target.checked }))}
                     style={{ accentColor: '#cc0000', width: 16, height: 16 }}
                   />
-                  <span>TransparÃƒÂªncias / Glassmorphic</span>
+                  <span>Transparências / Glassmorphic</span>
                 </label>
 
                 <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-primary)', cursor: 'pointer' }}>
@@ -684,7 +684,7 @@ export default function Configuracoes() {
 
         {/* White Label */}
         {abaAtiva === 'aparencia' && (
-        <SecaoConfig titulo="PersonalizaÃƒÂ§ÃƒÂ£o Visual (White Label)" icone={<Palette size={18} color="#8b5cf6" />}>
+        <SecaoConfig titulo="Personalização Visual (White Label)" icone={<Palette size={18} color="#8b5cf6" />}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             <div>
               <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 12, textTransform: 'uppercase' }}>
@@ -692,7 +692,7 @@ export default function Configuracoes() {
               </p>
               <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                                 {[
-                  { id: 'azul_autocred', nome: 'Azul (PadrÃƒÂ£o)', colors: { p: '#2563eb', s: '#1d4ed8', a: '#3b82f6', f: '#f8fafc' } },
+                  { id: 'azul_autocred', nome: 'Azul (Padrão)', colors: { p: '#2563eb', s: '#1d4ed8', a: '#3b82f6', f: '#f8fafc' } },
                   { id: 'azul_marinho', nome: 'Azul Marinho', colors: { p: '#1e3a8a', s: '#172554', a: '#60a5fa', f: '#ffffff' } },
                   { id: 'ciano_azul', nome: 'Ciano & Azul', colors: { p: '#06b6d4', s: '#0891b2', a: '#22d3ee', f: '#f8fafc' } },
                   { id: 'verde_azul', nome: 'Verde & Azul', colors: { p: '#059669', s: '#047857', a: '#3b82f6', f: '#ffffff' } },
@@ -753,7 +753,7 @@ export default function Configuracoes() {
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginTop: 10 }}>
               <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Cor PrimÃƒÂ¡ria</label>
+                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Cor Primária</label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 8, padding: '4px 8px' }}>
                   <input type="color" value={cfg.corPrimaria || '#cc092f'} onChange={e => { const val = e.target.value; setCfg(c => ({ ...c, paletaAtiva: 'custom', corPrimaria: val, corSecundaria: val })); document.documentElement.style.setProperty('--primary', val); document.documentElement.style.setProperty('--primary-hover', val); document.documentElement.style.setProperty('--primary-dark', val); localStorage.setItem('saved_secondary_color', val);  let meta = document.querySelector('meta[name="theme-color"]'); if (meta) meta.setAttribute('content', val); else { meta = document.createElement('meta'); meta.setAttribute('name', 'theme-color'); meta.setAttribute('content', val); document.head.appendChild(meta); } localStorage.setItem('saved_primary_color', val); }} onBlur={e => salvar({ ...cfg, paletaAtiva: 'custom', corPrimaria: e.target.value })} style={{ width: 30, height: 30, padding: 0, border: 'none', background: 'none', cursor: 'pointer' }} />
                   <input type="text" value={cfg.corPrimaria || '#cc092f'} onChange={e => { const val = e.target.value; setCfg(c => ({ ...c, paletaAtiva: 'custom', corPrimaria: val, corSecundaria: val })); document.documentElement.style.setProperty('--primary', val); document.documentElement.style.setProperty('--primary-hover', val); document.documentElement.style.setProperty('--primary-dark', val); localStorage.setItem('saved_secondary_color', val);  let meta = document.querySelector('meta[name="theme-color"]'); if (meta) meta.setAttribute('content', val); else { meta = document.createElement('meta'); meta.setAttribute('name', 'theme-color'); meta.setAttribute('content', val); document.head.appendChild(meta); } localStorage.setItem('saved_primary_color', val); }} onBlur={e => salvar({ ...cfg, paletaAtiva: 'custom', corPrimaria: e.target.value })} style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: 13, color: 'var(--text-primary)', width: '100%' }} />
@@ -761,7 +761,7 @@ export default function Configuracoes() {
               </div>
               
               <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Cor SecundÃƒÂ¡ria</label>
+                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Cor Secundária</label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 8, padding: '4px 8px' }}>
                   <input type="color" value={cfg.corSecundaria || '#88061f'} onChange={e => { const val = e.target.value; setCfg(c => ({ ...c, paletaAtiva: 'custom', corSecundaria: val })); document.documentElement.style.setProperty('--primary-dark', val); localStorage.setItem('saved_secondary_color', val); }} onBlur={e => salvar({ ...cfg, paletaAtiva: 'custom', corSecundaria: e.target.value })} style={{ width: 30, height: 30, padding: 0, border: 'none', background: 'none', cursor: 'pointer' }} />
                   <input type="text" value={cfg.corSecundaria || '#88061f'} onChange={e => { const val = e.target.value; setCfg(c => ({ ...c, paletaAtiva: 'custom', corSecundaria: val })); document.documentElement.style.setProperty('--primary-dark', val); localStorage.setItem('saved_secondary_color', val); }} onBlur={e => salvar({ ...cfg, paletaAtiva: 'custom', corSecundaria: e.target.value })} style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: 13, color: 'var(--text-primary)', width: '100%' }} />
@@ -797,20 +797,20 @@ export default function Configuracoes() {
               }}
             >
               {salvo ? <Check size={18} /> : <Save size={18} />}
-              {salvo ? 'Cores Salvas!' : 'Salvar AlteraÃƒÂ§ÃƒÂµes White Label'}
+              {salvo ? 'Cores Salvas!' : 'Salvar Alterações White Label'}
             </button>
           </div>
         </SecaoConfig>
         )}
 
-        {/* Alertas Sonaoros BancÃƒÂ¡rios */}
+        {/* Alertas Sonaoros Bancários */}
         {abaAtiva === 'sons' && (
-        <SecaoConfig titulo="Alertas Sonaoros BancÃƒÂ¡rios" icone={<Bell size={18} color="#f59e0b" />}>
+        <SecaoConfig titulo="Alertas Sonaoros Bancários" icone={<Bell size={18} color="#f59e0b" />}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
                 <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>Efeitos Sonaoros do Sistema</p>
-                <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>Ativar toques de confirmaÃƒÂ§ÃƒÂ£o, receitas, despesas e alertas</p>
+                <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>Ativar toques de confirmação, receitas, despesas e alertas</p>
               </div>
               <input
                 type="checkbox"
@@ -835,7 +835,7 @@ export default function Configuracoes() {
                     className="btn-secondary"
                     style={{ padding: '3px 10px', fontSize: 11 }}
                   >
-                    Ã¯Â¿Â½x` Testar Sucesso
+                    x` Testar Sucesso
                   </button>
                   <button
                     type="button"
@@ -843,7 +843,7 @@ export default function Configuracoes() {
                     className="btn-secondary"
                     style={{ padding: '3px 10px', fontSize: 11 }}
                   >
-                    Ã¯Â¿Â½xÃ¯Â¿Â½ Testar Receita
+                    x Testar Receita
                   </button>
                 </div>
               </div>
@@ -865,9 +865,9 @@ export default function Configuracoes() {
         </SecaoConfig>
         )}
 
-        {/* SeguranÃƒÂ§a e SessÃƒÂ£o */}
+        {/* Segurança e Sessão */}
         {abaAtiva === 'seguranca' && (
-        <SecaoConfig titulo="SeguranÃƒÂ§a e SessÃƒÂ£o" icone={<Shield size={18} color="#cc0000" />}>
+        <SecaoConfig titulo="Segurança e Sessão" icone={<Shield size={18} color="#cc0000" />}>
           
           <div style={{ marginBottom: 24, paddingBottom: 24, borderBottom: '1px solid var(--border)' }}>
              <label style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
@@ -875,7 +875,7 @@ export default function Configuracoes() {
                 Desbloqueio por Biometria (App Lock)
              </label>
              <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12 }}>
-                Utilize a impressÃƒÂ£o digital ou reconhecimento facial (FaceID / TouchID / Windows Hello) do seu aparelho para desbloquear o sistema sem precisar digitar a senha da sua conta.
+                Utilize a impressão digital ou reconhecimento facial (FaceID / TouchID / Windows Hello) do seu aparelho para desbloquear o sistema sem precisar digitar a senha da sua conta.
              </p>
              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <button
@@ -894,15 +894,15 @@ export default function Configuracoes() {
                          const currentUser = auth.currentUser;
                          
                          const uidParaBiometria = isBypassAtivo ? 'clovis-master-bypass' : currentUser?.uid;
-                         const emailParaBiometria = isBypassAtivo ? 'clovis@financeai.com' : (currentUser?.email || 'UsuÃ¡rio');
+                         const emailParaBiometria = isBypassAtivo ? 'clovis@financeai.com' : (currentUser?.email || 'Usuário');
 
-                         if (!uidParaBiometria) { alert("SessÃƒÂ£o invÃƒÂ¡lida"); setBiometriaLoading(false); return; }
+                         if (!uidParaBiometria) { alert("Sessão inválida"); setBiometriaLoading(false); return; }
                          const ok = await registrarBiometriaLocal(uidParaBiometria, emailParaBiometria);
                          if (ok) {
                             setBiometriaAtiva(true);
                             alert("Biometria habilitada com sucesso neste dispositivo!");
                          } else {
-                            alert("NÃƒÂ£o foi possÃƒÂ­vel habilitar a biometria. Verifique se o seu dispositivo possui leitor de digital/facial ou se o navegador suporta este recurso.");
+                            alert("Não foi possível habilitar a biometria. Verifique se o seu dispositivo possui leitor de digital/facial ou se o navegador suporta este recurso.");
                          }
                       }
                       setBiometriaLoading(false);
@@ -910,13 +910,13 @@ export default function Configuracoes() {
                 >
                    {biometriaLoading ? 'Aguarde...' : (biometriaAtiva ? 'Desativar Biometria' : 'Habilitar Biometria Agora')}
                 </button>
-                {biometriaAtiva && <span style={{ fontSize: 12, color: '#22c55e', fontWeight: 600 }}>Ativo neste dispositivo Ã¯Â¿Â½S</span>}
+                {biometriaAtiva && <span style={{ fontSize: 12, color: '#22c55e', fontWeight: 600 }}>Ativo neste dispositivo S</span>}
              </div>
           </div>
 
           <div>
             <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>
-              Tempo de Inatividade para Logoff AutomÃƒÂ¡tico
+              Tempo de Inatividade para Logoff Automático
             </label>
             <select
               className="input-field"
@@ -930,7 +930,7 @@ export default function Configuracoes() {
               <option value="60">60 Minutos (1 Hora)</option>
             </select>
             <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
-              O sistema deslogarÃƒÂ¡ automaticamente caso fique sem nenhuma interaÃƒÂ§ÃƒÂ£o durante o tempo estipulado.
+              O sistema deslogará automaticamente caso fique sem nenhuma interação durante o tempo estipulado.
             </p>
           </div>
 
@@ -967,14 +967,14 @@ export default function Configuracoes() {
 
         {/* IA */}
         {abaAtiva === 'ia' && (
-        <SecaoConfig titulo="InteligÃƒÂªncia Artificial" icone={<Key size={18} color="#10b981" />}>
+        <SecaoConfig titulo="Inteligência Artificial" icone={<Key size={18} color="#10b981" />}>
           <div>
             <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>Provedor de IA</label>
             <div className="grid-responsive-3">
               {[
-                { id: 'offline' as const, label: 'Ã¯Â¿Â½x Offline', desc: 'Motor de Regras (Gratuito)' },
-                { id: 'openai' as const, label: 'Ã¯Â¿Â½xÃ¯Â¿Â½ OpenAI', desc: 'GPT-4 (Mais inteligente)' },
-                { id: 'gemini' as const, label: 'Ã¯Â¿Â½SÃ¯Â¿Â½ Gemini', desc: 'Google (Alternativa)' },
+                { id: 'offline' as const, label: 'x Offline', desc: 'Motor de Regras (Gratuito)' },
+                { id: 'openai' as const, label: 'x OpenAI', desc: 'GPT-4 (Mais inteligente)' },
+                { id: 'gemini' as const, label: '✨ Gemini', desc: 'Google (Alternativa)' },
               ].map(op => (
                 <button key={op.id}
                   onClick={() => setCfg(c => ({ ...c, provedorIA: op.id }))}
@@ -1033,20 +1033,20 @@ export default function Configuracoes() {
 
           {cfg.provedorIA === 'offline' && (
             <div style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.15)', borderRadius: 10, padding: '12px 14px' }}>
-              <p style={{ fontSize: 12, color: '#34d399', fontWeight: 600, marginBottom: 4 }}>Ã¯Â¿Â½S& Modo Offline Ativo</p>
+              <p style={{ fontSize: 12, color: '#34d399', fontWeight: 600, marginBottom: 4 }}>✅ Modo Offline Ativo</p>
               <p style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.6 }}>
-                O motor de regras inteligente interpreta seus lanÃƒÂ§amentos automaticamente, offline e sem custo. Reconhece mais de 200 padrÃƒÂµes de categorias, fornecedores, formas de pagamento e muito mais.
+                O motor de regras inteligente interpreta seus lançamentos automaticamente, offline e sem custo. Reconhece mais de 200 padrões de categorias, fornecedores, formas de pagamento e muito mais.
               </p>
             </div>
           )}
         </SecaoConfig>
         )}
 
-        {/* notificaÃ§Ãµes e Lembretes */}
+        {/* notificações e Lembretes */}
         {abaAtiva === 'sons' && (
-        <SecaoConfig titulo="notificaÃ§Ãµes e Lembretes" icone={<Bell size={18} color="#f59e0b" />}>
+        <SecaoConfig titulo="notificações e Lembretes" icone={<Bell size={18} color="#f59e0b" />}>
           <ToggleConfig
-            label="Alertas Pop-up DiÃ¡rios"
+            label="Alertas Pop-up Diários"
             descricao="Mostra um aviso na tela inicial sobre as contas vencendo hoje"
             ativo={cfg.lembretesPopup ?? true}
             onChange={v => setCfg(c => ({ ...c, lembretesPopup: v }))}
@@ -1054,18 +1054,18 @@ export default function Configuracoes() {
           {cfg.lembretesPopup !== false && (
              <div style={{ background: 'var(--bg-glass)', border: '1px solid var(--border)', borderRadius: 10, padding: 16, marginTop: 12, marginBottom: 12, display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <ToggleConfig
-                  label="Mostrar apenas ao Iniciar SessÃƒÂ£o"
-                  descricao="NÃƒÂ£o mostrar o popup toda vez que atualizar a pÃƒÂ¡gina, mas apenas na primeira vez do dia ou quando iniciar o aplicativo."
+                  label="Mostrar apenas ao Iniciar Sessão"
+                  descricao="Não mostrar o popup toda vez que atualizar a página, mas apenas na primeira vez do dia ou quando iniciar o aplicativo."
                   ativo={cfg.lembretesPopupAoIniciar ?? true}
                   onChange={v => setCfg(c => ({ ...c, lembretesPopupAoIniciar: v }))}
                 />
                 
                 <div>
                   <label style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 600, display: 'block', marginBottom: 6 }}>
-                    HorÃƒÂ¡rios EspecÃƒÂ­ficos para Lembrete DiÃ¡rio (Opcional)
+                    Horários Específicos para Lembrete Diário (Opcional)
                   </label>
                   <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8, lineHeight: 1.5 }}>
-                    Caso deseje que o popup suba novamente durante o dia de forma automÃƒÂ¡tica, defina os horÃƒÂ¡rios. Separe por vÃƒÂ­rgula (Ex: 09:00, 15:30). MÃƒÂ¡x: 4 horÃƒÂ¡rios.
+                    Caso deseje que o popup suba novamente durante o dia de forma automática, defina os horários. Separe por vírgula (Ex: 09:00, 15:30). Máx: 4 horários.
                   </p>
                   <input
                     type="text"
@@ -1083,19 +1083,19 @@ export default function Configuracoes() {
           )}
           <ToggleConfig
             label="Central de Alertas (Sino)"
-            descricao="Habilita a central de notificaÃ§Ãµes nao topo da tela"
+            descricao="Habilita a central de notificações nao topo da tela"
             ativo={cfg.lembretesSinao ?? true}
             onChange={v => setCfg(c => ({ ...c, lembretesSinao: v }))}
           />
         </SecaoConfig>
         )}
 
-        {/* AutomaÃƒÂ§ÃƒÂ£o de WhatsApp */}
+        {/* Automação de WhatsApp */}
         {abaAtiva === 'ia' && (
-        <SecaoConfig titulo="AutomaÃƒÂ§ÃƒÂ£o de WhatsApp" icone={<MessageCircle size={18} color="#10b981" />}>
+        <SecaoConfig titulo="Automação de WhatsApp" icone={<MessageCircle size={18} color="#10b981" />}>
           <ToggleConfig
-            label="Enviar Resumo DiÃ¡rio"
-            descricao="VocÃƒÂª receberÃƒÂ¡ um resumo financeiro e alertas de vencimento todos os dias"
+            label="Enviar Resumo Diário"
+            descricao="Você receberá um resumo financeiro e alertas de vencimento todos os dias"
             ativo={cfg.whatsappAtivo ?? false}
             onChange={v => setCfg(c => ({ ...c, whatsappAtivo: v }))}
           />
@@ -1103,17 +1103,17 @@ export default function Configuracoes() {
           {cfg.whatsappAtivo && (
             <div style={{ background: 'var(--bg-glass)', border: '1px solid var(--border)', borderRadius: 10, padding: 16, marginTop: 12, display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
-                <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>NÃƒÂºmeros de WhatsApp</label>
+                <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>Níºmeros de WhatsApp</label>
                 <input
                   className="input-field"
                   placeholder="Ex: 11999999999, 11888888888"
                   value={cfg.whatsappNumeros || ''}
                   onChange={e => setCfg(c => ({ ...c, whatsappNumeros: e.target.value }))}
                 />
-                <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>Separe os nÃƒÂºmeros por vÃƒÂ­rgula (com DDD).</p>
+                <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>Separe os níºmeros por vírgula (com DDD).</p>
               </div>
               <div>
-                <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>HorÃƒÂ¡rio do Envio</label>
+                <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>Horário do Envio</label>
                 <input
                   type="time"
                   className="input-field"
@@ -1122,9 +1122,9 @@ export default function Configuracoes() {
                 />
               </div>
               <div style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.15)', borderRadius: 8, padding: 12, marginTop: 4 }}>
-                <p style={{ fontSize: 12, color: '#34d399', fontWeight: 600, marginBottom: 4 }}>Ã¯Â¿Â½xÃ¯Â¿Â½ Como funciona?</p>
+                <p style={{ fontSize: 12, color: '#34d399', fontWeight: 600, marginBottom: 4 }}>x Como funciona?</p>
                 <p style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                  Todos os dias nao horÃƒÂ¡rio configurado, o sistema gerarÃƒÂ¡ automaticamente um resumo do que vence hoje e naos prÃ³ximos dias, alÃƒÂ©m de um panaorama rÃƒÂ¡pido do seu saldo.
+                  Todos os dias nao horário configurado, o sistema gerará automaticamente um resumo do que vence hoje e naos próximos dias, além de um panaorama rápido do seu saldo.
                 </p>
               </div>
             </div>
@@ -1132,8 +1132,8 @@ export default function Configuracoes() {
           
           <div style={{ marginTop: 24, borderTop: '1px solid var(--border)', paddingTop: 24 }}>
             <ToggleConfig
-              label="Bot Financeiro (LanÃƒÂ§amentos por WhatsApp)"
-              descricao="Permite criar lanÃƒÂ§amentos financeiros enviando mensagens de texto pelo WhatsApp"
+              label="Bot Financeiro (Lançamentos por WhatsApp)"
+              descricao="Permite criar lançamentos financeiros enviando mensagens de texto pelo WhatsApp"
               ativo={cfg.whatsappBotAtivo ?? false}
               onChange={v => setCfg(c => ({ ...c, whatsappBotAtivo: v }))}
             />
@@ -1148,11 +1148,11 @@ export default function Configuracoes() {
                     value={cfg.whatsappBotTelefone || ''}
                     onChange={e => setCfg(c => ({ ...c, whatsappBotTelefone: e.target.value.replace(/\D/g, '') }))}
                   />
-                  <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>Apenas este nÃƒÂºmero poderÃƒÂ¡ criar transaÃƒÂ§ÃƒÂµes. Coloque o DDI (55) + DDD + NÃƒÂºmero.</p>
+                  <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>Apenas este níºmero poderá criar transações. Coloque o DDI (55) + DDD + Níºmero.</p>
                 </div>
                 
                 <div>
-                  <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>Token de SeguranÃƒÂ§a (Para o Webhook)</label>
+                  <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>Token de Segurança (Para o Webhook)</label>
                   <input
                     className="input-field"
                     placeholder="Ex: minha-senha-secreta-123"
@@ -1185,9 +1185,9 @@ export default function Configuracoes() {
                 </div>
                 
                 <div style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.15)', borderRadius: 8, padding: 12, marginTop: 4 }}>
-                  <p style={{ fontSize: 12, color: '#34d399', fontWeight: 600, marginBottom: 4 }}>Ã¯Â¿Â½xÃ¯Â¿Â½ Como funciona?</p>
+                  <p style={{ fontSize: 12, color: '#34d399', fontWeight: 600, marginBottom: 4 }}>x Como funciona?</p>
                   <p style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                    Mande mensagens como <i>"Gastei 50 nao posto de gasolina"</i> ou <i>"Recebi 200 do cliente Joao"</i>. A InteligÃƒÂªncia Artificial lerÃƒÂ¡ sua mensagem e registrarÃƒÂ¡ a transaÃƒÂ§ÃƒÂ£o automaticamente!
+                    Mande mensagens como <i>"Gastei 50 nao posto de gasolina"</i> ou <i>"Recebi 200 do cliente Joao"</i>. A Inteligência Artificial lerá sua mensagem e registrará a transação automaticamente!
                   </p>
                 </div>
               </div>
@@ -1200,16 +1200,16 @@ export default function Configuracoes() {
         {abaAtiva === 'seguranca' && (
         <SecaoConfig titulo="Dados & Privacidade" icone={<Shield size={18} color="#06b6d4" />}>
           <ToggleConfig
-            label="Backup AutomÃƒÂ¡tico"
+            label="Backup Automático"
             descricao="Exporta os dados automaticamente (em breve)"
             ativo={cfg.backupAutomatico}
             onChange={v => setCfg(c => ({ ...c, backupAutomatico: v }))}
           />
 
           <div style={{ background: 'rgba(6,182,212,0.06)', border: '1px solid rgba(6,182,212,0.15)', borderRadius: 10, padding: '12px 14px' }}>
-            <p style={{ fontSize: 12, color: '#67e8f9', fontWeight: 600, marginBottom: 4 }}>Ã¯Â¿Â½x Dados 100% Privados</p>
+            <p style={{ fontSize: 12, color: '#67e8f9', fontWeight: 600, marginBottom: 4 }}>x Dados 100% Privados</p>
             <p style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.6 }}>
-              Todos os seus dados sÃƒÂ£o armazenados localmente nao seu navegador (IndexedDB). Nenhuma informaÃƒÂ§ÃƒÂ£o financeira ÃƒÂ© enviada para servidores externaos, exceto quando vocÃƒÂª usa uma API de IA e envia explicitamente o contexto.
+              Todos os seus dados são armazenados localmente nao seu navegador (IndexedDB). Nenhuma informação financeira é enviada para servidores externaos, exceto quando você usa uma API de IA e envia explicitamente o contexto.
             </p>
           </div>
 
@@ -1217,13 +1217,13 @@ export default function Configuracoes() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid var(--bg-glass)' }}>
             <div>
               <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 2 }}>Zerar Sistema (Reset)</p>
-              <p style={{ fontSize: 12, color: '#ef4444' }}>Apaga todos os seus dados. NÃƒÂ£o pode ser desfeito!</p>
+              <p style={{ fontSize: 12, color: '#ef4444' }}>Apaga todos os seus dados. Não pode ser desfeito!</p>
             </div>
             <button
               className="btn-primary"
               style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', padding: '8px 12px', fontSize: 12 }}
               onClick={() => {
-                if (window.confirm('Tem certeza absoluta que deseja apagar TODOS os seus lanÃƒÂ§amentos, cartÃƒÂµes, contas e cadastros? Essa aÃƒÂ§ÃƒÂ£o nao pode ser desfeita.')) {
+                if (window.confirm('Tem certeza absoluta que deseja apagar TODOS os seus lançamentos, cartões, contas e cadastros? Essa ação nao pode ser desfeita.')) {
                   const req = indexedDB.deleteDatabase('financeapp');
                   req.onsuccess = () => {
                     window.location.reload();
@@ -1250,42 +1250,42 @@ export default function Configuracoes() {
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a'); a.href = url; a.download = 'financeai-backup.json'; a.click();
               }}>
-                Ã¯Â¿Â½xÃ¯Â¿Â½ JSON
+                x JSON
               </button>
               <button className="btn-secondary" onClick={async () => {
                 const { getTransacoes, formatarMoeda } = await import('@/lib/storage');
                 const t = await getTransacoes();
-                const header = 'Tipo,DescriÃƒÂ§ÃƒÂ£o,Valor,Data,Categoria,Fornecedor,Conta,Forma de Pagamento,Status\n';
+                const header = 'Tipo,Descrição,Valor,Data,Categoria,Fornecedor,Conta,Forma de Pagamento,Status\n';
                 const rows = t.map(tx => `${tx.tipo},"${tx.descricao}",${tx.valor},${tx.data},"${tx.categoriaNome || ''}","${tx.fornecedorNome || ''}","${tx.contaNome || ''}",${tx.formaPagamento},${tx.status}`).join('\n');
                 const blob = new Blob([header + rows], { type: 'text/csv;charset=utf-8' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a'); a.href = url; a.download = 'financeai-lancamentos.csv'; a.click();
               }}>
-                Ã¯Â¿Â½x` CSV
+                x` CSV
               </button>
             </div>
           </div>
         </SecaoConfig>
         )}
 
-        {/* Funcionalidades AvanÃƒÂ§adas */}
+        {/* Funcionalidades Avançadas */}
         {abaAtiva === 'ia' && (
-        <SecaoConfig titulo="Funcionalidades AvanÃƒÂ§adas" icone={<Zap size={18} color="#eab308" />}>
+        <SecaoConfig titulo="Funcionalidades Avançadas" icone={<Zap size={18} color="#eab308" />}>
           <ToggleConfig
-            label="IntegraÃƒÂ§ÃƒÂ£o Open Finance"
-            descricao="Importa extratos e faturas automaticamente via conexÃƒÂ£o bancÃƒÂ¡ria (SimulaÃƒÂ§ÃƒÂ£o)"
+            label="Integração Open Finance"
+            descricao="Importa extratos e faturas automaticamente via conexão bancária (Simulação)"
             ativo={cfg.openFinanceAtivo ?? false}
             onChange={v => setCfg(c => ({ ...c, openFinanceAtivo: v }))}
           />
           <ToggleConfig
-            label="RelatÃƒÂ³rios AutomÃƒÂ¡ticos por E-mail"
-            descricao="Receba um balanÃƒÂ§o financeiro semanal/mensal nao e-mail cadastrado"
+            label="Relatórios Automáticos por E-mail"
+            descricao="Receba um balanço financeiro semanal/mensal nao e-mail cadastrado"
             ativo={cfg.relatoriosEmail ?? false}
             onChange={v => setCfg(c => ({ ...c, relatoriosEmail: v }))}
           />
           <ToggleConfig
-            label="Fechamento de MÃƒÂªs AutomÃƒÂ¡tico"
-            descricao="Bloqueia ediÃƒÂ§ÃƒÂ£o de lanÃƒÂ§amentos em meses jÃƒÂ¡ encerrados para evitar fraude ou divergÃƒÂªncias na DRE"
+            label="Fechamento de Mês Automático"
+            descricao="Bloqueia edição de lançamentos em meses já encerrados para evitar fraude ou divergências na DRE"
             ativo={cfg.fechamentoAutomatico ?? false}
             onChange={v => setCfg(c => ({ ...c, fechamentoAutomatico: v }))}
           />
@@ -1297,12 +1297,12 @@ export default function Configuracoes() {
         <SecaoConfig titulo="Sobre" icone={<Info size={18} color="#8b5cf6" />}>
           <div className="grid-responsive-2">
             {[
-              { label: 'VersÃƒÂ£o', valor: '2.0.0 Ultra' },
+              { label: 'Versão', valor: '2.0.0 Ultra' },
               { label: 'Tecnologia', valor: 'Next.js + TypeScript' },
               { label: 'Storage', valor: 'IndexedDB (Local)' },
               { label: 'IA Motor', valor: 'Regras + OpenAI' },
-              { label: 'GrÃƒÂ¡ficos', valor: 'Recharts' },
-              { label: 'PWA', valor: 'Suportado Ã¯Â¿Â½S&' },
+              { label: 'Gráficos', valor: 'Recharts' },
+              { label: 'PWA', valor: 'Suportado S&' },
             ].map((item, i) => (
               <div key={i} style={{ background: 'var(--bg-glass)', borderRadius: 8, padding: '10px 12px' }}>
                 <p style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600, marginBottom: 3 }}>{item.label}</p>
@@ -1313,12 +1313,12 @@ export default function Configuracoes() {
         </SecaoConfig>
         )}
 
-        {/* SeguranÃƒÂ§a e Backups */}
+        {/* Segurança e Backups */}
         {abaAtiva === 'seguranca' && (
-        <SecaoConfig titulo="SeguranÃƒÂ§a e Backups" icone={<Database size={18} color="var(--purple)" />}>
+        <SecaoConfig titulo="Segurança e Backups" icone={<Database size={18} color="var(--purple)" />}>
           <div style={{ marginBottom: 20 }}>
             <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 16 }}>
-              Proteja seus dados fazendo backups regulares ou ativando a rotina automÃƒÂ¡tica.
+              Proteja seus dados fazendo backups regulares ou ativando a rotina automática.
             </p>
             
             <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 24, flexWrap: 'wrap' }}>
@@ -1351,7 +1351,7 @@ export default function Configuracoes() {
               </button>
               
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg-secondary)', padding: '6px 12px', borderRadius: 8 }}>
-                <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Backup AutomÃƒÂ¡tico:</span>
+                <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Backup Automático:</span>
                 <select 
                   className="input-field"
                   style={{ padding: '4px 8px', minHeight: 30, fontSize: 12, width: 120 }}
@@ -1359,14 +1359,14 @@ export default function Configuracoes() {
                   onChange={e => setCfg(c => ({ ...c, frequenciaBackup: e.target.value as any, backupAutomatico: e.target.value !== 'nunca' }))}
                 >
                   <option value="nunca">Desativado</option>
-                  <option value="diario">DiÃ¡rio</option>
+                  <option value="diario">Diário</option>
                   <option value="semanal">Semanal</option>
                   <option value="mensal">Mensal</option>
                 </select>
                 
                 {cfg.frequenciaBackup && cfg.frequenciaBackup !== 'nunca' && (
                   <>
-                    <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 8 }}>HorÃƒÂ¡rio:</span>
+                    <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 8 }}>Horário:</span>
                     <input 
                       type="time" 
                       className="input-field" 
@@ -1387,9 +1387,9 @@ export default function Configuracoes() {
                     padding: '8px 14px', borderRadius: 8, fontWeight: 600, fontSize: 13, display: 'flex', alignItems: 'center', gap: 6,
                     cursor: backupLoading ? 'not-allowed' : 'pointer', marginLeft: 'auto'
                   }}
-                  title="Desfazer a ÃƒÂºltima restauraÃƒÂ§ÃƒÂ£o"
+                  title="Desfazer a íºltima restauração"
                 >
-                  <Undo2 size={16} /> Desfazer RestauraÃƒÂ§ÃƒÂ£o
+                  <Undo2 size={16} /> Desfazer Restauração
                 </button>
               )}
             </div>
@@ -1398,7 +1398,7 @@ export default function Configuracoes() {
             <div style={{ background: 'var(--bg-secondary)', borderRadius: 12, overflow: 'hidden', border: '1px solid var(--border-color)' }}>
               <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h4 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <History size={14} color="var(--blue)" /> Ã¯Â¿Â½altimos Backups
+                  <History size={14} color="var(--blue)" /> altimos Backups
                 </h4>
                 <button 
                   onClick={() => setShowLogs(!showLogs)}
@@ -1456,7 +1456,7 @@ export default function Configuracoes() {
                     const backupsParaMostrar = showOldBackups ? backupsAntigos : backupsRecentes;
 
                     if (backupsParaMostrar.length === 0) {
-                      return <p style={{ fontSize: 12, color: 'var(--text-muted)', textAlign: 'center', padding: 30 }}>Nenhum backup {showOldBackups ? 'antigo' : 'recente'} disponÃƒÂ­vel.</p>;
+                      return <p style={{ fontSize: 12, color: 'var(--text-muted)', textAlign: 'center', padding: 30 }}>Nenhum backup {showOldBackups ? 'antigo' : 'recente'} disponível.</p>;
                     }
 
                     return (
@@ -1466,7 +1466,7 @@ export default function Configuracoes() {
                           <th style={{ padding: '10px 16px', color: 'var(--text-muted)', fontWeight: 600 }}>Data e Hora</th>
                           <th style={{ padding: '10px 16px', color: 'var(--text-muted)', fontWeight: 600 }}>Tipo</th>
                           <th style={{ padding: '10px 16px', color: 'var(--text-muted)', fontWeight: 600 }}>Registros</th>
-                          <th style={{ padding: '10px 16px', color: 'var(--text-muted)', fontWeight: 600, textAlign: 'right' }}>AÃƒÂ§ÃƒÂµes</th>
+                          <th style={{ padding: '10px 16px', color: 'var(--text-muted)', fontWeight: 600, textAlign: 'right' }}>Ações</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1524,9 +1524,9 @@ export default function Configuracoes() {
           </div>
         </SecaoConfig>
         )}
-        {/* BotÃƒÂ£o salvar */}
+        {/* Botão salvar */}
         <button onClick={() => salvar()} className="btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '14px' }}>
-          {salvo ? <><Check size={18} /> Salvo com sucesso!</> : <><Save size={18} /> Salvar ConfiguraÃƒÂ§ÃƒÂµes</>}
+          {salvo ? <><Check size={18} /> Salvo com sucesso!</> : <><Save size={18} /> Salvar Configurações</>}
         </button>
       </div>
     </div>

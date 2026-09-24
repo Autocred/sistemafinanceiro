@@ -51,7 +51,7 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
   const hojeDate = new Date(hojeStr + 'T12:00:00');
   // Subscriptions
   useEffect(() => {
-    // Alerta de AtualizaÃ§Ã£o
+    // Alerta de Atualização
     const currentVersion = '1.2.22-LOGIN-VOLATIL';
     const savedVersion = typeof window !== 'undefined' ? localStorage.getItem('app_version') : currentVersion;
     if (savedVersion !== currentVersion) {
@@ -74,13 +74,13 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
       }
     };
     
-    // TransaÃ§Ãµes do mês selecionado para KPIs e GrÃ¡ficos
+    // Transações do mês selecionado para KPIs e Gráficos
     unsubs.push(subscribeTransacoesByMes(ano, mes, (data: Transacao[]) => {
       setTransacoesMes(data);
       loadedMes = true; checkLoading();
     }));
 
-    // Todas as transaÃ§Ãµes para cálculo dos Indicadores Globais de Vencimento
+    // Todas as transações para cálculo dos Indicadores Globais de Vencimento
     unsubs.push(subscribeTransacoes((data: Transacao[]) => {
       setTodasTransacoes(data);
       loadedGlobal = true; checkLoading();
@@ -111,7 +111,7 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
   const hojeDataDashboard = new Date();
     const hojeStrDashboard = format(hojeDataDashboard, 'yyyy-MM-dd');
     
-    // Helper: verifica se uma data (que pode conter horÃ¡rio, ex: "2026-09-04T17:00:00") corresponde a hoje
+    // Helper: verifica se uma data (que pode conter horário, ex: "2026-09-04T17:00:00") corresponde a hoje
     const isDataHoje = (dt: string | undefined | null): boolean => {
       if (!dt) return false;
       return dt === hojeStrDashboard || dt.startsWith(hojeStrDashboard + 'T');
@@ -121,10 +121,10 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
       .filter(t => t.tipo === 'receita' && t.status === 'pago' && (isDataHoje(t.dataPagamento) || (!t.dataPagamento && t.data === hojeStrDashboard)))
       .reduce((acc, t) => acc + getValorFinal(t), 0);
       
-    // TransaÃ§Ãµes de despesa pagas hoje
-    // Exclui transaÃ§Ãµes originais de cartão de crédito (formaPagamento='cartao_crédito') 
-    // pois ao pagar a fatura, o sistema cria dÃ©bitos bancÃ¡rios separados + marca as originais como pagas,
-    // o que causaria duplicidade. Apenas os dÃ©bitos bancÃ¡rios devem ser contabilizados.
+    // Transações de despesa pagas hoje
+    // Exclui transações originais de cartão de crédito (formaPagamento='cartao_crédito') 
+    // pois ao pagar a fatura, o sistema cria débitos bancários separados + marca as originais como pagas,
+    // o que causaria duplicidade. Apenas os débitos bancários devem ser contabilizados.
     const pagosHoje = todasTransacoes
       .filter(t => t.tipo === 'despesa' && t.status === 'pago' && t.formaPagamento !== 'cartao_crédito' && (isDataHoje(t.dataPagamento) || (!t.dataPagamento && t.data === hojeStrDashboard)))
       .reduce((acc, t) => acc + getValorFinal(t), 0);
@@ -166,7 +166,7 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
       
     const pendentesGlobais = todasTransacoes.filter(t => {
     if (t.status === 'pago') return false;
-    // Compras individuais de cartão de crédito sÃ£o pagas na fatura consolidada
+    // Compras individuais de cartão de crédito são pagas na fatura consolidada
     if (t.formaPagamento === 'cartao_crédito' && !t.descricao.toLowerCase().includes('fatura')) return false;
     return true;
   });
@@ -223,7 +223,7 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
   const pagarSemanaCountAcumulado = atrasadasPagarItems.length + hojePagarItems.length + pagar2DiasItems.length + pagarSemanaItems.length;
   const receberSemanaCountAcumulado = atrasadasReceberItems.length + hojeReceberItems.length + receber2DiasItems.length + receberSemanaItems.length;
 
-  // Alerta Sonoro AutomÃ¡tico ao entrar na tela se houver contas crÃ­ticas
+  // Alerta Sonoro Automático ao entrar na tela se houver contas críticas
   useEffect(() => {
     const sessaoChave = `alerta_sonoro_${hojeStr}`;
     const temCriticas = atrasadas.length > 0 || vencemHoje.length > 0 || vencem2Dias.length > 0;
@@ -264,7 +264,7 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
       : [...ordenarMovimentacoesDesc(atrasadasForaDoMes), ...ordenarMovimentacoesDesc(transacoesMes)].slice(0, 8);
   const fmt = formatarMoeda;
 
-  // 1. Dados para GrÃ¡fico de Fluxo Diário
+  // 1. Dados para Gráfico de Fluxo Diário
   const chartDataDiário = transacoesMes.reduce((acc: any[], t) => {
     if (t.status !== 'pago') return acc;
     // Usa data de pagamento (real fluxo de caixa), senao vencimento, senao data original
@@ -284,7 +284,7 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
     return acc;
   }, []).sort((a, b) => parseInt(a.name) - parseInt(b.name));
 
-  // 2. Dados para GrÃ¡fico de Despesas por Categoria (Donut)
+  // 2. Dados para Gráfico de Despesas por Categoria (Donut)
   const chartDataCategorias = Object.entries(
     transacoesMes
       .filter(t => t.tipo === 'despesa')
@@ -298,8 +298,8 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
 
   // 3. Dados para Distribuição por Forma de Pagamento
   const fmtPagto: Record<string, string> = { 
-    pix: 'PIX', cartao_crédito: 'Cartão CrÃ©dito', cartao_debito: 'Cartão DÃ©bito', 
-    dinheiro: 'Dinheiro', boleto: 'Boleto', transferencia: 'TransferÃªncia', cheque: 'Cheque', outro: 'Outro' 
+    pix: 'PIX', cartao_crédito: 'Cartão Crédito', cartao_debito: 'Cartão Débito', 
+    dinheiro: 'Dinheiro', boleto: 'Boleto', transferencia: 'Transferência', cheque: 'Cheque', outro: 'Outro' 
   };
 
   const chartDataPagamentos = Object.entries(
@@ -392,7 +392,7 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
 
           <button 
             onClick={nextMes} 
-            title="PrÃ³ximo Mês"
+            title="Próximo Mês"
             style={{ background: 'var(--bg-primary)', border: '1px solid var(--border)', borderRadius: 6, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#475569' }}
           >
             <ChevronRight size={16} />
@@ -423,7 +423,7 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
           const diffMs = dtVenc.getTime() - dtHoje.getTime();
           const diffDias = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
           if (diffDias < 0) {
-            diasRestantesStr = `(Atrasada hÃ¡ ${Math.abs(diffDias)} dia${Math.abs(diffDias) > 1 ? 's' : ''})`;
+            diasRestantesStr = `(Atrasada há ${Math.abs(diffDias)} dia${Math.abs(diffDias) > 1 ? 's' : ''})`;
           } else if (diffDias === 0) {
             diasRestantesStr = `(Vence HOJE)`;
           } else {
@@ -1110,7 +1110,7 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
             </div>
           </div>
           <div style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', padding: '6px 14px', borderRadius: 20, color: '#fff', fontSize: 12, fontWeight: 800, boxShadow: '0 2px 8px rgba(59, 130, 246, 0.3)' }}>
-            MÃ³dulo Premium
+            Módulo Premium
           </div>
         </div>
 
@@ -1145,7 +1145,7 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
             <div>
               <h2 style={{ fontSize: 15, fontWeight: 800, color: 'var(--text-title)', margin: 0 }}>Fluxo de Caixa Diário</h2>
-              <p style={{ fontSize: 12, color: '#94a3b8', margin: '2px 0 0 0', fontWeight: 500 }}>Entradas vs SaÃ­das do mês selecionado</p>
+              <p style={{ fontSize: 12, color: '#94a3b8', margin: '2px 0 0 0', fontWeight: 500 }}>Entradas vs Saídas do mês selecionado</p>
             </div>
             <Activity size={18} color="#0284c7" />
           </div>

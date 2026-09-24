@@ -1,0 +1,66 @@
+src\app\master\configuracoes\page.tsx:400: PRODUÇÃO
+src\app\master\licencas\page.tsx:216: if(confirm(`ATENÇÃO: A exclusão do cliente ${l.nomeFantasia} é permanente (Hard Delete) e removerá todos os dados do banco isolado. Confirmar?`)) {
+src\app\master\licencas\[id]\page.tsx:251: {/* TAB CONTENT: VISÃO GERAL */}
+src\app\master\licencas\[id]\page.tsx:605: <Shield className="w-6 h-6" /> EXCLUSÃO DEFINITIVA
+src\app\master\seguranca\page.tsx:102: if(confirm(`ATENÇÃO: Deseja forçar o logout do usuário "${nome}" imediatamente?`)) {
+src\app\master\suporte\page.tsx:640: {/* ASSUNTO E DESCRIÇÃO ORIGINAL */}
+src\app\page.tsx:333: // ─── MONITOREAMENTO DE INATIVIDADE (DESLOGAR SOZINHO) E SESSÃO INICIAL ─────────────────────────
+src\components\CalendarioFinanceiro.tsx:66: {/* CONTROLES DE MÊS & VISÃO */}
+src\components\CalendarioFinanceiro.tsx:80: {/* SELETOR DE VISÃO */}
+src\components\CentralConciliacao.tsx:72: {/* HEADER CONCILIAÇÃO */}
+src\components\CFOExecutiveDashboard.tsx:222: {/* PROJEÇÃO DE FLUXO DE CAIXA E AGING LIST */}
+src\components\CFOExecutiveDashboard.tsx:264: {/* DETECÇÃO DE ANOMALIAS */}
+src\components\Configuracoes.tsx:575: ÃœÂ¬Ã¯Â¸Â Claro
+src\components\Contas.tsx:203: {/* MODAL CARTÃO */}
+src\components\Contas.tsx:274: {/* MODAL CONFIRMAR EXCLUSÃO */}
+src\components\Contas.tsx:368: // ===== CARTÃO CARD =====
+src\components\Contas.tsx:584: const senha = prompt('⚠️ ATENÇÃO: Reabrir uma fatura paga é uma ação crítica usada apenas em últimos casos.\nOs pagamentos registrados serão cancelados e os lançamentos voltarão para o status "A Pagar".\n\nDigite a senha Master para prosseguir:');
+src\components\Contas.tsx:723: // ===== MODAL CARTÃO =====
+src\components\Dashboard.tsx:136: // ================= CÃLCULO DOS INDICADORES CRÃTICOS: A PAGAR E A RECEBER =================
+src\components\Dashboard.tsx:220: // 3. VENCE EM ATÉ 2 DIAS (ANTECIPAÇÃO 48H)
+src\components\Dashboard.tsx:342: // ================= CÃLCULO PROJEï¿½!ÃO DE FLUXO DE CAIXA (30 DIAS) =================
+src\components\Dashboard.tsx:434: {/* BOTÃO NOVO LANÇAMENTO */}
+src\components\Dashboard.tsx:466: {/* ================= GRÃFICOS AUTOCRED (apenas tenant autocrédito) ================= */}
+src\components\Dashboard.tsx:469: {/* ================= ALERTA DE FATURAS DE CARTÃO FECHADAS (PISCANDO) ================= */}
+src\components\Dashboard.tsx:549: {/* ================= BANNER DE ALERTA SONORO & ANTECIPAï¿½!ÃO (2 DIAS) ================= */}
+src\components\Dashboard.tsx:936: case 'AMANHÃ': return { bg: '#3b82f6', text: '#fff' };
+src\components\Dashboard.tsx:941: const alertOrder: Record<string, number> = { 'VENCIDO': 1, 'HOJE': 2, 'AMANHÃ': 3, 'PRÓXIMOS': 4 };
+src\components\Dashboard.tsx:949: ...pagar2DiasItems.map((t: any) => ({ ...t, _alertStatus: 'AMANHÃ' })),
+src\components\Dashboard.tsx:950: ...receber2DiasItems.map((t: any) => ({ ...t, _alertStatus: 'AMANHÃ' })),
+src\components\Dashboard.tsx:981: <span style={{ color: '#3b82f6', display: 'flex', alignItems: 'center', gap: 4 }}><span style={{width: 8, height: 8, borderRadius: '50%', background: '#3b82f6'}}></span> AMANHÃ</span>
+src\components\Dashboard.tsx:1152: {/* GRÃFICO PREMIUM: PROJEï¿½!ÃO FUTURA (CASHFLOW) */}
+src\components\Dashboard.tsx:1192: {/* SEï¿½!ÃO 1 DE GRÃFICOS: FLUXO DE CAIXA + DESPESAS POR CATEGORIA */}
+src\components\Dashboard.tsx:1195: {/* GRÃFICO 1: FLUXO DE CAIXA DIÃRIO */}
+src\components\Dashboard.tsx:1236: {/* GRÃFICO 2: DESPESAS POR CATEGORIA (PIE / DONUT) */}
+src\components\Dashboard.tsx:1287: {/* SEï¿½!ÃO 2: FORMAS DE PAGAMENTO + LISTA DE MOVIMENTAÇÕES */}
+src\components\Dashboard.tsx:1290: {/* GRÃFICO 3: FORMAS DE PAGAMENTO (BAR CHART) */}
+src\components\ExtratoBancario.tsx:216: {/* SELEÇÃO DE PERÍODO BANCÁRIO */}
+src\components\HubInvestimentos.tsx:114: {/* GRÁFICO EVOLUÇÃO */}
+src\components\HubInvestimentos.tsx:144: {/* DISTRIBUIÇÃO */}
+src\components\LancamentosV2.tsx:888: âš ï¸ Esta ação não pode ser desfeita!
+src\components\MetasGamificadas.tsx:573: {/* MODAL DE EDIÇÃO / CRIAÇÃO DE META */}
+src\components\MetasGamificadasV2.tsx:572: {/* MODAL DE EDIÇÃO / CRIAÇÃO DE META */}
+src\components\ModalLancamento.tsx:372: // FORÇAR REGRAS DO CARTÃO DE CRÉDITO
+src\components\ModalLancamento.tsx:606: {/* PRÉ-LANÇAMENTO CONFIRMAÇÃO */}
+src\components\ModalLancamento.tsx:619: {/* EDIÇÃO RÁPIDA */}
+src\components\NewMobileBankApp.tsx:243: {/* 5. VENCE HOJE (PISCANTE & CLICÃVEL) */}
+src\components\NewMobileBankApp.tsx:267: {/* 6. VENCE A MENOS DE 2 DIAS (CLICÃVEL) */}
+src\components\NewMobileBankApp.tsx:285: {/* 7. VENCE EM 1 SEMANA (CLICÃVEL) */}
+src\components\NewMobileBankApp.tsx:303: {/* 8. EM ATRASO (CLICÃVEL) */}
+src\components\NewMobileBankApp.tsx:401: * EXIBE TODAS AS CONTAS SEM NENHUMA RESTRIï¿½!ÃO
+src\components\RegrasAutomacaoTab.tsx:54: Crie automações inteligentes "SE termo X ENTÃO categoria Y"
+src\lib\ai-agent-engine.ts:261: // 4.5 VERIFICAÇÃO DE PAGAMENTO ESPECÍFICO (ex: "a fatura de energia está paga?")
+src\lib\ai-agent-engine.ts:344: // 6. FALLBACK SE NÃO ENTENDER NADA
+src\lib\ai-engine.ts:587: // Se NÃO informou a data:
+src\lib\cfoEngine.ts:122: * PROJEÇÃO PREDITIVA DE FLUXO DE CAIXA
+src\lib\conciliacao.ts:5: * PARSER E MOTOR DE CONCILIAÇÃO BANCÁRIA (OFX / CSV)
+src\lib\ocr-pipeline.ts:148: // Extração Baseada em Âncoras (Procurar R$, TOTAL, VALOR)
+src\lib\ocr-pipeline.ts:213: else if (tUpper.match(/PET|VETERINARIO|RACAO|RAÇÃO|COBASI|PETZ/)) categoria = 'Pets';
+src\lib\pdf-generator.ts:70: doc.text('DESCRIÇÃO', 20, 95);
+src\lib\rulesEngine.ts:7: * MOTOR DE REGRAS DE AUTOMAÇÃO E CLASSIFICAÇÃO AUTOMÁTICA
+src\lib\saas.ts:82: // GERAÇÃO DE LICENÇA E APROVAÇÃO
+src\lib\storage.ts:247: // VALIDAÇÃO ESTRITA ANTES DA TRANSAÇÃO
+src\lib\storage.ts:505: // IMPORTANTE: Se __skipFaturaRelink=true, é porque vincularTransacaoFatura nos chamou — NÃO fazer cleanup
+src\lib\storage.ts:893: // ─── 1. VERIFICAÇÃO DE SALDO OBRIGATÓRIA ────────────────────────────────────
+src\lib\storage.ts:1016: // ─── 6. RESTAURAR LIMITE DO CARTÃO ──────────────────────────────────────────
+src\lib\whatsapp.ts:19: // IMPLEMENTAÇÃO REAL DA API VAI AQUI (SUBSTITUA PELO SEU GATEWAY)

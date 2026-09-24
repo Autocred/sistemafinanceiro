@@ -20,7 +20,7 @@ const fmt = formatarMoeda;
 /**
  * 1. DASHBOARD HEADER (CABEï¿½!ALHO NUBANK / INTER ENERGETIC RED)
  * Canto Esquerdo: Logo + Nome ("FinPessoal")
- * Canto Direito: Sinão + Nome ("Olá, Clovis") + BotÃ£o Sair / Logoff
+ * Canto Direito: Sinão + Nome ("Olá, Clovis") + Botão Sair / Logoff
  */
 export function DashboardHeader({ cfg, userProfile, dataAcesso, onLogout }: { cfg: any; userProfile: any; dataAcesso: string; onLogout?: () => void }) {
   const [isPrivacy, setIsPrivacy] = React.useState(false);
@@ -80,7 +80,7 @@ export function DashboardHeader({ cfg, userProfile, dataAcesso, onLogout }: { cf
         <NotificationCenter userId={userProfile?.uid || ''} />
         <div className="bank-header-user-badge">
           <span className="bank-header-user-name">
-            Olá, {cfg?.nomeUsuario ? cfg.nomeUsuario.split(' ')[0] : (userProfile?.nome ? userProfile.nome.split(' ')[0] : 'Clovis')}
+            Olá, {(userProfile?.nome && userProfile.nome !== 'Usuário') ? userProfile.nome.split(' ')[0] : (cfg?.nomeUsuario && cfg.nomeUsuario !== 'Usuário' ? cfg.nomeUsuario.split(' ')[0] : 'Usuário')}
           </span>
           <span className="bank-header-user-date">
             Acesso: {new Date().toLocaleDateString('pt-BR')} - {new Date().getHours().toString().padStart(2, '0')}h{new Date().getMinutes().toString().padStart(2, '0')}
@@ -174,10 +174,10 @@ export function DashboardIndicators({
 
   return (
     <div className="bank-kpi-grid" style={{ marginBottom: 20 }}>
-      {/* 1. Saldo DisponÃ­vel */}
+      {/* 1. Saldo Disponível */}
       <div className="bank-kpi-card">
         <div className="bank-kpi-header">
-          <span className="bank-kpi-label">Saldo DisponÃ­vel</span>
+          <span className="bank-kpi-label">Saldo Disponível</span>
           <div className="bank-kpi-icon-box">
             <Wallet size={18} color={saldoDisponivel >= 0 ? "#10b981" : "#ef4444"} />
           </div>
@@ -188,10 +188,10 @@ export function DashboardIndicators({
         <span className="bank-kpi-sub">Em contas correntes/digitais</span>
       </div>
 
-      {/* 2. Receitas do MÃªs */}
+      {/* 2. Receitas do Mês */}
       <div className="bank-kpi-card">
         <div className="bank-kpi-header">
-          <span className="bank-kpi-label">Receitas do MÃªs</span>
+          <span className="bank-kpi-label">Receitas do Mês</span>
           <div className="bank-kpi-icon-box">
             <TrendingUp size={18} color="#10b981" />
           </div>
@@ -202,10 +202,10 @@ export function DashboardIndicators({
         <span className="bank-kpi-sub">{transacoes.filter((t: any) => t.tipo === 'receita').length} créditos confirmados</span>
       </div>
 
-      {/* 3. Despesas do MÃªs */}
+      {/* 3. Despesas do Mês */}
       <div className="bank-kpi-card">
         <div className="bank-kpi-header">
-          <span className="bank-kpi-label">Despesas do MÃªs</span>
+          <span className="bank-kpi-label">Despesas do Mês</span>
           <div className="bank-kpi-icon-box">
             <TrendingDown size={18} color="#ef4444" />
           </div>
@@ -213,7 +213,7 @@ export function DashboardIndicators({
         <div className="bank-kpi-value" style={{ color: '#ef4444' }}>
           {fmt(totalDespesas)}
         </div>
-        <span className="bank-kpi-sub">Pagas em dÃ©bito/PIX</span>
+        <span className="bank-kpi-sub">Pagas em débito/PIX</span>
       </div>
 
       {/* 4. Faturas em Aberto */}

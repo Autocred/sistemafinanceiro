@@ -1199,14 +1199,30 @@ export async function getConfiguracoes(uid: string = 'app'): Promise<Configuraca
     notificacoesAtivas: true, backupAutomatico: true, tema: 'dark'
   };
   if (!isBrowser()) return defaults;
+  
+  let config: ConfiguracaoApp | null = null;
   try {
     const snapGeral = await getDoc(doc(getDb(), getCollectionPath('config'), 'geral'));
-    if (snapGeral.exists()) return snapGeral.data() as ConfiguracaoApp;
-
-    const snapUid = await getDoc(doc(getDb(), getCollectionPath('config'), uid));
-    if (snapUid.exists()) return snapUid.data() as ConfiguracaoApp;
+    if (snapGeral.exists()) {
+      config = snapGeral.data() as ConfiguracaoApp;
+    } else {
+      const snapUid = await getDoc(doc(getDb(), getCollectionPath('config'), uid));
+      if (snapUid.exists()) config = snapUid.data() as ConfiguracaoApp;
+    }
   } catch {}
-  return defaults;
+
+  // Se não tem nomeSistema preenchido, tenta buscar o nome fantasia do tenant (licença)
+  if (activeTenantId && activeTenantId !== 'master' && (!config || !config.nomeSistema)) {
+    try {
+      const snapLicenca = await getDoc(doc(getDb(), 'admin_master_licencas', activeTenantId));
+      if (snapLicenca.exists() && snapLicenca.data().nomeFantasia) {
+        if (!config) config = { ...defaults };
+        config.nomeSistema = snapLicenca.data().nomeFantasia;
+      }
+    } catch {}
+  }
+
+  return config || defaults;
 }
 
 export async function salvarConfiguracoes(c: ConfiguracaoApp, uid: string = 'app'): Promise<void> {
@@ -1321,5 +1337,51 @@ export async function sincronizarFaturasPendentes() {
         }
       }
     }
+  }
+}
+// ================= METAS FINANCEIRAS =================
+export async function getMetasFinanceiras(): Promise<any[]> {
+  try {
+    const metasRef = collection(getDb(), getCollectionPath('metas_financeiras'));
+    const snap = await getDocs(metasRef);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch (err) {
+    console.error('Erro ao buscar metas financeiras', err);
+    return [];
+  }
+}
+
+export function subscribeMetasFinanceiras(callback: (metas: any[]) => void) {
+  try {
+    const metasRef = collection(getDb(), getCollectionPath('metas_financeiras'));
+    return onSnapshot(metasRef, (snap) => {
+      callback(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+  } catch (err) {
+    console.error('Erro no onSnapshot de metas financeiras', err);
+    return () => {};
+  }
+}
+
+export async function salvarMetaFinanceira(meta: any): Promise<void> {
+  try {
+    const id = meta.id || gerarId();
+    const docRef = doc(getDb(), getCollectionPath('metas_financeiras'), id);
+    const data = { ...meta, id };
+    if (!meta.id) data.createdAt = Date.now();
+    await setDoc(docRef, data, { merge: true });
+  } catch (err) {
+    console.error('Erro ao salvar meta financeira', err);
+    throw err;
+  }
+}
+
+export async function excluirMetaFinanceira(id: string): Promise<void> {
+  try {
+    const docRef = doc(getDb(), getCollectionPath('metas_financeiras'), id);
+    await deleteDoc(docRef);
+  } catch (err) {
+    console.error('Erro ao excluir meta financeira', err);
+    throw err;
   }
 }

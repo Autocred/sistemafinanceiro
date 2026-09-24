@@ -412,7 +412,7 @@ export default function ModalLancamento({ onClose, onSalvo, transacaoEditar }: P
       setSucesso(true);
       setTimeout(() => onSalvo(), 900);
     } catch (err: any) {
-      setErro(err.message || 'Erro ao salvar. Tente novamente.');
+      let msg = err.message || 'Erro ao salvar. Tente novamente.'; if(msg.includes('Quota exceeded')) msg = 'A cota diária gratuita do banco de dados foi excedida (Firebase). Volte amanhã ou faça o upgrade do plano (Blaze).'; setErro(msg);
       setSalvando(false);
     }
   };
