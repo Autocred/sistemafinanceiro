@@ -412,7 +412,7 @@ export default function ModalLancamento({ onClose, onSalvo, transacaoEditar }: P
       setSucesso(true);
       setTimeout(() => onSalvo(), 900);
     } catch (err: any) {
-      let msg = err.message || 'Erro ao salvar. Tente novamente.'; if(msg.includes('Quota exceeded')) msg = 'A cota diária gratuita do banco de dados foi excedida (Firebase). Volte amanhã ou faça o upgrade do plano (Blaze).'; setErro(msg);
+      let msg = err.message || 'Erro ao salvar. Tente novamente.'; if(msg.includes('Quota exceeded')) msg = 'A cota diária gratuita do banco de dados foi excedida (Firebase). Volte amanhã ou faça o upgrade do plano (Blaze).'; if(msg.includes('Connection failed') || msg.includes('offline') || msg.includes('network') || msg.includes('Failed to fetch')) msg = 'Sua conexão com o servidor falhou ou oscilou. Verifique sua rede e tente salvar novamente. (Se o erro persistir, aguarde 30 segundos).'; setErro(msg);
       setSalvando(false);
     }
   };

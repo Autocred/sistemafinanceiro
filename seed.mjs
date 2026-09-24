@@ -16,11 +16,11 @@ const db = getFirestore(app);
 
 async function seed() {
   const release = {
-    versao: 'v3.6.14',
-    titulo: 'Fix: Redirecionamento Definitivo para o Dashboard',
-    descricao: 'Corrigido um comportamento onde o React guardava na própria memória da tela (Estado interno) a última aba acessada, ignorando o comando de limpeza de cache.',
+    versao: 'v3.6.15',
+    titulo: 'Tradução Amigável de Erros de Conexão',
+    descricao: 'As vezes a conexão do celular/computador oscila por 1 segundo bem na hora de salvar, e o servidor cospe um erro gringo genérico "Connection failed." na tela.',
     changes: [
-      { tipo: 'correcao', texto: 'Agora o aplicativo força uma mudança imediata de estado interno (setPaginaAtual) no momento exato em que a senha é validada, teletransportando a visão obrigatoriamente para a tela inicial do Dashboard.' }
+      { tipo: 'melhoria', texto: 'Agora o sistema intercepta esse erro e avisa gentilmente em português que houve uma oscilação na rede, pedindo para o usuário tentar novamente.' }
     ],
     dataLancamento: new Date().toISOString(),
     status: 'publicado',
@@ -30,7 +30,7 @@ async function seed() {
     createdAt: Date.now()
   };
 
-  await setDoc(doc(db, 'saas_releases', 'v3.6.14-login-redirect-state'), release);
+  await setDoc(doc(db, 'saas_releases', 'v3.6.15-connection-failed-translate'), release);
   console.log('Seed das atualizacoes com sucesso!');
 }
 
