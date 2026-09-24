@@ -443,7 +443,7 @@ export default function Home() {
       if (lastStr) {
         const last = parseInt(lastStr, 10);
         if (Date.now() - last >= timeoutMs) {
-          setBloqueadoBiometria(true);
+          handleLogout();
           return true;
         }
       }
@@ -871,30 +871,7 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
     }
   }, [autenticado]);
 
-  // Hook de inatividade global
-  useEffect(() => {
-    if (!autenticado || !cfg?.tempoInatividade || cfg.tempoInatividade <= 0) return;
-
-    let timeoutId: NodeJS.Timeout;
-
-    const resetarTimer = () => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => {
-        setBloqueadoInatividade(true);
-        handleLogout();
-      }, cfg.tempoInatividade! * 60 * 1000);
-    };
-
-    const eventos = ['mousemove', 'keydown', 'wheel', 'touchstart', 'click'];
-    
-    eventos.forEach(evento => window.addEventListener(evento, resetarTimer));
-    resetarTimer(); // Inicializa o timer
-
-    return () => {
-      clearTimeout(timeoutId);
-      eventos.forEach(evento => window.removeEventListener(evento, resetarTimer));
-    };
-  }, [autenticado, cfg?.tempoInatividade]);
+  
 
   if (!mounted || authLoading) {
     return (

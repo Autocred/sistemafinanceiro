@@ -210,10 +210,7 @@ export function shouldRunAutoBackup(
   // Have we reached or passed the target time today?
   const isPastTime = (now.getHours() > targetHour) || (now.getHours() === targetHour && now.getMinutes() >= targetMinute);
   
-  if (!isPastTime) {
-    // If it's not yet time today, we don't run it right now.
-    return false;
-  }
+  
   
   if (!ultimoBackupDataHora) {
     return true; // Never backed up before, and we passed the time
@@ -224,6 +221,14 @@ export function shouldRunAutoBackup(
   const lastTime = last.getTime();
   const hoursPassed = (nowTime - lastTime) / (1000 * 60 * 60);
   
+  if (frequencia === 'diario' && hoursPassed > 24) return true;
+  if (frequencia === 'semanal' && hoursPassed > 168) return true;
+  if (frequencia === 'mensal' && hoursPassed > 720) return true;
+
+  if (!isPastTime) {
+    return false;
+  }
+
   if (frequencia === 'diario' && hoursPassed >= 20) return true;
   if (frequencia === 'semanal' && hoursPassed >= 160) return true;
   if (frequencia === 'mensal' && hoursPassed >= 700) return true;

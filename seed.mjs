@@ -15,13 +15,13 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 async function seed() {
-  const release5 = {
-    versao: 'v3.6.5',
-    titulo: 'Identidade White Label na Tela de Login',
-    descricao: 'Correção e reforço na arquitetura White Label: A tela de login agora respeita rigorosamente o nome cadastrado nas configurações individuais de cada licença (Tenant) logo no primeiro acesso.',
+  const release7 = {
+    versao: 'v3.6.7',
+    titulo: 'Melhorias em Logoff e Backups Automaticos',
+    descricao: 'Correcao de bugs relacionados ao logoff por inatividade (que estava deslogando imediatamente ao entrar) e ajustes na engrenagem de backup automatico.',
     changes: [
-      { tipo: 'correcao', texto: 'A tela de login volta a ler instantaneamente o ID da empresa através da URL para exibir a logomarca e o Nome da Empresa customizados antes mesmo do login.' },
-      { tipo: 'melhoria', texto: 'Regra Global de White Label: Estabelecido no sistema que a marca individual tem precedência absoluta sobre o nome padrão do sistema em todas as licenças.' }
+      { tipo: 'correcao', texto: 'Logoff Automatico corrigido. Anteriormente, sessoes antigas podiam acionar o logoff instantaneamente no momento do login.' },
+      { tipo: 'correcao', texto: 'A rotina de backup automatico agora garante a criacao da copia de seguranca caso o sistema nao seja aberto no horario exato estipulado, compensando o atraso na primeira oportunidade.' }
     ],
     dataLancamento: new Date().toISOString(),
     status: 'publicado',
@@ -31,7 +31,7 @@ async function seed() {
     createdAt: Date.now()
   };
 
-  await setDoc(doc(db, 'saas_releases', 'v3.6.5-login-whitelabel'), release5);
+  await setDoc(doc(db, 'saas_releases', 'v3.6.7-logoff-backup'), release7);
   console.log('Seed das atualizacoes com sucesso!');
 }
 
