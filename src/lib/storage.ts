@@ -2,7 +2,7 @@
 
 import {
   collection, doc, getDocs, getDoc, setDoc, updateDoc,
-  deleteDoc, query, orderBy, where, onSnapshot, runTransaction
+  deleteDoc, query, orderBy, where, onSnapshot, runTransaction, limit
 } from 'firebase/firestore';
 import { getDb } from './firebase';
 import {
@@ -115,7 +115,8 @@ function subscribe<T>(
 
 // Subscriptions exportadas
 export function subscribeTransacoes(callback: (data: any[]) => void): Unsubscribe {
-  return subscribe('transacoes', callback, [orderBy('data', 'desc')]);
+  // ATENÇÃO: Limite de 1500 para evitar o consumo de milhões de reads no Firebase.
+  return subscribe('transacoes', callback, [orderBy('data', 'desc'), limit(1500)]);
 }
 
 export function subscribeTransacoesByMes(

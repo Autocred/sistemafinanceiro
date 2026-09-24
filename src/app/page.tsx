@@ -752,8 +752,11 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
               setAutenticado(false);
               setUserProfile(null);
               const { getConfiguracoes, setTenantId } = await import('@/lib/storage');
+              const urlTenant = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('tenant') : null;
               const lastTenantId = typeof window !== 'undefined' ? localStorage.getItem('last_logged_tenantId') : null;
-              if (lastTenantId) {
+              if (urlTenant) {
+                setTenantId(urlTenant);
+              } else if (lastTenantId) {
                 setTenantId(lastTenantId);
               }
               const c = await getConfiguracoes('app').catch(() => null);
@@ -1307,12 +1310,12 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
             <button 
               className="flex items-center justify-center gap-2 w-full mb-6 py-3.5 px-4 transition-all"
               style={{
-                background: 'linear-gradient(180deg, #10b981 0%, #059669 100%)',
+                background: (!userProfile || !userProfile.tenantId || userProfile.tenantId === 'master' || userProfile.uid === 'clovis-master-bypass') ? 'linear-gradient(180deg, #10b981 0%, #059669 100%)' : 'linear-gradient(180deg, var(--primary) 0%, var(--primary-dark) 100%)',
                 color: '#ffffff',
                 border: 'none',
                 borderRadius: '12px',
-                borderBottom: '5px solid #047857',
-                boxShadow: '0 4px 20px rgba(16, 185, 129, 0.4)',
+                borderBottom: (!userProfile || !userProfile.tenantId || userProfile.tenantId === 'master' || userProfile.uid === 'clovis-master-bypass') ? '5px solid #047857' : '5px solid color-mix(in srgb, var(--primary-dark) 80%, black)',
+                boxShadow: (!userProfile || !userProfile.tenantId || userProfile.tenantId === 'master' || userProfile.uid === 'clovis-master-bypass') ? '0 4px 20px rgba(16, 185, 129, 0.4)' : '0 4px 20px var(--primary-light)',
                 fontSize: '15px',
                 fontWeight: 900,
                 cursor: 'pointer',
@@ -1327,7 +1330,7 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
                 e.currentTarget.style.filter = 'brightness(1)';
                 e.currentTarget.style.borderBottomWidth = '5px';
                 e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 20px rgba(16, 185, 129, 0.4)';
+                e.currentTarget.style.boxShadow = (!userProfile || !userProfile.tenantId || userProfile.tenantId === 'master' || userProfile.uid === 'clovis-master-bypass') ? '0 4px 20px rgba(16, 185, 129, 0.4)' : '0 4px 20px var(--primary-light)';
               }}
               onMouseDown={e => {
                 e.currentTarget.style.borderBottomWidth = '0px';
@@ -1337,7 +1340,7 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
               onMouseUp={e => {
                 e.currentTarget.style.borderBottomWidth = '5px';
                 e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 20px rgba(16, 185, 129, 0.4)';
+                e.currentTarget.style.boxShadow = (!userProfile || !userProfile.tenantId || userProfile.tenantId === 'master' || userProfile.uid === 'clovis-master-bypass') ? '0 4px 20px rgba(16, 185, 129, 0.4)' : '0 4px 20px var(--primary-light)';
               }}
               onClick={() => { setMobileMenuAberto(false); setTransacaoEditar(null); setModalAberto(true); }}
             >
