@@ -71,13 +71,13 @@ export default function DashboardMensal() {
   // Dados Filtrados (Ano e Mês)
   const txAno = useMemo(() => {
     const anoStr = String(ano);
-    return transacoes.filter(t => normalizeDate(t.dataCompetencia || t.dataPagamento || t.dataVencimento || t.data || '').startsWith(anoStr));
+    return transacoes.filter(t => normalizeDate(t.dataPagamento || t.dataVencimento || t.data || '').startsWith(anoStr));
   }, [transacoes, ano]);
 
   const txMes = useMemo(() => {
     const mesStr = `${ano}-${String(mes + 1).padStart(2, '0')}`;
     return transacoes.filter(t => {
-      if (!normalizeDate(t.dataCompetencia || t.dataPagamento || t.dataVencimento || t.data || '').startsWith(mesStr)) return false;
+      if (!normalizeDate(t.dataPagamento || t.dataVencimento || t.data || '').startsWith(mesStr)) return false;
       
       if (statusFiltro !== 'Todos') {
         if (statusFiltro === 'pago' && t.status !== 'pago') return false;
@@ -98,12 +98,12 @@ export default function DashboardMensal() {
     const prevM = mes === 0 ? 12 : mes;
     const prevAno = mes === 0 ? ano - 1 : ano;
     const mesStr = `${prevAno}-${String(prevM).padStart(2, '0')}`;
-    return transacoes.filter(t => normalizeDate(t.dataCompetencia || t.dataPagamento || t.dataVencimento || t.data || '').startsWith(mesStr));
+    return transacoes.filter(t => normalizeDate(t.dataPagamento || t.dataVencimento || t.data || '').startsWith(mesStr));
   }, [transacoes, ano, mes]);
 
   // Cálculos Básicos
-  const despesas = txMes.filter(t => t.tipo === 'despesa' && t.categoriaNome !== 'Pagamento de Fatura' && t.formaPagamento !== 'cartao_credito');
-  const receitas = txMes.filter(t => t.tipo === 'receita');
+  const despesas = txMes.filter(t => t.tipo === 'despesa' && t.status === 'pago' && t.categoriaNome !== 'Pagamento de Fatura' && t.formaPagamento !== 'cartao_credito');
+  const receitas = txMes.filter(t => t.tipo === 'receita' && t.status === 'pago');
   
   const totalDespesas = despesas.reduce((acc, t) => acc + (Number(t.valor) || 0), 0);
   const totalReceitas = receitas.reduce((acc, t) => acc + (Number(t.valor) || 0), 0);
@@ -150,7 +150,7 @@ export default function DashboardMensal() {
       const mesStr = `${ano}-${String(idx + 1).padStart(2, '0')}`;
       
       if (t.tipo !== 'despesa' || t.formaPagamento === 'cartao_credito' || t.categoriaNome === 'Pagamento de Fatura') return false;
-      if (!normalizeDate(t.dataCompetencia || t.dataPagamento || t.dataVencimento || t.data || '').startsWith(mesStr)) return false;
+      if (!normalizeDate(t.dataPagamento || t.dataVencimento || t.data || '').startsWith(mesStr)) return false;
       
       if (statusFiltro !== 'Todos') {
         if (statusFiltro === 'pago' && t.status !== 'pago') return false;
@@ -468,8 +468,8 @@ export default function DashboardMensal() {
             <div className="ind-item"><span>Menor Despesa</span> <b>{formatarMoeda(menorLcto)}</b></div>
             <div className="ind-item"><span>Cat. Mais Gastou</span> <b>{catMaiorGasto?.nome || '-'}</b></div>
             <div className="ind-item"><span>Cat. Menos Gastou</span> <b>{catMenorGasto?.nome || '-'}</b></div>
-            <div className="ind-item"><span>Total Receitas</span> <b style={{color: '#10b981'}}>{formatarMoeda(totalReceitas)}</b></div>
-            <div className="ind-item"><span>Total Despesas</span> <b style={{color: '#ef4444'}}>{formatarMoeda(totalDespesas)}</b></div>
+            <div className="ind-item"><span>Receitas Pagas</span> <b style={{color: '#10b981'}}>{formatarMoeda(totalReceitas)}</b></div>
+            <div className="ind-item"><span>Despesas Pagas</span> <b style={{color: '#ef4444'}}>{formatarMoeda(totalDespesas)}</b></div>
             <div className="ind-item"><span>Saldo do Mês</span> <b style={{color: saldoMes >= 0 ? '#10b981' : '#ef4444'}}>{formatarMoeda(saldoMes)}</b></div>
             <div className="ind-item"><span>Média por Lcto.</span> <b>{qtdDespesas > 0 ? formatarMoeda(totalDespesas / qtdDespesas) : 'R$ 0,00'}</b></div>
           </div>
