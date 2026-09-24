@@ -63,6 +63,7 @@ export async function GET(request: Request) {
       name: nomeSistema,
       short_name: nomeSistema.split(' ')[0], // Primeiro nome
       start_url: `/?tenant=${tenant}`,
+      id: `/?tenant=${tenant}`,
       icons: fotoPerfil ? [
         {
           src: fotoPerfil, // Base64 ou URL do Firebase Storage da foto

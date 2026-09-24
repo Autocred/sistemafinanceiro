@@ -15,13 +15,13 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 async function seed() {
-  const release7 = {
-    versao: 'v3.6.7',
-    titulo: 'Melhorias em Logoff e Backups Automaticos',
-    descricao: 'Correcao de bugs relacionados ao logoff por inatividade (que estava deslogando imediatamente ao entrar) e ajustes na engrenagem de backup automatico.',
+  const release8 = {
+    versao: 'v3.6.8',
+    titulo: 'Isolamento de Aplicativos PWA por Licenca',
+    descricao: 'Os aplicativos instalados no computador ou celular agora sao completamente isolados pelo sistema. Cada icone abrira estritamente a licenca e tela de login correspondentes.',
     changes: [
-      { tipo: 'correcao', texto: 'Logoff Automatico corrigido. Anteriormente, sessoes antigas podiam acionar o logoff instantaneamente no momento do login.' },
-      { tipo: 'correcao', texto: 'A rotina de backup automatico agora garante a criacao da copia de seguranca caso o sistema nao seja aberto no horario exato estipulado, compensando o atraso na primeira oportunidade.' }
+      { tipo: 'melhoria', texto: 'Inclusao de IDs unicos (PWA Manifest ID) baseados no tenant, forçando o sistema operacional a tratar a Autocred e o Master como softwares instalados separados.' },
+      { tipo: 'correcao', texto: 'A URL de inicio (start_url) agora é amarrada estritamente à licença no momento da instalacao, impedindo que o ultimo acesso sobrescreva o atalho do aplicativo.' }
     ],
     dataLancamento: new Date().toISOString(),
     status: 'publicado',
@@ -31,7 +31,7 @@ async function seed() {
     createdAt: Date.now()
   };
 
-  await setDoc(doc(db, 'saas_releases', 'v3.6.7-logoff-backup'), release7);
+  await setDoc(doc(db, 'saas_releases', 'v3.6.8-pwa-isolation'), release8);
   console.log('Seed das atualizacoes com sucesso!');
 }
 
