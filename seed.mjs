@@ -16,12 +16,11 @@ const db = getFirestore(app);
 
 async function seed() {
   const release = {
-    versao: 'v3.6.12',
-    titulo: 'Otimização Anti-Duplicidade de Cartão',
-    descricao: 'Efetuamos uma varredura rigorosa no código e consertamos um problema silencioso onde certas compras de cartão de crédito não estavam sendo filtradas corretamente pelos painéis de indicadores.',
+    versao: 'v3.6.13',
+    titulo: 'Redirecionamento para o Dashboard no Login',
+    descricao: 'Atendendo a pedidos, o sistema agora irá sempre te jogar direto para a tela inicial (Dashboard) após realizar o login, zerando a memória da última aba que você tinha acessado na sessão anterior.',
     changes: [
-      { tipo: 'correcao', texto: 'Ajuste ortográfico nas engrenagens do Dashboard. As variáveis responsáveis por ignorar "compras individuais no cartão" (para não duplicar com as Faturas Pagas) agora estão interceptando 100% dos lançamentos sem chance de vazamento.' },
-      { tipo: 'melhoria', texto: 'A Auditoria completa de compilação (Build Test) foi concluída sem apontar nenhum erro interno. Todo o SaaS e os Tenants estão rodando na mesma lógica.' }
+      { tipo: 'melhoria', texto: 'Injetado comando de redirecionamento global no motor de Login. Sempre que houver uma nova autenticação, a aba (paginaAtual) será automaticamente cravada como "dashboard", forçando o usuário a começar da visão global.' }
     ],
     dataLancamento: new Date().toISOString(),
     status: 'publicado',
@@ -31,7 +30,7 @@ async function seed() {
     createdAt: Date.now()
   };
 
-  await setDoc(doc(db, 'saas_releases', 'v3.6.12-anti-duplicidade'), release);
+  await setDoc(doc(db, 'saas_releases', 'v3.6.13-login-redirect'), release);
   console.log('Seed das atualizacoes com sucesso!');
 }
 

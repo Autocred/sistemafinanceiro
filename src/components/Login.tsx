@@ -12,6 +12,7 @@ import { Fingerprint } from 'lucide-react';
   const saveSessionProfile = (p: AppUser) => {
     if (typeof window !== 'undefined') {
       sessionStorage.setItem('active_session_auth', 'true');
+      sessionStorage.setItem('paginaAtual', 'dashboard');
       sessionStorage.setItem('active_session_profile', JSON.stringify(p));
       localStorage.setItem('active_session_profile', JSON.stringify(p));
       localStorage.setItem('last_activity_timestamp', Date.now().toString());
@@ -54,6 +55,7 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
           const user = JSON.parse(impUser);
           console.log("[LOGIN] Auto-login via impersonation ativado para o tenant", impTenant);
           sessionStorage.setItem('active_session_auth', 'true');
+      sessionStorage.setItem('paginaAtual', 'dashboard');
           saveSessionProfile(user); onLogin(user);
           return; // Para não iniciar biometria
         }
@@ -104,6 +106,7 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
            lastLogin: loginTime
         };
         sessionStorage.setItem('active_session_auth', 'true');
+      sessionStorage.setItem('paginaAtual', 'dashboard');
         saveSessionProfile(fakeMaster); onLogin(fakeMaster);
      } else {
         setErro('Biometria falhou ou foi cancelada.');
@@ -139,6 +142,7 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
           if (data.status === 'aprovado') {
              console.log("[LOGIN] Usuário aprovado pelo admin em tempo real! Entrando...");
              sessionStorage.setItem('active_session_auth', 'true');
+      sessionStorage.setItem('paginaAtual', 'dashboard');
              saveSessionProfile(data); onLogin(data);
           } else if (data.status === 'recusado' || data.status === 'desativado') {
              setPerfilStatus(data);
@@ -182,6 +186,7 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
          setSucesso('Senha atualizada! Entrando...');
          setTimeout(() => {
            sessionStorage.setItem('active_session_auth', 'true');
+      sessionStorage.setItem('paginaAtual', 'dashboard');
            saveSessionProfile(tempProfile); onLogin(tempProfile);
          }, 1200);
       }
@@ -276,6 +281,7 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
               lastLogin: loginTime
            };
            sessionStorage.setItem('active_session_auth', 'true');
+      sessionStorage.setItem('paginaAtual', 'dashboard');
            saveSessionProfile(fakeMaster); onLogin(fakeMaster);
            return;
         }
@@ -287,6 +293,7 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
            console.log("[LOGIN] Login Autocred Grando ativado!");
            sessionStorage.removeItem('master_bypass');
            sessionStorage.setItem('active_session_auth', 'true');
+      sessionStorage.setItem('paginaAtual', 'dashboard');
            const loginTime = new Date().toISOString();
 
            try {
@@ -311,6 +318,7 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
               lastLogin: loginTime
            };
            sessionStorage.setItem('active_session_auth', 'true');
+      sessionStorage.setItem('paginaAtual', 'dashboard');
            saveSessionProfile(grandoUser); onLogin(grandoUser);
            return;
         }
@@ -452,6 +460,7 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
          setSucesso("Sucesso! Entrando não sistema...");
          setTimeout(() => {
            sessionStorage.setItem('active_session_auth', 'true');
+      sessionStorage.setItem('paginaAtual', 'dashboard');
            saveSessionProfile(profile); onLogin(profile);
          }, 1200);
       } else if (profile.role === 'user') {
@@ -460,6 +469,7 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
            setSucesso("Sucesso! Entrando não sistema...");
            setTimeout(() => {
              sessionStorage.setItem('active_session_auth', 'true');
+      sessionStorage.setItem('paginaAtual', 'dashboard');
              saveSessionProfile(profile); onLogin(profile);
            }, 1200);
          } else if (profile.status === 'pendente') {
