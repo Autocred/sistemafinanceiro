@@ -20,7 +20,8 @@ import { Fingerprint } from 'lucide-react';
   };
 
 export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoApp, onLogin: (profile: AppUser) => void }) {
-  const [modo, setModo] = useState<'login' | 'cadastro' | 'recuperar'>('login');
+  const [modo, setModo] = useState<'login' | 'cadastro' | 'recuperar' | 'pin'>('login');
+  const [pinDigitado, setPinDigitado] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
@@ -72,6 +73,46 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
         }, 500);
      }
   }, []);
+
+  
+  const handlePinUnlock = async (digito: string) => {
+    if (modo !== 'pin') return;
+    const novoPin = pinDigitado + digito;
+    setPinDigitado(novoPin);
+    
+    if (novoPin.length === 4) {
+      setLoading(true);
+      setErro('');
+      const pinSalvo = localStorage.getItem('app_pin_code');
+      if (novoPin === pinSalvo) {
+         try {
+            const savedEmail = localStorage.getItem('saved_email_apk');
+            const savedPass = localStorage.getItem('saved_password_apk');
+            if (!savedEmail || !savedPass) throw new Error("Credenciais não encontradas");
+            
+            const auth = getFirebaseAuth();
+            const cred = await signInWithEmailAndPassword(auth, savedEmail, atob(savedPass));
+            
+            // Depois do login no firebase auth, o app redireciona/carrega normal.
+            // Para não bugar, simulamos o handleSubmit aqui apenas forçando o recarregamento,
+            // OU apenas deixamos a página renderizar usando o reload (mais seguro).
+            window.location.reload();
+         } catch(e) {
+            setErro('Erro ao restaurar a sessão.');
+            setPinDigitado('');
+            setLoading(false);
+         }
+      } else {
+         setErro('PIN incorreto!');
+         setPinDigitado('');
+         setLoading(false);
+      }
+    }
+  };
+
+  const handlePinApagar = () => {
+    setPinDigitado(prev => prev.slice(0, -1));
+  };
 
   const handleBiometricLogin = async () => {
      setErro('');
