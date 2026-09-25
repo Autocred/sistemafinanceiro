@@ -940,12 +940,12 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
 
         return (
           <div style={{ background: '#1e293b', borderRadius: 12, padding: 20, marginBottom: 24, boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <Bell size={20} color="#f87171" />
                 <h3 style={{ margin: 0, color: 'white', fontSize: 16 }}>Alertas de Vencimento ({todosAlertas.length})</h3>
               </div>
-              <div style={{ display: 'flex', gap: 12, fontSize: 11, fontWeight: 700 }}>
+              <div className="flex flex-wrap gap-3 text-[11px] font-bold">
                 <span style={{ color: '#ef4444', display: 'flex', alignItems: 'center', gap: 4 }}><span style={{width: 8, height: 8, borderRadius: '50%', background: '#ef4444'}}></span> VENCIDO</span>
                 <span style={{ color: '#f59e0b', display: 'flex', alignItems: 'center', gap: 4 }}><span style={{width: 8, height: 8, borderRadius: '50%', background: '#f59e0b'}}></span> HOJE</span>
                 <span style={{ color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: 4 }}><span style={{width: 8, height: 8, borderRadius: '50%', background: 'var(--primary)'}}></span> AMANHÃ</span>
@@ -961,30 +961,44 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
                   <div 
                     key={t.id || idx}
                     onClick={() => onEditarLancamento && onEditarLancamento(t)}
-                    style={{ 
-                      display: 'grid', gridTemplateColumns: '80px 100px 1fr 140px 120px', alignItems: 'center', gap: 16,
-                      background: 'rgba(255,255,255,0.05)', padding: '12px 16px', borderRadius: 8, cursor: 'pointer',
-                      border: '1px solid rgba(255,255,255,0.1)', transition: 'background 0.2s ease'
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
-                    onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                    className="flex flex-col md:flex-row items-start md:items-center gap-3 md:gap-4 bg-white/5 hover:bg-white/10 p-3 md:p-4 rounded-lg cursor-pointer border border-white/10 transition-colors relative"
                   >
-                    <span style={{ background: badge.bg, color: badge.text, padding: '4px 8px', borderRadius: 12, fontSize: 10, fontWeight: 800, textAlign: 'center' }}>
-                      {t._alertStatus}
-                    </span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: isPagar ? '#ef4444' : '#10b981', fontSize: 12, fontWeight: 600 }}>
-                      {isPagar ? <ArrowDownRight size={14} /> : <ArrowUpRight size={14} />}
-                      {isPagar ? 'Pagar' : 'Receber'}
-                    </span>
-                    <div style={{ color: 'white', fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {t.descricao} <span style={{ color: '#94a3b8', fontSize: 12, fontWeight: 400 }}>• {t.clienteNome || t.fornecedorNome || t.categoriaNome || ''}</span>
+                    {/* Top Row on Mobile, Left Column on Desktop */}
+                    <div className="flex items-center gap-3 w-full md:w-[196px] shrink-0 justify-between md:justify-start">
+                      <div className="flex items-center gap-3">
+                        <span style={{ background: badge.bg, color: badge.text, padding: '4px 8px', borderRadius: 12, fontSize: 10, fontWeight: 800, textAlign: 'center', width: 80 }}>
+                          {t._alertStatus}
+                        </span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: isPagar ? '#ef4444' : '#10b981', fontSize: 12, fontWeight: 600, width: 100 }}>
+                          {isPagar ? <ArrowDownRight size={14} /> : <ArrowUpRight size={14} />}
+                          {isPagar ? 'Pagar' : 'Receber'}
+                        </span>
+                      </div>
+                      
+                      {/* Show value on top right in mobile only */}
+                      <div className="md:hidden">
+                        <span style={{ background: isPagar ? '#ef4444' : '#10b981', color: 'white', padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 800 }}>
+                          <span className="valor-sensivel">{formatarMoeda(Math.abs(t.valor))}</span>
+                        </span>
+                      </div>
                     </div>
-                    <span style={{ color: '#94a3b8', fontSize: 12 }}>
-                      Vence: {format(new Date((t.dataVencimento || t.data) + 'T12:00:00'), 'dd/MM/yyyy')}
-                    </span>
-                    <span style={{ background: isPagar ? '#ef4444' : '#10b981', color: 'white', padding: '6px 12px', borderRadius: 20, fontSize: 13, fontWeight: 800, textAlign: 'right', display: 'flex', justifyContent: 'center' }}>
-                      <span className="valor-sensivel">{formatarMoeda(Math.abs(t.valor))}</span>
-                    </span>
+
+                    {/* Middle Column on Desktop, Second Row on Mobile */}
+                    <div className="flex-1 min-w-0 flex flex-col md:flex-row md:items-center justify-between gap-1 md:gap-2 w-full">
+                       <div style={{ color: 'white', fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>
+                        {t.descricao} <span style={{ color: '#94a3b8', fontSize: 12, fontWeight: 400 }}>• {t.clienteNome || t.fornecedorNome || t.categoriaNome || ''}</span>
+                       </div>
+                       <span style={{ color: '#94a3b8', fontSize: 12, width: 'auto', textAlign: 'left' }} className="md:text-center shrink-0">
+                        Vence: {format(new Date((t.dataVencimento || t.data) + 'T12:00:00'), 'dd/MM/yyyy')}
+                       </span>
+                    </div>
+
+                    {/* Right Column on Desktop (Value) - Hidden on Mobile */}
+                    <div className="hidden md:flex shrink-0 w-[120px] justify-center">
+                      <span style={{ background: isPagar ? '#ef4444' : '#10b981', color: 'white', padding: '6px 12px', borderRadius: 20, fontSize: 13, fontWeight: 800 }}>
+                        <span className="valor-sensivel">{formatarMoeda(Math.abs(t.valor))}</span>
+                      </span>
+                    </div>
                   </div>
                 );
               })}
