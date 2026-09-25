@@ -65,13 +65,19 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
       }
     }
 
-     if (typeof window !== 'undefined' && isBiometriaHabilitada()) {
+     if (typeof window !== 'undefined') {
+      const pinSalvo = localStorage.getItem('app_pin_code');
+      const savedPass = localStorage.getItem('saved_password_apk');
+      const savedEmail = localStorage.getItem('saved_email_apk');
+      if (pinSalvo && savedPass && savedEmail) {
+        setModo('pin');
+      } else if (isBiometriaHabilitada()) {
         setTemBiometria(true);
-        // Tenta auto-acionar a biometria com pequenão delay para o navegador inicializar
         setTimeout(() => {
           handleBiometricLogin();
         }, 500);
-     }
+      }
+    }
   }, []);
 
   
