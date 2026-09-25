@@ -11,15 +11,16 @@ const db = getFirestore(app);
 
 async function run() {
   await addDoc(collection(db, 'saas_releases'), {
-    version: '1.4.2',
+    version: '1.4.3',
     date: new Date().toISOString(),
-    title: 'Correção de Visualização de Transferências',
-    description: 'Ajuste definitivo para exibir a Conta Destino corretamente nas tags de transferência, eliminando caracteres estranhos e restaurando o nome da conta de destino.',
+    title: 'Novo Desbloqueio por PIN de 4 Dígitos',
+    description: 'Criado sistema de PIN rápido (estilo app de banco) para contornar bloqueios de biometria nativa em aplicativos gerados via WebViews (ex: Appilix).',
     features: [
-      'Correção do ícone da seta de origem/destino',
-      'Correção do nome da conta destino (ex: Conta Santander -> Carteira dinheiro)'
+      'Novo teclado numérico virtual elegante e responsivo na tela de bloqueio.',
+      'Possibilidade de cadastrar um PIN fixo nas configurações.',
+      'Funciona 100% offline no WebView, acelerando o login sem precisar digitar a senha completa.'
     ],
-    type: 'bugfix'
+    type: 'feature'
   });
   console.log('Release notes added!');
   process.exit(0);
