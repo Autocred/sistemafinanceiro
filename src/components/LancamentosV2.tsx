@@ -279,101 +279,104 @@ const openSafeAttachment = (url: string) => {
   };
 
   // Filtrar base (todos, o filtro refinado cuida do resto). Esconde Juros da Fatura para não poluir a tela.
-  const filtradasBase = transacoes.filter(t => !(t.faturaId && t.descricao.startsWith('Juros/Multa')));
-
-  const filtradasSemOrdem = filtradasBase.filter(t => {
-    const rawRef = filtroData === 'lancamento' ? (t.dataPagamento || t.dataLancamento || t.data) : (t.dataVencimento || t.data);
-    const dataRef = normalizeDate(rawRef);
+  const filtradas = React.useMemo(() => {
+    const filtradasBase = transacoes.filter(t => !(t.faturaId && t.descricao.startsWith('Juros/Multa')));
     
-    let naoPeriodo = true;
-    const hojeData = new Date();
-    const hojeStr = format(hojeData, 'yyyy-MM-dd');
-    if (periodoFiltro === 'hoje') {
-      naoPeriodo = dataRef === hojeStr;
-    } else if (periodoFiltro === '2dias') {
-      const hoje = format(hojeData, 'yyyy-MM-dd');
-      const doisDiasFrente = format(new Date(hojeData.getTime() + 2 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
-      naoPeriodo = dataRef >= hoje && dataRef <= doisDiasFrente;
-    } else if (periodoFiltro === 'semana') {
-      const inicioSemana = format(startOfWeek(hojeData, { weekStartsOn: 1 }), 'yyyy-MM-dd');
-      const fimSemana = format(endOfWeek(hojeData, { weekStartsOn: 1 }), 'yyyy-MM-dd');
-      naoPeriodo = dataRef >= inicioSemana && dataRef <= fimSemana;
-    } else if (periodoFiltro === 'mes') {
-      const inicioMes = format(startOfMonth(hojeData), 'yyyy-MM-dd');
-      const fimMes = format(endOfMonth(hojeData), 'yyyy-MM-dd');
-      naoPeriodo = dataRef >= inicioMes && dataRef <= fimMes;
-    } else if (periodoFiltro === 'ano') {
-      const anoAtual = format(hojeData, 'yyyy');
-      naoPeriodo = String(dataRef || '').startsWith(anoAtual);
-    } else if (periodoFiltro === 'data_especifica') {
-      const dataItem = dataRef || '';
-      if (dataEspecificaInicio && dataEspecificaFim) {
-        naoPeriodo = dataItem >= dataEspecificaInicio && dataItem <= dataEspecificaFim;
-      } else if (dataEspecificaInicio) {
-        naoPeriodo = dataItem >= dataEspecificaInicio;
-      } else if (dataEspecificaFim) {
-        naoPeriodo = dataItem <= dataEspecificaFim;
-      } else {
-        naoPeriodo = true;
-      }
-    }
-
-    // Pesquisa Inteligente Unificada
-    const matchBusca = !busca || [
-      t.descricao, t.fornecedorNome, t.clienteNome, t.categoriaNome, t.contaNome, t.observacoes, String(t.valor)
-    ].some(v => v?.toLowerCase()?.includes(busca.toLowerCase()));
+      const filtradasSemOrdem = filtradasBase.filter(t => {
+        const rawRef = filtroData === 'lancamento' ? (t.dataPagamento || t.dataLancamento || t.data) : (t.dataVencimento || t.data);
+        const dataRef = normalizeDate(rawRef);
+        
+        let naoPeriodo = true;
+        const hojeData = new Date();
+        const hojeStr = format(hojeData, 'yyyy-MM-dd');
+        if (periodoFiltro === 'hoje') {
+          naoPeriodo = dataRef === hojeStr;
+        } else if (periodoFiltro === '2dias') {
+          const hoje = format(hojeData, 'yyyy-MM-dd');
+          const doisDiasFrente = format(new Date(hojeData.getTime() + 2 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
+          naoPeriodo = dataRef >= hoje && dataRef <= doisDiasFrente;
+        } else if (periodoFiltro === 'semana') {
+          const inicioSemana = format(startOfWeek(hojeData, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+          const fimSemana = format(endOfWeek(hojeData, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+          naoPeriodo = dataRef >= inicioSemana && dataRef <= fimSemana;
+        } else if (periodoFiltro === 'mes') {
+          const inicioMes = format(startOfMonth(hojeData), 'yyyy-MM-dd');
+          const fimMes = format(endOfMonth(hojeData), 'yyyy-MM-dd');
+          naoPeriodo = dataRef >= inicioMes && dataRef <= fimMes;
+        } else if (periodoFiltro === 'ano') {
+          const anoAtual = format(hojeData, 'yyyy');
+          naoPeriodo = String(dataRef || '').startsWith(anoAtual);
+        } else if (periodoFiltro === 'data_especifica') {
+          const dataItem = dataRef || '';
+          if (dataEspecificaInicio && dataEspecificaFim) {
+            naoPeriodo = dataItem >= dataEspecificaInicio && dataItem <= dataEspecificaFim;
+          } else if (dataEspecificaInicio) {
+            naoPeriodo = dataItem >= dataEspecificaInicio;
+          } else if (dataEspecificaFim) {
+            naoPeriodo = dataItem <= dataEspecificaFim;
+          } else {
+            naoPeriodo = true;
+          }
+        }
     
-    // Múltipla escolha:
-    const showAll = filtrosAtivos.includes('todos');
+        // Pesquisa Inteligente Unificada
+        const matchBusca = !busca || [
+          t.descricao, t.fornecedorNome, t.clienteNome, t.categoriaNome, t.contaNome, t.observacoes, String(t.valor)
+        ].some(v => v?.toLowerCase()?.includes(busca.toLowerCase()));
+        
+        // Múltipla escolha:
+        const showAll = filtrosAtivos.includes('todos');
+        
+        // Tipo:
+        const checkReceita = filtrosAtivos.includes('receita');
+        const checkDespesa = filtrosAtivos.includes('despesa');
+          const checkTransferencia = filtrosAtivos.includes('transferencia');
+          const checkCartao = filtrosAtivos.includes('cartao');
+          let matchTipo = true;
+          if (!showAll && (checkReceita || checkDespesa || checkTransferencia || checkCartao)) {
+            matchTipo = (checkReceita && t.tipo === 'receita') || (checkDespesa && t.tipo === 'despesa') || (checkTransferencia && t.tipo === 'transferencia') || (checkCartao && t.formaPagamento === 'cartao_credito');
+          }
     
-    // Tipo:
-    const checkReceita = filtrosAtivos.includes('receita');
-    const checkDespesa = filtrosAtivos.includes('despesa');
-      const checkTransferencia = filtrosAtivos.includes('transferencia');
-      const checkCartao = filtrosAtivos.includes('cartao');
-      let matchTipo = true;
-      if (!showAll && (checkReceita || checkDespesa || checkTransferencia || checkCartao)) {
-        matchTipo = (checkReceita && t.tipo === 'receita') || (checkDespesa && t.tipo === 'despesa') || (checkTransferencia && t.tipo === 'transferencia') || (checkCartao && t.formaPagamento === 'cartao_credito');
-      }
-
-    // Status:
-    const checkPago = filtrosAtivos.includes('pago');
-    const checkPendente = filtrosAtivos.includes('pendente');
-    const checkVencido = filtrosAtivos.includes('vencido');
-    let matchStatus = true;
-    if (!showAll && (checkPago || checkPendente || checkVencido)) {
-      const isPago = t.status === 'pago';
-      let isPend = false;
-      if (t.formaPagamento === 'cartao_credito') {
-        isPend = checkCartaoPendente(t);
-      } else {
-        isPend = t.status === 'pendente' || t.status === 'atrasado';
-      }
-      const dVenc = normalizeDate(t.dataVencimento || t.data || '');
-      let isVenc = (t.status === 'atrasado' || t.status === 'pendente') && dVenc !== '' && dVenc < hojeStr;
-      if (t.formaPagamento === 'cartao_credito' && !t.descricao.toLowerCase().includes('fatura')) {
-        isVenc = false;
-      }
-      
-      matchStatus = (checkPago && isPago) || (checkPendente && isPend) || (checkVencido && isVenc);
-    }
+        // Status:
+        const checkPago = filtrosAtivos.includes('pago');
+        const checkPendente = filtrosAtivos.includes('pendente');
+        const checkVencido = filtrosAtivos.includes('vencido');
+        let matchStatus = true;
+        if (!showAll && (checkPago || checkPendente || checkVencido)) {
+          const isPago = t.status === 'pago';
+          let isPend = false;
+          if (t.formaPagamento === 'cartao_credito') {
+            isPend = checkCartaoPendente(t);
+          } else {
+            isPend = t.status === 'pendente' || t.status === 'atrasado';
+          }
+          const dVenc = normalizeDate(t.dataVencimento || t.data || '');
+          let isVenc = (t.status === 'atrasado' || t.status === 'pendente') && dVenc !== '' && dVenc < hojeStr;
+          if (t.formaPagamento === 'cartao_credito' && !t.descricao.toLowerCase().includes('fatura')) {
+            isVenc = false;
+          }
+          
+          matchStatus = (checkPago && isPago) || (checkPendente && isPend) || (checkVencido && isVenc);
+        }
+        
+        // Recorrente:
+        const checkRecorrente = filtrosAtivos.includes('recorrente');
+        let matchRecorrente = true;
+        if (!showAll && checkRecorrente) {
+          matchRecorrente = t.recorrente === true;
+        }
     
-    // Recorrente:
-    const checkRecorrente = filtrosAtivos.includes('recorrente');
-    let matchRecorrente = true;
-    if (!showAll && checkRecorrente) {
-      matchRecorrente = t.recorrente === true;
-    }
-
-    const matchCat = !filtroCategoria || t.categoriaNome === filtroCategoria;
-    const matchCC = !filtroCC || t.centroCustoNome === filtroCC;
-    const matchCont = !filtroContato || t.fornecedorNome === filtroContato || t.clienteNome === filtroContato;
-    return naoPeriodo && matchBusca && matchTipo && matchStatus && matchRecorrente && matchCat && matchCC && matchCont;
-  });
-
-  const filtradas = filtroData === 'vencimento' 
-    ? ordenarVencimentosAsc(filtradasSemOrdem)
-    : ordenarMovimentacoesDesc(filtradasSemOrdem);
+        const matchCat = !filtroCategoria || t.categoriaNome === filtroCategoria;
+        const matchCC = !filtroCC || t.centroCustoNome === filtroCC;
+        const matchCont = !filtroContato || t.fornecedorNome === filtroContato || t.clienteNome === filtroContato;
+        return naoPeriodo && matchBusca && matchTipo && matchStatus && matchRecorrente && matchCat && matchCC && matchCont;
+      });
+    
+      const filtradasTemp = filtroData === 'vencimento' 
+        ? ordenarVencimentosAsc(filtradasSemOrdem)
+        : ordenarMovimentacoesDesc(filtradasSemOrdem);
+    return filtradasTemp;
+  }, [transacoes, filtroData, periodoFiltro, busca, filtrosAtivos, filtroCategoria, filtroCC, filtroContato, dataEspecificaInicio, dataEspecificaFim, faturas]);
 
   const {
     totalReceitas, receitasPagas, receitasPendentes,
@@ -383,7 +386,7 @@ const openSafeAttachment = (url: string) => {
     despesasAPagarTotal, despesasAPagarTotal: despesasAPagar,
     totalDespesas,
     saldoProjetado: saldo
-  } = calcularTotais(filtradas, faturas);
+  } = React.useMemo(() => calcularTotais(filtradas, faturas), [filtradas, faturas]);
   const fmt = formatarMoeda;
 
   const checkSenha = () => {

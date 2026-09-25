@@ -108,121 +108,142 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
   }, [transacoesMes, contas, faturas, loading, mesSelecionado]);
 
   // ================= CÃLCULO DOS INDICADORES CRÃTICOS: A PAGAR E A RECEBER =================
-  const hojeDataDashboard = new Date();
-    const hojeStrDashboard = format(hojeDataDashboard, 'yyyy-MM-dd');
+  const dashboardMetrics = useMemo<any>(() => {
+    const hojeDataDashboard = new Date();
+        const hojeStrDashboard = format(hojeDataDashboard, 'yyyy-MM-dd');
+        
+        // Helper: verifica se uma data (que pode conter horário, ex: "2026-09-04T17:00:00") corresponde a hoje
+        const isDataHoje = (dt: string | undefined | null): boolean => {
+          if (!dt) return false;
+          return dt === hojeStrDashboard || dt.startsWith(hojeStrDashboard + 'T');
+        };
+        
+        const recebidosHoje = todasTransacoes
+          .filter(t => t.tipo === 'receita' && t.status === 'pago' && (isDataHoje(t.dataPagamento) || (!t.dataPagamento && t.data === hojeStrDashboard)))
+          .reduce((acc, t) => acc + getValorFinal(t), 0);
+          
+        // Transações de despesa pagas hoje
+        // Exclui transações originais de cartão de crédito (formaPagamento='cartao_credito') 
+        // pois ao pagar a fatura, o sistema cria débitos bancários separados + marca as originais como pagas,
+        // o que causaria duplicidade. Apenas os débitos bancários devem ser contabilizados.
+        const pagosHoje = todasTransacoes
+          .filter(t => t.tipo === 'despesa' && t.status === 'pago' && t.formaPagamento !== 'cartao_credito' && (isDataHoje(t.dataPagamento) || (!t.dataPagamento && t.data === hojeStrDashboard)))
+          .reduce((acc, t) => acc + getValorFinal(t), 0);
     
-    // Helper: verifica se uma data (que pode conter horário, ex: "2026-09-04T17:00:00") corresponde a hoje
-    const isDataHoje = (dt: string | undefined | null): boolean => {
-      if (!dt) return false;
-      return dt === hojeStrDashboard || dt.startsWith(hojeStrDashboard + 'T');
+        const inicioSemana = format(startOfWeek(hojeDataDashboard, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+        const fimSemana = format(endOfWeek(hojeDataDashboard, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+        const mesAtualStrDashboard = format(hojeDataDashboard, 'yyyy-MM');
+    
+        const recebidosSemana = todasTransacoes
+          .filter(t => t.tipo === 'receita' && t.status === 'pago')
+          .filter(t => {
+            const d = (t.dataPagamento || t.data || '').split('T')[0];
+            return d >= inicioSemana && d <= fimSemana;
+          })
+          .reduce((acc, t) => acc + getValorFinal(t), 0);
+    
+        const pagosSemana = todasTransacoes
+          .filter(t => t.tipo === 'despesa' && t.status === 'pago' && t.formaPagamento !== 'cartao_credito')
+          .filter(t => {
+            const d = (t.dataPagamento || t.data || '').split('T')[0];
+            return d >= inicioSemana && d <= fimSemana;
+          })
+          .reduce((acc, t) => acc + getValorFinal(t), 0);
+    
+        const recebidosMes = todasTransacoes
+          .filter(t => t.tipo === 'receita' && t.status === 'pago')
+          .filter(t => {
+            const d = (t.dataPagamento || t.data || '').split('T')[0];
+            return d.startsWith(mesAtualStrDashboard);
+          })
+          .reduce((acc, t) => acc + getValorFinal(t), 0);
+    
+        const pagosMes = todasTransacoes
+          .filter(t => t.tipo === 'despesa' && t.status === 'pago' && t.formaPagamento !== 'cartao_credito')
+          .filter(t => {
+            const d = (t.dataPagamento || t.data || '').split('T')[0];
+            return d.startsWith(mesAtualStrDashboard);
+          })
+          .reduce((acc, t) => acc + getValorFinal(t), 0);
+          
+        const pendentesGlobais = todasTransacoes.filter(t => {
+        if (t.status === 'pago') return false;
+        // Compras individuais de cartão de crédito são pagas na fatura consolidada
+        if (t.formaPagamento === 'cartao_credito' && !t.descricao.toLowerCase().includes('fatura')) return false;
+        return true;
+      });
+    
+      // 1. EM ATRASO (VENCIDAS)
+      const atrasadas = pendentesGlobais.filter(t => {
+        const dt = t.dataVencimento || t.data;
+        return dt && dt < hojeStr;
+      });
+      const atrasadasPagarItems = atrasadas.filter(t => t.tipo === 'despesa');
+      const atrasadasReceberItems = atrasadas.filter(t => t.tipo === 'receita');
+      const atrasadasPagarVal = atrasadasPagarItems.reduce((a, t) => a + getValorFinal(t), 0);
+      const atrasadasReceberVal = atrasadasReceberItems.reduce((a, t) => a + getValorFinal(t), 0);
+    
+      // 2. VENCE HOJE
+      const vencemHoje = pendentesGlobais.filter(t => {
+        const dt = t.dataVencimento || t.data;
+        return dt && dt === hojeStr;
+      });
+      const hojePagarItems = vencemHoje.filter(t => t.tipo === 'despesa');
+      const hojeReceberItems = vencemHoje.filter(t => t.tipo === 'receita');
+      const hojePagarVal = hojePagarItems.reduce((a, t) => a + getValorFinal(t), 0);
+      const hojeReceberVal = hojeReceberItems.reduce((a, t) => a + getValorFinal(t), 0);
+    
+      // 3. VENCE EM ATÉ 2 DIAS (ANTECIPAÇÃO 48H)
+      const vencem2Dias = pendentesGlobais.filter(t => {
+        const dt = t.dataVencimento || t.data;
+        if (!dt || dt <= hojeStr) return false;
+        const diffMs = new Date(dt + 'T12:00:00').getTime() - hojeDate.getTime();
+        const diffDias = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+        return diffDias > 0 && diffDias <= 2;
+      });
+      const pagar2DiasItems = vencem2Dias.filter(t => t.tipo === 'despesa');
+      const receber2DiasItems = vencem2Dias.filter(t => t.tipo === 'receita');
+      const pagar2DiasVal = pagar2DiasItems.reduce((a, t) => a + getValorFinal(t), 0);
+      const receber2DiasVal = receber2DiasItems.reduce((a, t) => a + getValorFinal(t), 0);
+    
+      // 4. VENCE NA SEMANA (PRÏ¿½ XIMOS 7 DIAS)
+      const vencemSemana = pendentesGlobais.filter(t => {
+        const dt = t.dataVencimento || t.data;
+        if (!dt || dt < hojeStr) return false;
+        const diffMs = new Date(dt + 'T12:00:00').getTime() - hojeDate.getTime();
+        const diffDias = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+        return diffDias > 2 && diffDias <= 7;
+      });
+      const pagarSemanaItems = vencemSemana.filter(t => t.tipo === 'despesa');
+      const receberSemanaItems = vencemSemana.filter(t => t.tipo === 'receita');
+      const pagarSemanaVal = pagarSemanaItems.reduce((a, t) => a + getValorFinal(t), 0);
+      const receberSemanaVal = receberSemanaItems.reduce((a, t) => a + getValorFinal(t), 0);
+    
+      // Acumulados para exibir nos cards da Semana
+      const pagarSemanaAcumulado = atrasadasPagarVal + hojePagarVal + pagar2DiasVal + pagarSemanaVal;
+      const receberSemanaAcumulado = atrasadasReceberVal + hojeReceberVal + receber2DiasVal + receberSemanaVal;
+      const pagarSemanaCountAcumulado = atrasadasPagarItems.length + hojePagarItems.length + pagar2DiasItems.length + pagarSemanaItems.length;
+      const receberSemanaCountAcumulado = atrasadasReceberItems.length + hojeReceberItems.length + receber2DiasItems.length + receberSemanaItems.length;
+    return {
+      recebidosHoje, pagosHoje, recebidosSemana, pagosSemana, recebidosMes, pagosMes,
+      atrasadas, vencemHoje, vencem2Dias, vencemSemana, aReceberAtrasadas, aReceberHoje, aReceber2Dias, aReceberSemana,
+      atrasadasPagarVal, atrasadasPagarItems, hojePagarVal, hojePagarItems,
+      pagar2DiasVal, pagar2DiasItems, pagarSemanaVal, pagarSemanaItems,
+      atrasadasReceberVal, atrasadasReceberItems, hojeReceberVal, hojeReceberItems,
+      receber2DiasVal, receber2DiasItems, receberSemanaVal, receberSemanaItems,
+      pagarSemanaAcumulado, receberSemanaAcumulado, pagarSemanaCountAcumulado, receberSemanaCountAcumulado, hojeStrDashboard
     };
-    
-    const recebidosHoje = todasTransacoes
-      .filter(t => t.tipo === 'receita' && t.status === 'pago' && (isDataHoje(t.dataPagamento) || (!t.dataPagamento && t.data === hojeStrDashboard)))
-      .reduce((acc, t) => acc + getValorFinal(t), 0);
-      
-    // Transações de despesa pagas hoje
-    // Exclui transações originais de cartão de crédito (formaPagamento='cartao_credito') 
-    // pois ao pagar a fatura, o sistema cria débitos bancários separados + marca as originais como pagas,
-    // o que causaria duplicidade. Apenas os débitos bancários devem ser contabilizados.
-    const pagosHoje = todasTransacoes
-      .filter(t => t.tipo === 'despesa' && t.status === 'pago' && t.formaPagamento !== 'cartao_credito' && (isDataHoje(t.dataPagamento) || (!t.dataPagamento && t.data === hojeStrDashboard)))
-      .reduce((acc, t) => acc + getValorFinal(t), 0);
+  }, [todasTransacoes, faturas]);
 
-    const inicioSemana = format(startOfWeek(hojeDataDashboard, { weekStartsOn: 1 }), 'yyyy-MM-dd');
-    const fimSemana = format(endOfWeek(hojeDataDashboard, { weekStartsOn: 1 }), 'yyyy-MM-dd');
-    const mesAtualStrDashboard = format(hojeDataDashboard, 'yyyy-MM');
-
-    const recebidosSemana = todasTransacoes
-      .filter(t => t.tipo === 'receita' && t.status === 'pago')
-      .filter(t => {
-        const d = (t.dataPagamento || t.data || '').split('T')[0];
-        return d >= inicioSemana && d <= fimSemana;
-      })
-      .reduce((acc, t) => acc + getValorFinal(t), 0);
-
-    const pagosSemana = todasTransacoes
-      .filter(t => t.tipo === 'despesa' && t.status === 'pago' && t.formaPagamento !== 'cartao_credito')
-      .filter(t => {
-        const d = (t.dataPagamento || t.data || '').split('T')[0];
-        return d >= inicioSemana && d <= fimSemana;
-      })
-      .reduce((acc, t) => acc + getValorFinal(t), 0);
-
-    const recebidosMes = todasTransacoes
-      .filter(t => t.tipo === 'receita' && t.status === 'pago')
-      .filter(t => {
-        const d = (t.dataPagamento || t.data || '').split('T')[0];
-        return d.startsWith(mesAtualStrDashboard);
-      })
-      .reduce((acc, t) => acc + getValorFinal(t), 0);
-
-    const pagosMes = todasTransacoes
-      .filter(t => t.tipo === 'despesa' && t.status === 'pago' && t.formaPagamento !== 'cartao_credito')
-      .filter(t => {
-        const d = (t.dataPagamento || t.data || '').split('T')[0];
-        return d.startsWith(mesAtualStrDashboard);
-      })
-      .reduce((acc, t) => acc + getValorFinal(t), 0);
-      
-    const pendentesGlobais = todasTransacoes.filter(t => {
-    if (t.status === 'pago') return false;
-    // Compras individuais de cartão de crédito são pagas na fatura consolidada
-    if (t.formaPagamento === 'cartao_credito' && !t.descricao.toLowerCase().includes('fatura')) return false;
-    return true;
-  });
-
-  // 1. EM ATRASO (VENCIDAS)
-  const atrasadas = pendentesGlobais.filter(t => {
-    const dt = t.dataVencimento || t.data;
-    return dt && dt < hojeStr;
-  });
-  const atrasadasPagarItems = atrasadas.filter(t => t.tipo === 'despesa');
-  const atrasadasReceberItems = atrasadas.filter(t => t.tipo === 'receita');
-  const atrasadasPagarVal = atrasadasPagarItems.reduce((a, t) => a + getValorFinal(t), 0);
-  const atrasadasReceberVal = atrasadasReceberItems.reduce((a, t) => a + getValorFinal(t), 0);
-
-  // 2. VENCE HOJE
-  const vencemHoje = pendentesGlobais.filter(t => {
-    const dt = t.dataVencimento || t.data;
-    return dt && dt === hojeStr;
-  });
-  const hojePagarItems = vencemHoje.filter(t => t.tipo === 'despesa');
-  const hojeReceberItems = vencemHoje.filter(t => t.tipo === 'receita');
-  const hojePagarVal = hojePagarItems.reduce((a, t) => a + getValorFinal(t), 0);
-  const hojeReceberVal = hojeReceberItems.reduce((a, t) => a + getValorFinal(t), 0);
-
-  // 3. VENCE EM ATÉ 2 DIAS (ANTECIPAÇÃO 48H)
-  const vencem2Dias = pendentesGlobais.filter(t => {
-    const dt = t.dataVencimento || t.data;
-    if (!dt || dt <= hojeStr) return false;
-    const diffMs = new Date(dt + 'T12:00:00').getTime() - hojeDate.getTime();
-    const diffDias = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-    return diffDias > 0 && diffDias <= 2;
-  });
-  const pagar2DiasItems = vencem2Dias.filter(t => t.tipo === 'despesa');
-  const receber2DiasItems = vencem2Dias.filter(t => t.tipo === 'receita');
-  const pagar2DiasVal = pagar2DiasItems.reduce((a, t) => a + getValorFinal(t), 0);
-  const receber2DiasVal = receber2DiasItems.reduce((a, t) => a + getValorFinal(t), 0);
-
-  // 4. VENCE NA SEMANA (PRÏ¿½ XIMOS 7 DIAS)
-  const vencemSemana = pendentesGlobais.filter(t => {
-    const dt = t.dataVencimento || t.data;
-    if (!dt || dt < hojeStr) return false;
-    const diffMs = new Date(dt + 'T12:00:00').getTime() - hojeDate.getTime();
-    const diffDias = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-    return diffDias > 2 && diffDias <= 7;
-  });
-  const pagarSemanaItems = vencemSemana.filter(t => t.tipo === 'despesa');
-  const receberSemanaItems = vencemSemana.filter(t => t.tipo === 'receita');
-  const pagarSemanaVal = pagarSemanaItems.reduce((a, t) => a + getValorFinal(t), 0);
-  const receberSemanaVal = receberSemanaItems.reduce((a, t) => a + getValorFinal(t), 0);
-
-  // Acumulados para exibir nos cards da Semana
-  const pagarSemanaAcumulado = atrasadasPagarVal + hojePagarVal + pagar2DiasVal + pagarSemanaVal;
-  const receberSemanaAcumulado = atrasadasReceberVal + hojeReceberVal + receber2DiasVal + receberSemanaVal;
-  const pagarSemanaCountAcumulado = atrasadasPagarItems.length + hojePagarItems.length + pagar2DiasItems.length + pagarSemanaItems.length;
-  const receberSemanaCountAcumulado = atrasadasReceberItems.length + hojeReceberItems.length + receber2DiasItems.length + receberSemanaItems.length;
+  const {
+      recebidosHoje, pagosHoje, recebidosSemana, pagosSemana, recebidosMes, pagosMes,
+      atrasadas, vencemHoje, vencem2Dias, vencemSemana, aReceberAtrasadas, aReceberHoje, aReceber2Dias, aReceberSemana,
+      atrasadasPagarVal, atrasadasPagarItems, hojePagarVal, hojePagarItems,
+      pagar2DiasVal, pagar2DiasItems, pagarSemanaVal, pagarSemanaItems,
+      atrasadasReceberVal, atrasadasReceberItems, hojeReceberVal, hojeReceberItems,
+      receber2DiasVal, receber2DiasItems, receberSemanaVal, receberSemanaItems,
+      pagarSemanaAcumulado, receberSemanaAcumulado, pagarSemanaCountAcumulado, receberSemanaCountAcumulado
+    } = dashboardMetrics;
 
   // Alerta Sonoro Automático ao entrar na tela se houver contas críticas
   useEffect(() => {
@@ -255,7 +276,7 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
   };
 
   const mesesStr = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-  const atrasadasForaDoMes = atrasadas.filter(a => !transacoesMes.some(t => t.id === a.id));
+  const atrasadasForaDoMes = (atrasadas as any[]).filter((a: any) => !transacoesMes.some(t => t.id === a.id));
   const isTargetTenant = (() => {
       const tid = getTenantId();
       return tid === 'master' || tid === '9yxuafoC0AV9BrIKem05ponbmgn2' || tid === 'autocred-promotora-de-credito';
