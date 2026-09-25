@@ -74,6 +74,7 @@ export default function Configuracoes() {
   const [novoCargo, setNovoCargo] = useState('');
   
   const [biometriaAtiva, setBiometriaAtiva] = useState<boolean>(false);
+  const [pinAtivo, setPinAtivo] = useState<boolean>(false);
   const [biometriaLoading, setBiometriaLoading] = useState(false);
   const [versaoUi, setVersaoUi] = useState<string>('v2');
   
@@ -102,6 +103,7 @@ export default function Configuracoes() {
       const configDB = await getConfiguracoes(uid);
       setCfg(configDB);
       setBiometriaAtiva(isBiometriaHabilitada());
+      setPinAtivo(!!localStorage.getItem('app_pin_code'));
       
       if (!isBypassAtivo && auth.currentUser) {
          const p = await getUserProfile(auth.currentUser.uid);
