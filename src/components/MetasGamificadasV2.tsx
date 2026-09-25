@@ -60,17 +60,28 @@ interface KpiCardProps {
   border?: string;
 }
 
-function KpiCard({ icon, label, value, sub, color = '#fff', bg = 'rgba(255,255,255,0.05)', border = 'rgba(255,255,255,0.1)' }: KpiCardProps) {
+function KpiCard({ icon, label, value, sub, color = '#fff' }: KpiCardProps) {
   return (
     <div style={{
-      background: bg, border: `1px solid ${border}`,
-      borderRadius: 12, padding: '14px 16px'
+      background: 'rgba(255, 255, 255, 0.015)', 
+      border: '1px solid rgba(255, 255, 255, 0.04)',
+      borderRadius: 14, 
+      padding: '16px 20px',
+      position: 'relative',
+      overflow: 'hidden',
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'center',
+      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)'
     }}>
-      <div style={{ fontSize: 11, color: '#93c5fd', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-        {icon} {label}
+      {/* Indicador de cor sutil na lateral */}
+      {color !== '#fff' && <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, background: color, opacity: 0.6 }} />}
+
+      <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+        <span style={{ color: color !== '#fff' ? color : '#94a3b8', display: 'flex', opacity: 0.8 }}>{icon}</span> {label}
       </div>
-      <div style={{ fontSize: 22, fontWeight: 900, color }}>{value}</div>
-      {sub && <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 3 }}>{sub}</div>}
+      <div style={{ fontSize: 24, fontWeight: 800, color, letterSpacing: '-0.5px' }}>{value}</div>
+      {sub && <div style={{ fontSize: 12, color: '#64748b', marginTop: 4, fontWeight: 500 }}>{sub}</div>}
     </div>
   );
 }
