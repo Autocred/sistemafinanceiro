@@ -68,15 +68,14 @@ export async function GET(request: Request) {
         {
           src: fotoPerfil, // Base64 ou URL do Firebase Storage da foto
           sizes: "192x192",
-          type: fotoPerfil.startsWith('data:image/svg') ? 'image/svg+xml' : (fotoPerfil.startsWith('data:image/jpeg') ? 'image/jpeg' : 'image/png'),
           purpose: "any"
         },
         {
           src: fotoPerfil,
           sizes: "512x512",
-          type: fotoPerfil.startsWith('data:image/svg') ? 'image/svg+xml' : (fotoPerfil.startsWith('data:image/jpeg') ? 'image/jpeg' : 'image/png'),
           purpose: "any"
-        }
+        },
+        ...defaultManifest.icons
       ] : defaultManifest.icons
     };
 
