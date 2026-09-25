@@ -226,7 +226,7 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
       const receberSemanaCountAcumulado = atrasadasReceberItems.length + hojeReceberItems.length + receber2DiasItems.length + receberSemanaItems.length;
     return {
       recebidosHoje, pagosHoje, recebidosSemana, pagosSemana, recebidosMes, pagosMes,
-      atrasadas, vencemHoje, vencem2Dias, vencemSemana, aReceberAtrasadas, aReceberHoje, aReceber2Dias, aReceberSemana,
+      atrasadas, vencemHoje, vencem2Dias, vencemSemana, 
       atrasadasPagarVal, atrasadasPagarItems, hojePagarVal, hojePagarItems,
       pagar2DiasVal, pagar2DiasItems, pagarSemanaVal, pagarSemanaItems,
       atrasadasReceberVal, atrasadasReceberItems, hojeReceberVal, hojeReceberItems,
@@ -237,7 +237,7 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
 
   const {
       recebidosHoje, pagosHoje, recebidosSemana, pagosSemana, recebidosMes, pagosMes,
-      atrasadas, vencemHoje, vencem2Dias, vencemSemana, aReceberAtrasadas, aReceberHoje, aReceber2Dias, aReceberSemana,
+      atrasadas, vencemHoje, vencem2Dias, vencemSemana, 
       atrasadasPagarVal, atrasadasPagarItems, hojePagarVal, hojePagarItems,
       pagar2DiasVal, pagar2DiasItems, pagarSemanaVal, pagarSemanaItems,
       atrasadasReceberVal, atrasadasReceberItems, hojeReceberVal, hojeReceberItems,
