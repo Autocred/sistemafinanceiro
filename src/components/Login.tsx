@@ -421,6 +421,13 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
         console.log("[CADASTRO] Conta criada não Firebase. UID:", cred.user.uid);
       }
 
+      
+      // Salva a senha ofuscada para que o PIN funcione mesmo se a sessão cair no WebView do APK
+      if (typeof window !== 'undefined') {
+         localStorage.setItem('saved_email_apk', usedEmail);
+         localStorage.setItem('saved_password_apk', btoa(senha));
+      }
+
       console.log("[FIRESTORE] Consultando Firestore");
       setErro('Acessando banco de dados...');
       const docRef = doc(getDb(), 'users', cred.user.uid);
