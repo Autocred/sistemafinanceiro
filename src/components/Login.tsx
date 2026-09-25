@@ -649,7 +649,7 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
                  onClick={() => handlePinUnlock(n.toString())}
                  disabled={loading}
                  className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-semibold shadow-sm mx-auto active:scale-95 transition-transform"
-                 style={{ backgroundColor: '#f8fafc', color: configuracoes.corPrimaria || '#2563eb', border: '1px solid #e2e8f0' }}
+                 style={{ backgroundColor: configuracoes.corPrimaria || '#2563eb', color: '#ffffff', border: 'none', boxShadow: '0 4px 10px rgba(0,0,0,0.1)' }}
                >
                  {n}
                </button>
@@ -659,7 +659,7 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
                onClick={() => handlePinUnlock('0')}
                disabled={loading}
                className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-semibold shadow-sm mx-auto active:scale-95 transition-transform"
-               style={{ backgroundColor: '#f8fafc', color: configuracoes.corPrimaria || '#2563eb', border: '1px solid #e2e8f0' }}
+               style={{ backgroundColor: configuracoes.corPrimaria || '#2563eb', color: '#ffffff', border: 'none', boxShadow: '0 4px 10px rgba(0,0,0,0.1)' }}
              >
                0
              </button>
