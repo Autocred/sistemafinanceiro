@@ -1046,7 +1046,7 @@ const openSafeAttachment = (url: string) => {
                     <div className="lancamento-tags" style={{ display: 'flex', flexWrap: 'nowrap', overflowX: 'auto', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch', gap: 6 }}>
 {t.tipo === 'transferencia' ? (
                          <span style={{ background: 'var(--bg-active)', padding: '4px 8px', fontSize: 11, borderRadius: 8, fontWeight: 500, whiteSpace: 'nowrap', flexShrink: 0, color: 'var(--primary)' }}>
-                           {t.contaNome || '-'} ➔ {((t as any)['contaDestin\u01DCoNome']) || ((t as any)['contaDestinoNome']) || (contas.find(c => c.id === ((t as any)['contaDestin\u01DCoId'] || (t as any)['contaDestinoId']))?.nome) || '-'}
+                           {t.contaNome || '-'} ➔ {((t as any)['contaDestinãoNome']) || ((t as any)['contaDestinoNome']) || (contas.find(c => c.id === ((t as any)['contaDestinãoId'] || (t as any)['contaDestinoId']))?.nome) || '-'}
                          </span>
                        ) : (
                          <>
