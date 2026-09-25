@@ -618,10 +618,10 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
   
   if (modo === 'pin') {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 relative" style={{ backgroundColor: cfg.corFundo || '#f1f5f9' }}>
+      <div className="min-h-screen flex items-center justify-center p-4 relative" style={{ backgroundColor: configuracoes.corFundo || '#f1f5f9' }}>
         <div className="max-w-md w-full bg-white rounded-xl shadow-2xl p-8 relative z-10 flex flex-col items-center">
-           <Unlock size={48} color={cfg.corPrimaria || '#2563eb'} style={{ marginBottom: 16 }} />
-           <h2 className="text-2xl font-bold text-center mb-2" style={{ color: cfg.corPrimaria || '#2563eb' }}>
+           <Unlock size={48} color={configuracoes.corPrimaria || '#2563eb'} style={{ marginBottom: 16 }} />
+           <h2 className="text-2xl font-bold text-center mb-2" style={{ color: configuracoes.corPrimaria || '#2563eb' }}>
              Digite seu PIN
            </h2>
            <p className="text-gray-500 text-center mb-8 text-sm">
@@ -632,8 +632,8 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
              {[0, 1, 2, 3].map(i => (
                <div key={i} className="w-4 h-4 rounded-full border-2 transition-all duration-200"
                     style={{
-                      borderColor: cfg.corPrimaria || '#2563eb',
-                      backgroundColor: pinDigitado.length > i ? (cfg.corPrimaria || '#2563eb') : 'transparent'
+                      borderColor: configuracoes.corPrimaria || '#2563eb',
+                      backgroundColor: pinDigitado.length > i ? (configuracoes.corPrimaria || '#2563eb') : 'transparent'
                     }}
                />
              ))}
@@ -649,7 +649,7 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
                  onClick={() => handlePinUnlock(n.toString())}
                  disabled={loading}
                  className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-semibold shadow-sm mx-auto active:scale-95 transition-transform"
-                 style={{ backgroundColor: '#f8fafc', color: cfg.corPrimaria || '#2563eb', border: '1px solid #e2e8f0' }}
+                 style={{ backgroundColor: '#f8fafc', color: configuracoes.corPrimaria || '#2563eb', border: '1px solid #e2e8f0' }}
                >
                  {n}
                </button>
@@ -659,7 +659,7 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
                onClick={() => handlePinUnlock('0')}
                disabled={loading}
                className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-semibold shadow-sm mx-auto active:scale-95 transition-transform"
-               style={{ backgroundColor: '#f8fafc', color: cfg.corPrimaria || '#2563eb', border: '1px solid #e2e8f0' }}
+               style={{ backgroundColor: '#f8fafc', color: configuracoes.corPrimaria || '#2563eb', border: '1px solid #e2e8f0' }}
              >
                0
              </button>
@@ -676,7 +676,7 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
              <button 
                onClick={() => { setModo('login'); setPinDigitado(''); }} 
                className="text-sm font-semibold hover:underline"
-               style={{ color: cfg.corSecundaria || '#475569' }}
+               style={{ color: configuracoes.corSecundaria || '#475569' }}
              >
                Acessar com E-mail e Senha
              </button>
