@@ -13,6 +13,7 @@ import { Fingerprint } from 'lucide-react';
     if (typeof window !== 'undefined') {
       sessionStorage.setItem('active_session_auth', 'true');
       sessionStorage.setItem('paginaAtual', 'dashboard');
+      sessionStorage.setItem('is_unlocked', 'true');
       sessionStorage.setItem('active_session_profile', JSON.stringify(p));
       localStorage.setItem('active_session_profile', JSON.stringify(p));
       localStorage.setItem('last_activity_timestamp', Date.now().toString());
