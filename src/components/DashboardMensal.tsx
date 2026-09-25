@@ -20,7 +20,9 @@ import * as XLSX from 'xlsx';
 
 // Cores vibrantes premium
 const COLORS = [
-  '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', 
+      'var(--primary)', 'var(--primary-hover)', 'var(--primary-dark)', '#f59e0b', '#10b981', '#ef4444',
+    //
+  'var(--primary)', '#10b981', '#f59e0b', 'var(--primary)', '#ef4444', 
   '#06b6d4', '#ec4899', '#f97316', '#14b8a6', '#6366f1',
   '#84cc16', '#d946ef', '#0ea5e9'
 ];
@@ -175,7 +177,7 @@ export default function DashboardMensal() {
     return [
       { name: 'Receitas', valor: totalReceitas, color: '#10b981' },
       { name: 'Despesas', valor: totalDespesas, color: '#ef4444' },
-      { name: 'Saldo', valor: saldoMes, color: '#3b82f6' }
+      { name: 'Saldo', valor: saldoMes, color: 'var(--primary)' }
     ];
   }, [totalReceitas, totalDespesas, saldoMes]);
 
@@ -426,8 +428,8 @@ export default function DashboardMensal() {
               <BarChart data={evolucaoAno.slice(Math.max(0, mes - 5), mes + 1)} margin={{ top: 30, right: 30, left: 20, bottom: 5 }}>
                 <defs>
                   <linearGradient id="colorEvolucao" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.9}/>
-                    <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.4}/>
+                    <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.9}/>
+                    <stop offset="95%" stopColor="var(--primary)" stopOpacity={0.4}/>
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.4} />
@@ -446,7 +448,7 @@ export default function DashboardMensal() {
                 }} />
                 <Bar dataKey="valor" radius={[6, 6, 0, 0]} animationDuration={1500} barSize={40}>
                   {evolucaoAno.slice(Math.max(0, mes - 5), mes + 1).map((entry, index) => (
-                    <Cell key={`cell-ev-${index}`} fill={entry.isSelected ? '#3b82f6' : 'url(#colorEvolucao)'} style={{ filter: 'drop-shadow(2px 4px 6px rgba(0,0,0,0.1))' }} />
+                    <Cell key={`cell-ev-${index}`} fill={entry.isSelected ? 'var(--primary)' : 'url(#colorEvolucao)'} style={{ filter: 'drop-shadow(2px 4px 6px rgba(0,0,0,0.1))' }} />
                   ))}
                   <LabelList dataKey="valor" position="top" formatter={(v: any) => formatarMoeda(Number(v) || 0)} style={{ fill: 'var(--text-primary)', fontSize: 12, fontWeight: 'bold' }} />
                 </Bar>

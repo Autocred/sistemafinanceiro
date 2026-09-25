@@ -273,7 +273,7 @@ export default function MetasGamificadasV2() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 900, color: 'var(--text-title)', margin: '0 0 4px 0', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <Wand2 size={22} color="#8b5cf6" /> Metas Financeiras com IA
+            <Wand2 size={22} color="var(--primary)" /> Metas Financeiras com IA
           </h1>
           <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
             Acompanhamento em tempo real · Regime de Caixa · Dias Úteis
@@ -319,9 +319,9 @@ export default function MetasGamificadasV2() {
           {metas.filter(m => m.status === 'ativa').map(m => (
             <button key={m.id} onClick={() => setMetaDestaqueId(m.id)} style={{
               padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: 'pointer',
-              background: metaDestaqueId === m.id ? '#3b82f6' : 'transparent',
+              background: metaDestaqueId === m.id ? 'var(--primary)' : 'transparent',
               color: metaDestaqueId === m.id ? '#fff' : '#93c5fd',
-              border: `1px solid ${metaDestaqueId === m.id ? '#3b82f6' : '#334155'}`
+              border: `1px solid ${metaDestaqueId === m.id ? 'var(--primary)' : '#334155'}`
             }}>
               {m.nome}
             </button>
@@ -490,7 +490,7 @@ export default function MetasGamificadasV2() {
                 width: Math.min(kd.pct, 100) + '%', height: '100%',
                 background: kd.pct >= 100
                   ? 'linear-gradient(90deg, #10b981, #34d399)'
-                  : 'linear-gradient(90deg, #3b82f6, #60a5fa)',
+                  : 'linear-gradient(90deg, var(--primary), #60a5fa)',
                 borderRadius: 9, transition: 'width 1.2s ease'
               }} />
             </div>
@@ -539,8 +539,8 @@ export default function MetasGamificadasV2() {
                 <AreaChart data={kd.chartData} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
                   <defs>
                     <linearGradient id="gReal" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4} />
-                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                      <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="var(--primary)" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.08)" />
@@ -552,7 +552,7 @@ export default function MetasGamificadasV2() {
                   />
                   <ReferenceLine y={metaDestaque.valorAlvo} stroke="#ef4444" strokeDasharray="4 4" label={{ value: 'Meta', fill: '#ef4444', fontSize: 11 }} />
                   <Area type="monotone" dataKey="ideal" name="ideal" stroke="#f59e0b" strokeWidth={2} fill="none" strokeDasharray="5 5" />
-                  <Area type="monotone" dataKey="realizado" name="realizado" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#gReal)" />
+                  <Area type="monotone" dataKey="realizado" name="realizado" stroke="var(--primary)" strokeWidth={3} fillOpacity={1} fill="url(#gReal)" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -628,12 +628,12 @@ export default function MetasGamificadasV2() {
         {metas.map(meta => {
           const prog = calcularMeta(meta);
           const isClosed = meta.status !== 'ativa';
-          const cor = prog.pct >= 100 ? '#10b981' : isClosed ? '#ef4444' : '#3b82f6';
+          const cor = prog.pct >= 100 ? '#10b981' : isClosed ? '#ef4444' : 'var(--primary)';
           const badge = prog.pct >= 100 ? 'Superada' : prog.pct >= 85 ? 'Quase lá' : prog.pct >= 50 ? 'Parcial' : isClosed ? 'Não atingida' : 'Em andamento';
 
           return (
             <div key={meta.id} onClick={() => setMetaDestaqueId(meta.id)} style={{
-              background: 'var(--bg-card)', border: `1px solid ${meta.id === metaDestaqueId ? '#3b82f6' : 'var(--border)'}`,
+              background: 'var(--bg-card)', border: `1px solid ${meta.id === metaDestaqueId ? 'var(--primary)' : 'var(--border)'}`,
               borderRadius: 12, padding: '16px 20px', cursor: 'pointer',
               transition: 'border-color 0.2s'
             }}>

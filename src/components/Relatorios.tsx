@@ -155,7 +155,7 @@ export default function Relatorios() {
   });
   const dadosDiarios = Object.entries(diasPeriodo).sort((a, b) => a[0].localeCompare(b[0])).map(([dia, d]) => ({ dia: dia.split('-')[2] + '/' + dia.split('-')[1], ...d }));
 
-  const CORES = ['#10b981', '#6366f1', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#ec4899', '#84cc16', '#14b8a6'];
+  const CORES = ['#10b981', '#6366f1', '#f59e0b', '#ef4444', 'var(--primary)', '#06b6d4', '#f97316', '#ec4899', '#84cc16', '#14b8a6'];
 
   // ===== EXPORTAÇÕES =====
 
@@ -512,7 +512,7 @@ export default function Relatorios() {
                 <XAxis dataKey="nome" tick={{ fill: 'var(--text-secondary)', fontSize: 12 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fill: 'var(--text-muted)', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => `R$${v.toFixed(0)}`} />
                 <Tooltip labelStyle={{ color: '#fff', fontWeight: 'bold' }}  contentStyle={{ background: '#1f2937', border: '1px solid var(--border-hover)', borderRadius: 10 }} formatter={(v: unknown) => [fmt(Number(v))]} />
-                <Bar dataKey="valor" fill="#8b5cf6" radius={[4, 4, 0, 0]} name="Total" />
+                <Bar dataKey="valor" fill="var(--primary)" radius={[4, 4, 0, 0]} name="Total" />
               </BarChart>
             </ResponsiveContainer>
           </div>

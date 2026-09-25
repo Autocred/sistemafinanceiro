@@ -1045,7 +1045,7 @@ const openSafeAttachment = (url: string) => {
                   <div className="lancamento-card-middle">
                     <div className="lancamento-tags" style={{ display: 'flex', flexWrap: 'nowrap', overflowX: 'auto', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch', gap: 6 }}>
 {t.tipo === 'transferencia' ? (
-                         <span style={{ background: 'var(--bg-active)', padding: '4px 8px', fontSize: 11, borderRadius: 8, fontWeight: 500, whiteSpace: 'nowrap', flexShrink: 0, color: '#0284c7' }}>
+                         <span style={{ background: 'var(--bg-active)', padding: '4px 8px', fontSize: 11, borderRadius: 8, fontWeight: 500, whiteSpace: 'nowrap', flexShrink: 0, color: 'var(--primary)' }}>
                            {t.contaNome || '-'} ➔ {t.contaNome || '-'} \u2794 {((t as any)['contaDestin\u01DCoNome']) || ((t as any)['contaDestinoNome']) || (contas.find(c => c.id === ((t as any)['contaDestin\u01DCoId'] || (t as any)['contaDestinoId']))?.nome) || '-'}
                          </span>
                        ) : (
@@ -1055,7 +1055,7 @@ const openSafeAttachment = (url: string) => {
                          </>
                        )}
                        {['master', '9yxuafoC0AV9BrIKem05ponbmgn2', 'autocred-promotora-de-credito'].includes(getTenantId()) && t.comportamento && (
-                         <span style={{ background: t.comportamento === 'fixa' ? 'rgba(139,92,246,0.15)' : 'rgba(245,158,11,0.15)', color: t.comportamento === 'fixa' ? '#6d28d9' : '#b45309', border: `1px solid ${t.comportamento === 'fixa' ? '#8b5cf6' : '#f59e0b'}`, padding: '4px 8px', fontSize: 11 }}>
+                         <span style={{ background: t.comportamento === 'fixa' ? 'rgba(139,92,246,0.15)' : 'rgba(245,158,11,0.15)', color: t.comportamento === 'fixa' ? '#6d28d9' : '#b45309', border: `1px solid ${t.comportamento === 'fixa' ? 'var(--primary)' : '#f59e0b'}`, padding: '4px 8px', fontSize: 11 }}>
                            {t.comportamento === 'fixa' ? 'Fixa' : 'Variável'}
                          </span>
                        )}

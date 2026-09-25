@@ -30,7 +30,7 @@ interface Props {
   onNavigateToCartoes?: (faturaId?: string) => void;
 }
 
-const CORES_CATEGORIAS = ['#0284c7', '#16a34a', '#ef4444', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#10b981', '#64748b'];
+const CORES_CATEGORIAS = ['var(--primary)', '#16a34a', '#ef4444', '#f59e0b', 'var(--primary)', '#ec4899', '#06b6d4', '#10b981', '#64748b'];
 
 export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, onEditarLancamento, onNavigateToCartoes }: Props) {
   const [mesSelecionado, setMesSelecionado] = useState<Date>(new Date());
@@ -561,7 +561,7 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
       {/* ================= SELETOR DE ABA DOS INDICADORES: TODAS | A PAGAR | A RECEBER ================= */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
         <h2 style={{ fontSize: 15, fontWeight: 800, color: 'var(--text-title)', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Clock size={18} color="#0284c7" />
+          <Clock size={18} color="var(--primary)" />
           Monitoramento de Vencimentos & Prazos
         </h2>
         <div style={{ display: 'flex', gap: 4, background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, padding: 3 }}>
@@ -862,7 +862,7 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
               onClick={() => onNavigateToLancamentos && onNavigateToLancamentos('semana_receber')}
               className={receberSemanaCountAcumulado > 0 ? 'glow-pulse-blue' : ''}
               style={{
-                background: receberSemanaCountAcumulado > 0 ? 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)' : '#fff',
+                background: receberSemanaCountAcumulado > 0 ? 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)' : '#fff',
                 borderRadius: 12,
                 padding: '16px 18px',
                 border: receberSemanaCountAcumulado > 0 ? 'none' : '1px solid #e2e8f0',
@@ -876,15 +876,15 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: receberSemanaCountAcumulado > 0 ? '#fff' : '#0284c7' }}>
+                <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: receberSemanaCountAcumulado > 0 ? '#fff' : 'var(--primary)' }}>
                   📅 VENCE NA SEMANA (7D)
                 </span>
-                <span style={{ fontSize: 11, fontWeight: 900, background: receberSemanaCountAcumulado > 0 ? 'rgba(0,0,0,0.25)' : '#e0f2fe', color: receberSemanaCountAcumulado > 0 ? '#fff' : '#0369a1', padding: '2px 8px', borderRadius: 20 }}>
+                <span style={{ fontSize: 11, fontWeight: 900, background: receberSemanaCountAcumulado > 0 ? 'rgba(0,0,0,0.25)' : '#e0f2fe', color: receberSemanaCountAcumulado > 0 ? '#fff' : 'var(--primary-dark)', padding: '2px 8px', borderRadius: 20 }}>
                   {receberSemanaCountAcumulado}
                 </span>
               </div>
               <div style={{ marginTop: 8 }}>
-                <div style={{ fontSize: 20, fontWeight: 900, color: receberSemanaCountAcumulado > 0 ? '#fff' : '#0284c7' }}>
+                <div style={{ fontSize: 20, fontWeight: 900, color: receberSemanaCountAcumulado > 0 ? '#fff' : 'var(--primary)' }}>
                   <span className="valor-sensivel">{fmt(receberSemanaAcumulado)}</span>
                 </div>
                 <div style={{ fontSize: 11, fontWeight: 600, color: receberSemanaCountAcumulado > 0 ? 'rgba(255,255,255,0.8)' : '#94a3b8', marginTop: 2 }}>
@@ -903,8 +903,8 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
           switch(status) {
             case 'VENCIDO': return { bg: '#ef4444', text: '#fff' };
             case 'HOJE': return { bg: '#f59e0b', text: '#fff' };
-            case 'AMANHÃ': return { bg: '#3b82f6', text: '#fff' };
-            default: return { bg: '#3b82f6', text: '#fff' };
+            case 'AMANHÃ': return { bg: 'var(--primary)', text: '#fff' };
+            default: return { bg: 'var(--primary)', text: '#fff' };
           }
         };
 
@@ -948,8 +948,8 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
               <div style={{ display: 'flex', gap: 12, fontSize: 11, fontWeight: 700 }}>
                 <span style={{ color: '#ef4444', display: 'flex', alignItems: 'center', gap: 4 }}><span style={{width: 8, height: 8, borderRadius: '50%', background: '#ef4444'}}></span> VENCIDO</span>
                 <span style={{ color: '#f59e0b', display: 'flex', alignItems: 'center', gap: 4 }}><span style={{width: 8, height: 8, borderRadius: '50%', background: '#f59e0b'}}></span> HOJE</span>
-                <span style={{ color: '#3b82f6', display: 'flex', alignItems: 'center', gap: 4 }}><span style={{width: 8, height: 8, borderRadius: '50%', background: '#3b82f6'}}></span> AMANHÃ</span>
-                <span style={{ color: '#3b82f6', display: 'flex', alignItems: 'center', gap: 4 }}><span style={{width: 8, height: 8, borderRadius: '50%', background: '#3b82f6'}}></span> PRÓXIMOS</span>
+                <span style={{ color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: 4 }}><span style={{width: 8, height: 8, borderRadius: '50%', background: 'var(--primary)'}}></span> AMANHÃ</span>
+                <span style={{ color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: 4 }}><span style={{width: 8, height: 8, borderRadius: '50%', background: 'var(--primary)'}}></span> PRÓXIMOS</span>
               </div>
             </div>
 
@@ -1052,10 +1052,10 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
             onClick={() => onNavigateToLancamentos && onNavigateToLancamentos('recebidos_mes')}
             style={{ background: '#eff6ff', borderRadius: 10, padding: '14px 18px', border: '1px solid #bfdbfe', cursor: 'pointer', transition: 'transform 0.15s ease' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-              <TrendingUp size={15} color="#2563eb" />
-              <span style={{ fontSize: 10, fontWeight: 800, color: '#2563eb', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Recebidos Este Mês</span>
+              <TrendingUp size={15} color="var(--primary)" />
+              <span style={{ fontSize: 10, fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Recebidos Este Mês</span>
             </div>
-            <div style={{ fontSize: 20, fontWeight: 900, color: '#1d4ed8' }}><span className="valor-sensivel">{fmt(recebidosMes)}</span></div>
+            <div style={{ fontSize: 20, fontWeight: 900, color: 'var(--primary-dark)' }}><span className="valor-sensivel">{fmt(recebidosMes)}</span></div>
           </div>
 
           {/* Pagos Este Mês */}
@@ -1063,10 +1063,10 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
             onClick={() => onNavigateToLancamentos && onNavigateToLancamentos('pagos_mes')}
             style={{ background: '#faf5ff', borderRadius: 10, padding: '14px 18px', border: '1px solid #e9d5ff', cursor: 'pointer', transition: 'transform 0.15s ease' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-              <TrendingDown size={15} color="#9333ea" />
-              <span style={{ fontSize: 10, fontWeight: 800, color: '#9333ea', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Pagos Este Mês</span>
+              <TrendingDown size={15} color="var(--primary)" />
+              <span style={{ fontSize: 10, fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Pagos Este Mês</span>
             </div>
-            <div style={{ fontSize: 20, fontWeight: 900, color: '#7e22ce' }}><span className="valor-sensivel">{fmt(pagosMes)}</span></div>
+            <div style={{ fontSize: 20, fontWeight: 900, color: 'var(--primary-dark)' }}><span className="valor-sensivel">{fmt(pagosMes)}</span></div>
           </div>
         </div>
 
@@ -1123,15 +1123,15 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
       <div style={{ background: 'var(--bg-card)', borderRadius: 16, padding: 24, boxShadow: '0 4px 15px rgba(0,0,0,0.03)', border: '1px solid var(--border)', marginBottom: 24 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(59, 130, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <TrendingUp size={20} color="#3b82f6" />
+            <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <TrendingUp size={20} color="var(--primary)" />
             </div>
             <div>
               <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: 'var(--text-title)' }}>Projeção de Fluxo de Caixa (Evolução de Saldo)</h3>
               <p style={{ margin: 0, fontSize: 13, color: '#94a3b8' }}>Evolução do Saldo projetada com base nos compromissos pendentes dos próximos 30 dias</p>
             </div>
           </div>
-          <div style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', padding: '6px 14px', borderRadius: 20, color: '#fff', fontSize: 12, fontWeight: 800, boxShadow: '0 2px 8px rgba(59, 130, 246, 0.3)' }}>
+          <div style={{ background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary) 100%)', padding: '6px 14px', borderRadius: 20, color: '#fff', fontSize: 12, fontWeight: 800, boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)' }}>
             Módulo Premium
           </div>
         </div>
@@ -1141,8 +1141,8 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
             <AreaChart data={projecaoData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorSaldo" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                  <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="var(--primary)" stopOpacity={0}/>
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
@@ -1153,7 +1153,7 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
                 contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', fontWeight: 'bold' }}
                 labelStyle={{ color: '#64748b', marginBottom: 5 }}
               />
-              <Area type="monotone" dataKey="saldo" name="Saldo Projetado" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorSaldo)" />
+              <Area type="monotone" dataKey="saldo" name="Saldo Projetado" stroke="var(--primary)" strokeWidth={3} fillOpacity={1} fill="url(#colorSaldo)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -1169,7 +1169,7 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
               <h2 style={{ fontSize: 15, fontWeight: 800, color: 'var(--text-title)', margin: 0 }}>Fluxo de Caixa Diário</h2>
               <p style={{ fontSize: 12, color: '#94a3b8', margin: '2px 0 0 0', fontWeight: 500 }}>Entradas vs Saídas do mês selecionado</p>
             </div>
-            <Activity size={18} color="#0284c7" />
+            <Activity size={18} color="var(--primary)" />
           </div>
           <div style={{ height: 260, width: '100%' }}>
             {chartDataDiário.length === 0 ? (
@@ -1210,7 +1210,7 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
               <h2 style={{ fontSize: 15, fontWeight: 800, color: 'var(--text-title)', margin: 0 }}>Despesas por Categoria</h2>
               <p style={{ fontSize: 12, color: '#94a3b8', margin: '2px 0 0 0', fontWeight: 500 }}>Distribuição dos gastos no mês</p>
             </div>
-            <PieIcon size={18} color="#8b5cf6" />
+            <PieIcon size={18} color="var(--primary)" />
           </div>
           <div style={{ height: 260, width: '100%', display: 'flex', alignItems: 'center' }}>
             {chartDataCategorias.length === 0 ? (
@@ -1280,7 +1280,7 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
                       contentStyle={{ backgroundColor: 'var(--text-title)', borderColor: 'var(--text-secondary)', borderRadius: '8px', color: '#fff' }} 
                       formatter={(value: any) => fmt(Number(value) || 0)} 
                     />
-                  <Bar dataKey="value" name="Total Gasto" fill="#0284c7" radius={[0, 4, 4, 0]} />
+                  <Bar dataKey="value" name="Total Gasto" fill="var(--primary)" radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -1295,7 +1295,7 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
               <p style={{ fontSize: 12, color: '#94a3b8', margin: '2px 0 0 0', fontWeight: 500 }}>{transacoesMes.length} lançamento(s) em {mesesStr[mesSelecionado.getMonth()]}</p>
             </div>
             {onNavigateToLancamentos && (
-              <button onClick={() => onNavigateToLancamentos()} style={{ fontSize: 12, fontWeight: 700, color: '#0284c7', background: '#e0f2fe', border: 'none', borderRadius: 4, padding: '6px 12px', cursor: 'pointer' }}>
+              <button onClick={() => onNavigateToLancamentos()} style={{ fontSize: 12, fontWeight: 700, color: 'var(--primary)', background: '#e0f2fe', border: 'none', borderRadius: 4, padding: '6px 12px', cursor: 'pointer' }}>
                 Ver Tabela Completa
               </button>
             )}

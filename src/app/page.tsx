@@ -1403,7 +1403,7 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
                 }}
                 className="w-full py-3 px-4 rounded-xl flex items-center justify-center gap-2 font-bold text-[13px] text-white transition-all shadow-[0_4px_0_rgba(0,0,0,0.2)] hover:-translate-y-0.5 active:translate-y-1 active:shadow-none"
                 style={{
-                  background: 'linear-gradient(135deg, #2563eb, #4f46e5)',
+                  background: 'linear-gradient(135deg, var(--primary), #4f46e5)',
                   border: '1px solid rgba(255,255,255,0.1)'
                 }}
               >
