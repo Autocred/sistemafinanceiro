@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { getConfiguracoes, salvarConfiguracoes } from '@/lib/storage';
@@ -698,6 +698,7 @@ export default function Configuracoes() {
                   { id: 'verde_azul', nome: 'Verde & Azul', colors: { p: '#059669', s: '#047857', a: '#3b82f6', f: '#ffffff' } },
                   { id: 'vermelho', nome: 'Vermelho & Cinza', colors: { p: '#dc2626', s: '#991b1b', a: '#ef4444', f: '#f8fafc' } },
                   { id: 'laranja', nome: 'Laranja Vibrante', colors: { p: '#ea580c', s: '#9a3412', a: '#f97316', f: '#ffffff' } },
+                  { id: 'ouro_moderno', nome: 'Ouro Moderno (Gold)', colors: { p: '#d4af37', s: '#997a00', a: '#fcd34d', f: '#f8fafc' } },
                 ].map(paleta => (
                   <div
                     key={paleta.id}
