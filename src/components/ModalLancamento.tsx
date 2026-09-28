@@ -1,7 +1,7 @@
 import { getFormasPagamentoCustom } from '@/lib/firebase';
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { PreLancamento, Transacao } from '@/lib/types';
 import { interpretarTexto, aprenderPadrao, calcularDataVencimentoCartao } from '@/lib/ai-engine';
 import { extrairDadosDocumento } from '@/lib/ocr-pipeline';
@@ -142,7 +142,15 @@ export default function ModalLancamento({ onClose, onSalvo, transacaoEditar }: P
   // AI Photo Scanning Global
   const [isScanningPhoto, setIsScanningPhoto] = useState(false);
   const [scanMessagePhoto, setScanMessagePhoto] = useState('');
-  const [scanData, setScanData] = useState<any>(null);
+  const [scanData, setScanData] = useState<any>(null);\n
+  const catsListOptions = useMemo(() => categorias.map(c => <option key={c.id} value={c.nome} />), [categorias]);
+  const ccListOptions = useMemo(() => centrosCusto.map(c => <option key={c.id} value={c.nome} />), [centrosCusto]);
+  const clientesFornecedoresOptionsEdit = useMemo(() => {
+    return (form.tipo === 'receita') ? clientes.map(c => <option key={c.id} value={c.nome} />) : fornecedores.map(f => <option key={f.id} value={f.nome} />);
+  }, [form.tipo, clientes, fornecedores]);
+  const contasOptions = useMemo(() => contas.map(c => <option key={c.id} value={c.id}>{c.nome}</option>), [contas]);
+  const cartoesOptions = useMemo(() => cartoes.map(c => <option key={c.id} value={c.id}>{c.nome}</option>), [cartoes]);
+
 
   const handleScanReceiptGlobal = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -892,7 +900,7 @@ function EditarPreLancamento({ prelancamento, categorias, centrosCusto, contas, 
                 });
               }}>
                 <option value="">Selecione o cartão...</option>
-                {cartoes.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                {cartoesOptions}
               </select>
             </div>
           ) : (
@@ -911,7 +919,7 @@ function EditarPreLancamento({ prelancamento, categorias, centrosCusto, contas, 
                   set({ contaId: e.target.value, contaNome: conta?.nome || '', contaDestinãoId: e.target.value === p.contaDestinãoId ? '' : p.contaDestinãoId });
                 }}>
                   <option value="">Selecione a conta...</option>
-                  {contas.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                  {contasOptions}
                 </select>
               </div>
             </div>
@@ -969,7 +977,7 @@ function EditarPreLancamento({ prelancamento, categorias, centrosCusto, contas, 
           else set({ categoriaId: '', categoriaNome: nome });
         }} />
         <datalist id="cats-list-edit">
-          {categorias.map(c => <option key={c.id} value={c.nome} />)}
+          {catsListOptions}
         </datalist>
       </div>
 
@@ -983,7 +991,7 @@ function EditarPreLancamento({ prelancamento, categorias, centrosCusto, contas, 
             else set({ centroCustoId: '', centroCustoNome: nome });
           }} />
           <datalist id="cc-list-edit">
-            {centrosCusto.map(c => <option key={c.id} value={c.nome} />)}
+            {ccListOptions}
           </datalist>
         </div>
       </div>
@@ -1001,7 +1009,7 @@ function EditarPreLancamento({ prelancamento, categorias, centrosCusto, contas, 
               const conta = contas.find(c => c.id === e.target.value);
               set({ contaId: e.target.value, contaNome: conta?.nome || '', contaDestinãoId: e.target.value === p.contaDestinãoId ? '' : p.contaDestinãoId });
             }}>
-              {contas.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+              {contasOptions}
             </select>
           </div>
           <div>
@@ -1095,7 +1103,7 @@ function EditarPreLancamento({ prelancamento, categorias, centrosCusto, contas, 
             </div>
           )}
           <datalist id="cats-list-rateio-edit">
-            {categorias.map(c => <option key={c.id} value={c.nome} />)}
+            {catsListOptions}
           </datalist>
         </div>
       </div>
@@ -1168,7 +1176,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
   const handleDescricaoBlur = () => {
       if (!form.descricao || form.descricao.length < 3) return;
       const descLower = form.descricao.toLowerCase().trim();
-      const match = historico.sort((a,b)=>b.count-a.count).find(h => h.texto && descLower.includes(h.texto.toLowerCase()));
+      const historicoSorted = [...historico].sort((a,b)=>b.count-a.count); const match = historicoSorted.find(h => h.texto && descLower.includes(h.texto.toLowerCase()));
       if (match) {
           setForm(prev => {
               const nf = { ...prev };
@@ -1286,7 +1294,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
     // Check if we have learned this description
     if (val.trim().length > 2) {
       try {
-        const dict = JSON.parse(localStorage.getItem('ai_learning_dictionary') || '{}');
+        const dict = (window as any).__ai_dictCache || ((window as any).__ai_dictCache = JSON.parse(localStorage.getItem('ai_learning_dictionary') || '{}'));
         const lowerVal = val.toLowerCase().trim();
         // exact match first
         let learned = dict[lowerVal];
@@ -1340,7 +1348,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
       return;
     }
     try {
-      const dict = JSON.parse(localStorage.getItem('ai_learning_dictionary') || '{}');
+      const dict = (window as any).__ai_dictCache || ((window as any).__ai_dictCache = JSON.parse(localStorage.getItem('ai_learning_dictionary') || '{}'));
       dict[form.descricao.toLowerCase().trim()] = {
         categoriaId: form.categoriaId,
         centroCustoId: form.centroCustoId,
@@ -1350,7 +1358,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
         contaId: form.contaId,
         cartaoId: form.cartaoId
       };
-      localStorage.setItem('ai_learning_dictionary', JSON.stringify(dict));
+      localStorage.setItem('ai_learning_dictionary', JSON.stringify(dict)); (window as any).__ai_dictCache = dict;
       alert('🧠 O sistema aprendeu! No próximo lançamento, basta digitar essa descrição e os campos de Categoria, Conta, Forma de Pagamento e Cliente/Fornecedor serão preenchidos sozinhos.');
     } catch (e) {}
   };
@@ -1583,7 +1591,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
                 } as any));
               }}>
                 <option value="">Selecione a conta origem</option>
-                {contas.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                {contasOptions}
               </select>
             </div>
             <div>
@@ -1727,7 +1735,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
                 }));
               }}>
                 <option value="">Selecione um cartão...</option>
-                {cartoes.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                {cartoesOptions}
               </select>
             </div>
           ) : (
@@ -1739,7 +1747,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
                   setForm(f => ({ ...f, contaId: e.target.value, contaNome: conta?.nome || '' }));
                 }}>
                   <option value="">Selecione uma conta...</option>
-                  {contas.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                  {contasOptions}
                 </select>
               </div>
               <div>
@@ -1866,7 +1874,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
                 else setForm(f => ({ ...f, categoriaId: '', categoriaNome: nome } as any));
               }} />
               <datalist id="cats-list-manual">
-                {categorias.map(c => <option key={c.id} value={c.nome} />)}
+                {catsListOptions}
               </datalist>
             </div>
             <button type="button" onClick={() => setNovoCadastro('categoria')} className="btn-secondary hover-lift active-press" style={{ padding: '0 12px', flexShrink: 0 }}>
@@ -1885,7 +1893,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
                 else setForm(f => ({ ...f, centroCustoId: '', centroCustoNome: nome } as any));
               }} />
               <datalist id="cc-list-manual">
-                {centrosCusto.map(c => <option key={c.id} value={c.nome} />)}
+                {ccListOptions}
               </datalist>
             </div>
             <button type="button" onClick={() => setNovoCadastro('centroCusto')} className="btn-secondary hover-lift active-press" style={{ padding: '0 12px', flexShrink: 0 }}>
@@ -1901,7 +1909,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
           <div>
             <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 5 }}>Conta de Origem</label>
             <select className="input-field" value={form.contaId} onChange={e => set({ contaId: e.target.value, contaDestinãoId: e.target.value === form.contaDestinãoId ? '' : form.contaDestinãoId })}>
-              {contas.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+              {contasOptions}
             </select>
           </div>
           <div>
@@ -1932,7 +1940,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
               }
             }} />
             <datalist id="clientes-fornecedores-list-manual">
-              {(form.tipo as string) === 'receita' ? clientes.map(c => <option key={c.id} value={c.nome} />) : fornecedores.map(f => <option key={f.id} value={f.nome} />)}
+              {clientesFornecedoresOptionsEdit}
             </datalist>
           </div>
           <button type="button" onClick={() => setNovoCadastro((form.tipo as string) === 'receita' ? 'cliente' : 'fornecedor')} className="btn-secondary hover-lift active-press" style={{ padding: '0 12px', flexShrink: 0 }}>
