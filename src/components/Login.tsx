@@ -115,7 +115,7 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
          try {
             const savedEmail = localStorage.getItem('saved_email_apk') || getCookieLocal('saved_email_apk');
             const savedPass = localStorage.getItem('saved_password_apk') || getCookieLocal('saved_password_apk');
-            if (!savedEmail || !savedPass) { setModo("login"); alert("A sessão expirou. Por favor, faça login com e-mail e senha uma vez para reativar o PIN."); return; }
+            if (!savedEmail || !savedPass) { setLoading(false); setModo("login"); alert("A sessão expirou. Por favor, faça login com e-mail e senha uma vez para reativar o PIN."); return; }
             
             const auth = getFirebaseAuth();
             const cred = await signInWithEmailAndPassword(auth, savedEmail, atob(savedPass));
