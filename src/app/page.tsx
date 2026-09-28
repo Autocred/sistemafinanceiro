@@ -425,10 +425,7 @@ export default function Home() {
       if (sessionStorage.getItem('is_unlocked') === 'true') {
         setBloqueadoBiometria(false);
       } else {
-        setBloqueadoBiometria(true);
-      }
-    }
-  }, []);
+        setBloqueadoBiometria(true); } } }, []); useEffect(() => { if (autenticado && sessionStorage.getItem('is_unlocked') === 'true') { setBloqueadoBiometria(false); } }, [autenticado]);
 
   // INACTIVITY: Lock (not logout) after timeout
   useEffect(() => {

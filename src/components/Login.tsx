@@ -103,11 +103,18 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
     if (novoPin.length === 4) {
       setLoading(true);
       setErro('');
-      const pinSalvo = localStorage.getItem('app_pin_code');
+      
+      const getCookieLocal = (name: string) => {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return decodeURIComponent(parts.pop()?.split(';').shift() || '');
+        return null;
+      };
+      const pinSalvo = localStorage.getItem('app_pin_code') || getCookieLocal('app_pin_code');
       if (novoPin === pinSalvo) {
          try {
-            const savedEmail = localStorage.getItem('saved_email_apk');
-            const savedPass = localStorage.getItem('saved_password_apk');
+            const savedEmail = localStorage.getItem('saved_email_apk') || getCookieLocal('saved_email_apk');
+            const savedPass = localStorage.getItem('saved_password_apk') || getCookieLocal('saved_password_apk');
             if (!savedEmail || !savedPass) throw new Error("Credenciais não encontradas");
             
             const auth = getFirebaseAuth();
@@ -442,8 +449,8 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
          localStorage.setItem('saved_password_apk', btoa(senha));
 
          // Salva em cookies também (caso o WebView apague o localStorage)
-         document.cookie = 'saved_email_apk=' + encodeURIComponent(usedEmail) + '; expires=Fri, 31 Dec 9999 23:59:59 GMT; path=/';
-         document.cookie = 'saved_password_apk=' + encodeURIComponent(btoa(senha)) + '; expires=Fri, 31 Dec 9999 23:59:59 GMT; path=/';
+         document.cookie = 'saved_email_apk=' + encodeURIComponent(usedEmail) + '; expires=Fri, 31 Dec 2030 23:59:59 GMT; path=/';
+         document.cookie = 'saved_password_apk=' + encodeURIComponent(btoa(senha)) + '; expires=Fri, 31 Dec 2030 23:59:59 GMT; path=/';
 
       }
 

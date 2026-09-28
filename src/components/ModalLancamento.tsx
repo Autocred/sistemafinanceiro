@@ -423,12 +423,8 @@ export default function ModalLancamento({ onClose, onSalvo, transacaoEditar }: P
   
   
   
-  const clientesFornecedoresOptionsEdit = useMemo(() => {
-    return (form.tipo === 'receita') ? clientes.map(c => <option key={c.id} value={c.nome} />) : fornecedores.map(f => <option key={f.id} value={f.nome} />);
-  }, [form.tipo, clientes, fornecedores]);
-  const contasOptions = useMemo(() => contas.map(c => <option key={c.id} value={c.id}>{c.nome}</option>), [contas]);
-  const cartoesOptions = useMemo(() => cartoes.map(c => <option key={c.id} value={c.id}>{c.nome}</option>), [cartoes]);
-
+  
+    
   if (sucesso) {
     return (
       <div className="modal-overlay">
