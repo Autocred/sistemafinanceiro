@@ -110,7 +110,7 @@ export async function GET(request: Request) {
 
       const fmt = (v: number) => `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
       
-      let texto = `*FinanceAI - Bom dia, ${cfg.nomeUsuario || 'Usuário'}!* ☀️\n\n`;
+      let texto = `*FinanceAI - Olá, ${cfg.nomeUsuario || 'Usuário'}!* ☀️\n\n`;
       texto += `Aqui está o seu resumo financeiro de hoje:\n\n`;
       
       if (alertasAntecipados.length > 0) {
