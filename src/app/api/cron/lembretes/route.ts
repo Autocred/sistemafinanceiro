@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getFirebaseApp, getDb } from '@/lib/firebase';
-import { collection, query, getDocs, doc, addDoc } from 'firebase/firestore';
+import { adminDb } from '@/lib/firebase-admin';
+
 import { enviarMensagemWhatsApp } from '@/lib/whatsapp';
 import { ConfiguracaoApp, Transacao } from '@/lib/types';
 import webpush from 'web-push';
@@ -21,8 +21,8 @@ export async function GET(request: Request) {
 
     console.log('[CRON] Iniciando rotina de Lembretes e Automações...');
 
-    const db = getDb();
-    const usersSnap = await getDocs(collection(db, 'users'));
+    const db = adminDb;
+    const usersSnap = await db.collection('users').get();
     
     let processados = 0;
     let enviosZap = 0;
@@ -45,10 +45,10 @@ export async function GET(request: Request) {
       const userId = userDoc.id;
       
       // Busca configurações
-      const confSnap = await getDocs(collection(db, 'users', userId, 'configuracoes'));
+      const confSnap = await db.collection('users').doc(userId).collection('configuracoes').get();
       let cfg: ConfiguracaoApp | null = null;
       if (!confSnap.empty) {
-        cfg = confSnap.docs[0].data() as ConfiguracaoApp;
+        cfg = confSnap.docs[0].data();
       }
       
       if (!cfg) continue;
@@ -182,7 +182,7 @@ export async function GET(request: Request) {
 
       // Gera NotificacaoApp não Firebase também (Sinão)
         if (cfg.lembretesSinao !== false && (venceHoje.length > 0 || atrasadas.length > 0)) {
-          await addDoc(collection(db, 'users', userId, 'notificacoes'), {
+          await db.collection('users').doc(userId).collection('notificacoes').add({
             tipo: atrasadas.length > 0 ? 'atraso' : 'vencimento',
             titulo: 'Resumo Diário de Contas',
             mensagem: `Hoje: ${venceHoje.length} contas, ${alertasAntecipados.length} p/ antecipar e ${atrasadas.length} atrasadas.`,
