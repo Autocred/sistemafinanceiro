@@ -144,14 +144,10 @@ export default function ModalLancamento({ onClose, onSalvo, transacaoEditar }: P
   const [scanMessagePhoto, setScanMessagePhoto] = useState('');
   const [scanData, setScanData] = useState<any>(null);
 
-  const catsListOptions = useMemo(() => categorias.map(c => <option key={c.id} value={c.nome} />), [categorias]);
-  const ccListOptions = useMemo(() => centrosCusto.map(c => <option key={c.id} value={c.nome} />), [centrosCusto]);
-  const clientesFornecedoresOptionsEdit = useMemo(() => {
+      const clientesFornecedoresOptionsEdit = useMemo(() => {
     return (form.tipo === 'receita') ? clientes.map(c => <option key={c.id} value={c.nome} />) : fornecedores.map(f => <option key={f.id} value={f.nome} />);
   }, [form.tipo, clientes, fornecedores]);
-  const contasOptions = useMemo(() => contas.map(c => <option key={c.id} value={c.id}>{c.nome}</option>), [contas]);
-  const cartoesOptions = useMemo(() => cartoes.map(c => <option key={c.id} value={c.id}>{c.nome}</option>), [cartoes]);
-
+    
 
   const handleScanReceiptGlobal = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -425,6 +421,15 @@ export default function ModalLancamento({ onClose, onSalvo, transacaoEditar }: P
       setSalvando(false);
     }
   };
+
+  
+  const catsListOptions = useMemo(() => categorias.map(c => <option key={c.id} value={c.nome} />), [categorias]);
+  const ccListOptions = useMemo(() => centrosCusto.map(c => <option key={c.id} value={c.nome} />), [centrosCusto]);
+  const clientesFornecedoresOptionsEdit = useMemo(() => {
+    return (form.tipo === 'receita') ? clientes.map(c => <option key={c.id} value={c.nome} />) : fornecedores.map(f => <option key={f.id} value={f.nome} />);
+  }, [form.tipo, clientes, fornecedores]);
+  const contasOptions = useMemo(() => contas.map(c => <option key={c.id} value={c.id}>{c.nome}</option>), [contas]);
+  const cartoesOptions = useMemo(() => cartoes.map(c => <option key={c.id} value={c.id}>{c.nome}</option>), [cartoes]);
 
   if (sucesso) {
     return (
