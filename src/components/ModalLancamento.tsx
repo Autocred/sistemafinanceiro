@@ -904,7 +904,7 @@ function EditarPreLancamento({ prelancamento, categorias, centrosCusto, contas, 
                 });
               }}>
                 <option value="">Selecione o cartão...</option>
-                {cartoesOptions}
+                {cartoes.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
               </select>
             </div>
           ) : (
@@ -923,7 +923,7 @@ function EditarPreLancamento({ prelancamento, categorias, centrosCusto, contas, 
                   set({ contaId: e.target.value, contaNome: conta?.nome || '', contaDestinãoId: e.target.value === p.contaDestinãoId ? '' : p.contaDestinãoId });
                 }}>
                   <option value="">Selecione a conta...</option>
-                  {contasOptions}
+                  {contas.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
                 </select>
               </div>
             </div>
@@ -981,7 +981,7 @@ function EditarPreLancamento({ prelancamento, categorias, centrosCusto, contas, 
           else set({ categoriaId: '', categoriaNome: nome });
         }} />
         <datalist id="cats-list-edit">
-          {catsListOptions}
+          {categorias.map(c => <option key={c.id} value={c.nome} />)}
         </datalist>
       </div>
 
@@ -995,7 +995,7 @@ function EditarPreLancamento({ prelancamento, categorias, centrosCusto, contas, 
             else set({ centroCustoId: '', centroCustoNome: nome });
           }} />
           <datalist id="cc-list-edit">
-            {ccListOptions}
+            {centrosCusto.map(c => <option key={c.id} value={c.nome} />)}
           </datalist>
         </div>
       </div>
@@ -1013,7 +1013,7 @@ function EditarPreLancamento({ prelancamento, categorias, centrosCusto, contas, 
               const conta = contas.find(c => c.id === e.target.value);
               set({ contaId: e.target.value, contaNome: conta?.nome || '', contaDestinãoId: e.target.value === p.contaDestinãoId ? '' : p.contaDestinãoId });
             }}>
-              {contasOptions}
+              {contas.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
             </select>
           </div>
           <div>
@@ -1107,7 +1107,7 @@ function EditarPreLancamento({ prelancamento, categorias, centrosCusto, contas, 
             </div>
           )}
           <datalist id="cats-list-rateio-edit">
-            {catsListOptions}
+            {categorias.map(c => <option key={c.id} value={c.nome} />)}
           </datalist>
         </div>
       </div>
@@ -1595,7 +1595,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
                 } as any));
               }}>
                 <option value="">Selecione a conta origem</option>
-                {contasOptions}
+                {contas.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
               </select>
             </div>
             <div>
@@ -1739,7 +1739,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
                 }));
               }}>
                 <option value="">Selecione um cartão...</option>
-                {cartoesOptions}
+                {cartoes.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
               </select>
             </div>
           ) : (
@@ -1751,7 +1751,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
                   setForm(f => ({ ...f, contaId: e.target.value, contaNome: conta?.nome || '' }));
                 }}>
                   <option value="">Selecione uma conta...</option>
-                  {contasOptions}
+                  {contas.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
                 </select>
               </div>
               <div>
@@ -1878,7 +1878,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
                 else setForm(f => ({ ...f, categoriaId: '', categoriaNome: nome } as any));
               }} />
               <datalist id="cats-list-manual">
-                {catsListOptions}
+                {categorias.map(c => <option key={c.id} value={c.nome} />)}
               </datalist>
             </div>
             <button type="button" onClick={() => setNovoCadastro('categoria')} className="btn-secondary hover-lift active-press" style={{ padding: '0 12px', flexShrink: 0 }}>
@@ -1897,7 +1897,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
                 else setForm(f => ({ ...f, centroCustoId: '', centroCustoNome: nome } as any));
               }} />
               <datalist id="cc-list-manual">
-                {ccListOptions}
+                {centrosCusto.map(c => <option key={c.id} value={c.nome} />)}
               </datalist>
             </div>
             <button type="button" onClick={() => setNovoCadastro('centroCusto')} className="btn-secondary hover-lift active-press" style={{ padding: '0 12px', flexShrink: 0 }}>
@@ -1913,7 +1913,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
           <div>
             <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 5 }}>Conta de Origem</label>
             <select className="input-field" value={form.contaId} onChange={e => set({ contaId: e.target.value, contaDestinãoId: e.target.value === form.contaDestinãoId ? '' : form.contaDestinãoId })}>
-              {contasOptions}
+              {contas.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
             </select>
           </div>
           <div>
@@ -1944,7 +1944,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
               }
             }} />
             <datalist id="clientes-fornecedores-list-manual">
-              {clientesFornecedoresOptionsEdit}
+              {fornecedores.map(f => <option key={f.id} value={f.nome} />)}{clientes.map(c => <option key={c.id} value={c.nome} />)}
             </datalist>
           </div>
           <button type="button" onClick={() => setNovoCadastro((form.tipo as string) === 'receita' ? 'cliente' : 'fornecedor')} className="btn-secondary hover-lift active-press" style={{ padding: '0 12px', flexShrink: 0 }}>
