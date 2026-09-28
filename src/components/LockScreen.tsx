@@ -21,6 +21,15 @@ export function LockScreen({
   const [pinMode, setPinMode] = useState(false);
   const [pinDigits, setPinDigits] = useState('');
 
+      const getCookie = (name: string) => {
+        if (typeof document === 'undefined') return null;
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return decodeURIComponent(parts.pop()?.split(';').shift() || '');
+        return null;
+      };
+
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const pinSalvo = (localStorage.getItem('app_pin_code') || getCookie('app_pin_code'));
