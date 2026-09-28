@@ -154,7 +154,7 @@ export function LockScreen({
                 <button
                   key={n}
                   onClick={() => { setErro(''); if(pinDigits.length < 4) setPinDigits(prev => prev + n) }}
-                  style={{ width: 60, height: 60, borderRadius: 30, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontSize: 24, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                  style={{ width: 60, height: 60, borderRadius: 30, background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text-primary)', fontSize: 24, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
                 >
                   {n}
                 </button>
@@ -162,7 +162,7 @@ export function LockScreen({
               <div />
               <button
                 onClick={() => { setErro(''); if(pinDigits.length < 4) setPinDigits(prev => prev + '0') }}
-                style={{ width: 60, height: 60, borderRadius: 30, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontSize: 24, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                style={{ width: 60, height: 60, borderRadius: 30, background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text-primary)', fontSize: 24, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
               >
                 0
               </button>
