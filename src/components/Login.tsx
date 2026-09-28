@@ -657,8 +657,8 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
              {[0, 1, 2, 3].map(i => (
                <div key={i} className="w-4 h-4 rounded-full border-2 transition-all duration-200"
                     style={{
-                      borderColor: configuracoes?.corPrimaria || '#2563eb',
-                      backgroundColor: pinDigitado.length > i ? (configuracoes?.corPrimaria || '#2563eb') : 'transparent'
+                      borderColor: (configuracoes?.corPrimaria === '#ffffff' || configuracoes?.corPrimaria === '#fff' || !configuracoes?.corPrimaria ? '#2563eb' : configuracoes.corPrimaria) || '#2563eb',
+                      backgroundColor: pinDigitado.length > i ? ((configuracoes?.corPrimaria === '#ffffff' || configuracoes?.corPrimaria === '#fff' || !configuracoes?.corPrimaria ? '#2563eb' : configuracoes.corPrimaria) || '#2563eb') : 'transparent'
                     }}
                />
              ))}
@@ -674,7 +674,7 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
                  onClick={() => handlePinUnlock(n.toString())}
                  disabled={loading}
                  className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-semibold shadow-sm mx-auto active:scale-95 transition-transform"
-                 style={{ backgroundColor: '#f8fafc', color: configuracoes?.corPrimaria || '#2563eb', border: `2px solid ${configuracoes?.corPrimaria || '#2563eb'}`, boxShadow: '0 4px 10px rgba(0,0,0,0.05)' }}
+                 style={{ backgroundColor: '#f8fafc', color: (configuracoes?.corPrimaria === '#ffffff' || configuracoes?.corPrimaria === '#fff' || !configuracoes?.corPrimaria ? '#2563eb' : configuracoes.corPrimaria) || '#2563eb', border: `2px solid ${(configuracoes?.corPrimaria === '#ffffff' || configuracoes?.corPrimaria === '#fff' || !configuracoes?.corPrimaria ? '#2563eb' : configuracoes.corPrimaria) || '#2563eb'}`, boxShadow: '0 4px 10px rgba(0,0,0,0.05)' }}
                >
                  {n}
                </button>
@@ -684,7 +684,7 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
                onClick={() => handlePinUnlock('0')}
                disabled={loading}
                className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-semibold shadow-sm mx-auto active:scale-95 transition-transform"
-               style={{ backgroundColor: '#f8fafc', color: configuracoes?.corPrimaria || '#2563eb', border: `2px solid ${configuracoes?.corPrimaria || '#2563eb'}`, boxShadow: '0 4px 10px rgba(0,0,0,0.05)' }}
+               style={{ backgroundColor: '#f8fafc', color: (configuracoes?.corPrimaria === '#ffffff' || configuracoes?.corPrimaria === '#fff' || !configuracoes?.corPrimaria ? '#2563eb' : configuracoes.corPrimaria) || '#2563eb', border: `2px solid ${(configuracoes?.corPrimaria === '#ffffff' || configuracoes?.corPrimaria === '#fff' || !configuracoes?.corPrimaria ? '#2563eb' : configuracoes.corPrimaria) || '#2563eb'}`, boxShadow: '0 4px 10px rgba(0,0,0,0.05)' }}
              >
                0
              </button>

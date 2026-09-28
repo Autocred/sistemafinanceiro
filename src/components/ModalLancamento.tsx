@@ -144,9 +144,7 @@ export default function ModalLancamento({ onClose, onSalvo, transacaoEditar }: P
   const [scanMessagePhoto, setScanMessagePhoto] = useState('');
   const [scanData, setScanData] = useState<any>(null);
 
-      const clientesFornecedoresOptionsEdit = useMemo(() => {
-    return (form.tipo === 'receita') ? clientes.map(c => <option key={c.id} value={c.nome} />) : fornecedores.map(f => <option key={f.id} value={f.nome} />);
-  }, [form.tipo, clientes, fornecedores]);
+
     
 
   const handleScanReceiptGlobal = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -423,8 +421,8 @@ export default function ModalLancamento({ onClose, onSalvo, transacaoEditar }: P
   };
 
   
-  const catsListOptions = useMemo(() => categorias.map(c => <option key={c.id} value={c.nome} />), [categorias]);
-  const ccListOptions = useMemo(() => centrosCusto.map(c => <option key={c.id} value={c.nome} />), [centrosCusto]);
+  
+  
   const clientesFornecedoresOptionsEdit = useMemo(() => {
     return (form.tipo === 'receita') ? clientes.map(c => <option key={c.id} value={c.nome} />) : fornecedores.map(f => <option key={f.id} value={f.nome} />);
   }, [form.tipo, clientes, fornecedores]);
