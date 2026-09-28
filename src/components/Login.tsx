@@ -680,8 +680,7 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
                  key={n}
                  onClick={() => handlePinUnlock(n.toString())}
                  disabled={loading}
-                 className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-semibold shadow-sm mx-auto active:scale-95 transition-transform"
-                 style={{ backgroundColor: '#f8fafc', color: (configuracoes?.corPrimaria === '#ffffff' || configuracoes?.corPrimaria === '#fff' || !configuracoes?.corPrimaria ? '#2563eb' : configuracoes.corPrimaria) || '#2563eb', border: `2px solid ${(configuracoes?.corPrimaria === '#ffffff' || configuracoes?.corPrimaria === '#fff' || !configuracoes?.corPrimaria ? '#2563eb' : configuracoes.corPrimaria) || '#2563eb'}`, boxShadow: '0 4px 10px rgba(0,0,0,0.05)' }}
+                 className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-semibold shadow-md mx-auto active:scale-95 transition-transform bg-slate-100 text-blue-600 border-2 border-blue-600"
                >
                  {n}
                </button>
@@ -690,8 +689,7 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
              <button
                onClick={() => handlePinUnlock('0')}
                disabled={loading}
-               className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-semibold shadow-sm mx-auto active:scale-95 transition-transform"
-               style={{ backgroundColor: '#f8fafc', color: (configuracoes?.corPrimaria === '#ffffff' || configuracoes?.corPrimaria === '#fff' || !configuracoes?.corPrimaria ? '#2563eb' : configuracoes.corPrimaria) || '#2563eb', border: `2px solid ${(configuracoes?.corPrimaria === '#ffffff' || configuracoes?.corPrimaria === '#fff' || !configuracoes?.corPrimaria ? '#2563eb' : configuracoes.corPrimaria) || '#2563eb'}`, boxShadow: '0 4px 10px rgba(0,0,0,0.05)' }}
+               className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-semibold shadow-md mx-auto active:scale-95 transition-transform bg-slate-100 text-blue-600 border-2 border-blue-600"
              >
                0
              </button>
