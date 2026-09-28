@@ -45,7 +45,20 @@ export default function Configuracoes() {
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(pubKey)
       });
-      setCfg(c => ({ ...c, webPushSubscription: JSON.stringify(sub) }));
+      setCfg(c => {
+    let arr = [];
+    try {
+      if(c.webPushSubscription) {
+        const parsed = JSON.parse(c.webPushSubscription);
+        arr = Array.isArray(parsed) ? parsed : [parsed];
+      }
+    } catch(e){}
+    // Check if sub endpoint already exists
+    if (!arr.find(s => s.endpoint === sub.endpoint)) {
+      arr.push(sub);
+    }
+    return { ...c, webPushSubscription: JSON.stringify(arr) };
+  });
       alert('notificações ativadas com sucesso neste dispositivo! O sistema tentará entregar os pop-ups nativos quando o app estiver fechado. Lembre-se de clicar no botão Salvar Configurações no topo!');
     } catch (e) {
       console.error(e);

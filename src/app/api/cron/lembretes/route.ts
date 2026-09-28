@@ -157,13 +157,22 @@ export async function GET(request: Request) {
       // Dispara Web Push
       if (cfg.webPushSubscription) {
         try {
-          const sub = JSON.parse(cfg.webPushSubscription);
+          const parsed = JSON.parse(cfg.webPushSubscription);
+   const subs = Array.isArray(parsed) ? parsed : [parsed];
           const payload = JSON.stringify({
             title: `Resumo: ${venceHoje.length} hoje, ${alertasAntecipados.length} antecipar`,
             body: `Hoje: ${venceHoje.length}, Antecipar: ${alertasAntecipados.length}, Atrasadas: ${atrasadas.length}.`,
             url: '/master/financeiro'
           });
-          await webpush.sendNotification(sub, payload);
+          for (const sub of subs) {
+      if (sub && sub.endpoint) {
+          try {
+             await webpush.sendNotification(sub, payload);
+          } catch(e) {
+             console.error('Falha push individual:', e);
+          }
+      }
+   }
           enviosPush++;
           console.log('[CRON] Web Push enviado com sucesso para', userId);
         } catch (err) {
