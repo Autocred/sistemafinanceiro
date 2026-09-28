@@ -950,7 +950,7 @@ document.cookie = 'app_pin_code=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/'
                             return;
                          }
                          localStorage.setItem('app_pin_code', novoPin);
-document.cookie = 'app_pin_code=' + encodeURIComponent(novoPin) + '; expires=Fri, 31 Dec 2030 23:59:59 GMT; path=/';
+document.cookie = 'app_pin_code=' + encodeURIComponent(novoPin) + '; max-age=315360000; path=/';
                          setPinAtivo(true);
                          alert("PIN ativado! Agora você pode usar esse PIN para desbloquear o sistema rapidamente.");
                       }

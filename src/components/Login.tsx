@@ -83,7 +83,7 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
       let finalPass = savedPass || getCookie('saved_password_apk');
       let finalEmail = savedEmail || getCookie('saved_email_apk');
 
-      if (finalPin && finalPass && finalEmail) {
+      if (finalPin) {
         setModo('pin');
       } else if (isBiometriaHabilitada()) {
         setTemBiometria(true);
@@ -115,7 +115,7 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
          try {
             const savedEmail = localStorage.getItem('saved_email_apk') || getCookieLocal('saved_email_apk');
             const savedPass = localStorage.getItem('saved_password_apk') || getCookieLocal('saved_password_apk');
-            if (!savedEmail || !savedPass) throw new Error("Credenciais não encontradas");
+            if (!savedEmail || !savedPass) { setModo("login"); alert("A sessão expirou. Por favor, faça login com e-mail e senha uma vez para reativar o PIN."); return; }
             
             const auth = getFirebaseAuth();
             const cred = await signInWithEmailAndPassword(auth, savedEmail, atob(savedPass));
@@ -449,8 +449,8 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
          localStorage.setItem('saved_password_apk', btoa(senha));
 
          // Salva em cookies também (caso o WebView apague o localStorage)
-         document.cookie = 'saved_email_apk=' + encodeURIComponent(usedEmail) + '; expires=Fri, 31 Dec 2030 23:59:59 GMT; path=/';
-         document.cookie = 'saved_password_apk=' + encodeURIComponent(btoa(senha)) + '; expires=Fri, 31 Dec 2030 23:59:59 GMT; path=/';
+         document.cookie = 'saved_email_apk=' + encodeURIComponent(usedEmail) + '; max-age=315360000; path=/';
+         document.cookie = 'saved_password_apk=' + encodeURIComponent(btoa(senha)) + '; max-age=315360000; path=/';
 
       }
 
