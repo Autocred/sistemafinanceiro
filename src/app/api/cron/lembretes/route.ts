@@ -21,7 +21,7 @@ export async function GET(request: Request) {
 
     console.log('[CRON] Iniciando rotina de Lembretes e Automações...');
 
-    const db = adminDb;
+    const db = adminDb!;
     const usersSnap = await db.collection('users').get();
     
     let processados = 0;
