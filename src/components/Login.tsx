@@ -70,7 +70,20 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
       const pinSalvo = localStorage.getItem('app_pin_code');
       const savedPass = localStorage.getItem('saved_password_apk');
       const savedEmail = localStorage.getItem('saved_email_apk');
-      if (pinSalvo && savedPass && savedEmail) {
+
+      // Fallback para ler do cookie se o localStorage estiver vazio
+      const getCookie = (name: string) => {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return decodeURIComponent(parts.pop()?.split(';').shift() || '');
+        return null;
+      };
+      
+      let finalPin = pinSalvo || getCookie('app_pin_code');
+      let finalPass = savedPass || getCookie('saved_password_apk');
+      let finalEmail = savedEmail || getCookie('saved_email_apk');
+
+      if (finalPin && finalPass && finalEmail) {
         setModo('pin');
       } else if (isBiometriaHabilitada()) {
         setTemBiometria(true);
@@ -427,6 +440,11 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
       if (typeof window !== 'undefined') {
          localStorage.setItem('saved_email_apk', usedEmail);
          localStorage.setItem('saved_password_apk', btoa(senha));
+
+         // Salva em cookies também (caso o WebView apague o localStorage)
+         document.cookie = 'saved_email_apk=' + encodeURIComponent(usedEmail) + '; expires=Fri, 31 Dec 9999 23:59:59 GMT; path=/';
+         document.cookie = 'saved_password_apk=' + encodeURIComponent(btoa(senha)) + '; expires=Fri, 31 Dec 9999 23:59:59 GMT; path=/';
+
       }
 
       console.log("[FIRESTORE] Consultando Firestore");
@@ -610,10 +628,17 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
           }} className="btn-secondary">
             Voltar para o Login
           </button>
-        </div>
-      </div>
-    );
-  }
+        
+<div style={{ position: 'absolute', bottom: 5, right: 5, fontSize: 10, color: '#ccc' }}>
+  v1.2 P:{typeof window !== 'undefined' && localStorage.getItem('app_pin_code') ? '1' : '0'} 
+  E:{typeof window !== 'undefined' && localStorage.getItem('saved_email_apk') ? '1' : '0'} 
+  M:{modo}
+</div>
+
+</div>
+</div>
+);
+}
 
   
   if (modo === 'pin') {
@@ -681,10 +706,17 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
                Acessar com E-mail e Senha
              </button>
            </div>
-        </div>
-      </div>
-    );
-  }
+        
+<div style={{ position: 'absolute', bottom: 5, right: 5, fontSize: 10, color: '#ccc' }}>
+  v1.2 P:{typeof window !== 'undefined' && localStorage.getItem('app_pin_code') ? '1' : '0'} 
+  E:{typeof window !== 'undefined' && localStorage.getItem('saved_email_apk') ? '1' : '0'} 
+  M:{modo}
+</div>
+
+</div>
+</div>
+);
+}
 
 if (requirePasswordChange) {
     return (
@@ -748,10 +780,17 @@ if (requirePasswordChange) {
               Cancelar e Sair
             </button>
           </form>
-        </div>
-      </div>
-    );
-  }
+        
+<div style={{ position: 'absolute', bottom: 5, right: 5, fontSize: 10, color: '#ccc' }}>
+  v1.2 P:{typeof window !== 'undefined' && localStorage.getItem('app_pin_code') ? '1' : '0'} 
+  E:{typeof window !== 'undefined' && localStorage.getItem('saved_email_apk') ? '1' : '0'} 
+  M:{modo}
+</div>
+
+</div>
+</div>
+);
+}
 
   return (
     <div style={{
@@ -929,7 +968,14 @@ if (requirePasswordChange) {
             )}
           </div>
         </div>
-      </div>
-    </div>
-  );
+      
+<div style={{ position: 'absolute', bottom: 5, right: 5, fontSize: 10, color: '#ccc' }}>
+  v1.2 P:{typeof window !== 'undefined' && localStorage.getItem('app_pin_code') ? '1' : '0'} 
+  E:{typeof window !== 'undefined' && localStorage.getItem('saved_email_apk') ? '1' : '0'} 
+  M:{modo}
+</div>
+
+</div>
+</div>
+);
 }

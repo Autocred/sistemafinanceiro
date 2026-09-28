@@ -23,14 +23,14 @@ export function LockScreen({
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const pinSalvo = localStorage.getItem('app_pin_code');
+      const pinSalvo = (localStorage.getItem('app_pin_code') || getCookie('app_pin_code'));
       if (pinSalvo) setPinMode(true);
     }
   }, []);
 
   useEffect(() => {
     if (pinDigits.length === 4) {
-      const pinSalvo = localStorage.getItem('app_pin_code');
+      const pinSalvo = (localStorage.getItem('app_pin_code') || getCookie('app_pin_code'));
       if (pinDigits === pinSalvo) {
         playSound('sucesso');
         onDesbloquear(''); // bypass com pin

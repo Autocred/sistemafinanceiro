@@ -103,7 +103,15 @@ export default function Configuracoes() {
       const configDB = await getConfiguracoes(uid);
       setCfg(configDB);
       setBiometriaAtiva(isBiometriaHabilitada());
-      setPinAtivo(!!localStorage.getItem('app_pin_code'));
+      
+      const getCookie = (name: string) => {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return decodeURIComponent(parts.pop()?.split(';').shift() || '');
+        return null;
+      };
+      setPinAtivo(!!(localStorage.getItem('app_pin_code') || getCookie('app_pin_code')));
+
       
       if (!isBypassAtivo && auth.currentUser) {
          const p = await getUserProfile(auth.currentUser.uid);
@@ -931,6 +939,7 @@ export default function Configuracoes() {
                    onClick={() => {
                       if (pinAtivo) {
                          localStorage.removeItem('app_pin_code');
+document.cookie = 'app_pin_code=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
                          setPinAtivo(false);
                          alert("Desbloqueio por PIN desativado com sucesso!");
                       } else {
@@ -941,6 +950,7 @@ export default function Configuracoes() {
                             return;
                          }
                          localStorage.setItem('app_pin_code', novoPin);
+document.cookie = 'app_pin_code=' + encodeURIComponent(novoPin) + '; expires=Fri, 31 Dec 9999 23:59:59 GMT; path=/';
                          setPinAtivo(true);
                          alert("PIN ativado! Agora você pode usar esse PIN para desbloquear o sistema rapidamente.");
                       }
