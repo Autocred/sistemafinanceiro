@@ -142,7 +142,8 @@ export default function ModalLancamento({ onClose, onSalvo, transacaoEditar }: P
   // AI Photo Scanning Global
   const [isScanningPhoto, setIsScanningPhoto] = useState(false);
   const [scanMessagePhoto, setScanMessagePhoto] = useState('');
-  const [scanData, setScanData] = useState<any>(null);\n
+  const [scanData, setScanData] = useState<any>(null);
+
   const catsListOptions = useMemo(() => categorias.map(c => <option key={c.id} value={c.nome} />), [categorias]);
   const ccListOptions = useMemo(() => centrosCusto.map(c => <option key={c.id} value={c.nome} />), [centrosCusto]);
   const clientesFornecedoresOptionsEdit = useMemo(() => {
