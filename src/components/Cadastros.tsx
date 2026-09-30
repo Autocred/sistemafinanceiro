@@ -9,6 +9,13 @@ import { DynamicIcon } from '@/components/DynamicIcon';
 
 type Aba = 'categorias' | 'centros-custo' | 'fornecedores' | 'clientes' | 'formas-pagamento';
 
+function normalizarTexto(texto: string) {
+  if (!texto) return '';
+  let t = texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  if (t.endsWith('s')) t = t.slice(0, -1);
+  return t;
+}
+
 export default function Cadastros() {
   const [aba, setAba] = useState<Aba>('categorias');
   const [categorias, setCategorias] = useState<Categoria[]>([]);
@@ -229,21 +236,29 @@ export default function Cadastros() {
       )}
 
       {/* Modais */}
-      {modalCat && <ModalNovaCategoria onClose={() => setModalCat(false)} onSalvo={() => { setModalCat(false); carregar(); }} />}
-      {modalCC && <ModalNovoCentroCusto onClose={() => setModalCC(false)} onSalvo={() => { setModalCC(false); carregar(); }} />}
-      {modalForn && <ModalNovoFornecedor onClose={() => setModalForn(false)} onSalvo={() => { setModalForn(false); carregar(); }} />}
-      {modalCli && <ModalNovoCliente onClose={() => setModalCli(false)} onSalvo={() => { setModalCli(false); carregar(); }} />}
+      {modalCat && <ModalNovaCategoria categorias={categorias} onClose={() => setModalCat(false)} onSalvo={() => { setModalCat(false); carregar(); }} />}
+      {modalCC && <ModalNovoCentroCusto centrosCusto={centrosCusto} onClose={() => setModalCC(false)} onSalvo={() => { setModalCC(false); carregar(); }} />}
+      {modalForn && <ModalNovoFornecedor fornecedores={fornecedores} onClose={() => setModalForn(false)} onSalvo={() => { setModalForn(false); carregar(); }} />}
+      {modalCli && <ModalNovoCliente clientes={clientes} onClose={() => setModalCli(false)} onSalvo={() => { setModalCli(false); carregar(); }} />}
     </div>
   );
 }
 
-function ModalNovaCategoria({ onClose, onSalvo }: { onClose: () => void; onSalvo: () => void }) {
+function ModalNovaCategoria({ categorias, onClose, onSalvo }: { categorias: Categoria[]; onClose: () => void; onSalvo: () => void }) {
   const [form, setForm] = useState({ nome: '', icone: 'Package', cor: 'var(--text-muted)', tipo: 'despesa' as 'despesa' | 'receita' | 'ambos' });
   const ICONES = ['Package', 'Utensils', 'ShoppingCart', 'Fuel', 'Home', 'Pill', 'Book', 'Gamepad2', 'Shirt', 'Scissors', 'Dog', 'Smartphone', 'CreditCard', 'Shield', 'Plane', 'Gift', 'Wrench', 'Briefcase', 'Laptop', 'LineChart', 'Coins', 'Trophy'];
   const CORES = ['var(--text-muted)', '#f97316', '#10b981', '#f59e0b', '#06b6d4', '#ef4444', '#8b5cf6', '#ec4899', '#6366f1', '#84cc16', '#fb923c'];
 
   const salvar = async () => {
     if (!form.nome.trim()) return;
+    
+    const normNome = normalizarTexto(form.nome);
+    const duplicado = categorias.find(x => normalizarTexto(x.nome) === normNome);
+    if (duplicado) {
+      alert(`Já existe um cadastro com nome semelhante: "${duplicado.nome}". Para manter a organização, evite duplicidades.`);
+      return;
+    }
+
     await salvarCategoria({ id: gerarIdPublico(), ...form });
     onSalvo();
   };
@@ -292,13 +307,21 @@ function ModalNovaCategoria({ onClose, onSalvo }: { onClose: () => void; onSalvo
   );
 }
 
-function ModalNovoCentroCusto({ onClose, onSalvo }: { onClose: () => void; onSalvo: () => void }) {
+function ModalNovoCentroCusto({ centrosCusto, onClose, onSalvo }: { centrosCusto: CentroCusto[]; onClose: () => void; onSalvo: () => void }) {
   const [form, setForm] = useState({ nome: '', icone: 'Target', cor: '#6366f1', descricao: '' });
   const ICONES = ['Target', 'User', 'Car', 'Home', 'Briefcase', 'Baby', 'Pill', 'Book', 'Drama', 'LineChart', 'Dog', 'Building2'];
   const CORES = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#ec4899'];
 
   const salvar = async () => {
     if (!form.nome.trim()) return;
+    
+    const normNome = normalizarTexto(form.nome);
+    const duplicado = centrosCusto.find(x => normalizarTexto(x.nome) === normNome);
+    if (duplicado) {
+      alert(`Já existe um cadastro com nome semelhante: "${duplicado.nome}". Para manter a organização, evite duplicidades.`);
+      return;
+    }
+
     await salvarCentroCusto({ id: gerarIdPublico(), ...form });
     onSalvo();
   };
@@ -343,11 +366,19 @@ function ModalNovoCentroCusto({ onClose, onSalvo }: { onClose: () => void; onSal
   );
 }
 
-function ModalNovoFornecedor({ onClose, onSalvo }: { onClose: () => void; onSalvo: () => void }) {
+function ModalNovoFornecedor({ fornecedores, onClose, onSalvo }: { fornecedores: Fornecedor[]; onClose: () => void; onSalvo: () => void }) {
   const [form, setForm] = useState({ nome: '', telefone: '', email: '' });
 
   const salvar = async () => {
     if (!form.nome.trim()) return;
+    
+    const normNome = normalizarTexto(form.nome);
+    const duplicado = fornecedores.find(x => normalizarTexto(x.nome) === normNome);
+    if (duplicado) {
+      alert(`Já existe um cadastro com nome semelhante: "${duplicado.nome}". Para manter a organização, evite duplicidades.`);
+      return;
+    }
+
     await salvarFornecedor({ id: gerarIdPublico(), ...form });
     onSalvo();
   };
@@ -375,11 +406,19 @@ function ModalNovoFornecedor({ onClose, onSalvo }: { onClose: () => void; onSalv
   );
 }
 
-function ModalNovoCliente({ onClose, onSalvo }: { onClose: () => void; onSalvo: () => void }) {
+function ModalNovoCliente({ clientes, onClose, onSalvo }: { clientes: Cliente[]; onClose: () => void; onSalvo: () => void }) {
   const [form, setForm] = useState({ nome: '', telefone: '', email: '' });
 
   const salvar = async () => {
     if (!form.nome.trim()) return;
+    
+    const normNome = normalizarTexto(form.nome);
+    const duplicado = clientes.find(x => normalizarTexto(x.nome) === normNome);
+    if (duplicado) {
+      alert(`Já existe um cadastro com nome semelhante: "${duplicado.nome}". Para manter a organização, evite duplicidades.`);
+      return;
+    }
+
     await salvarCliente({ id: gerarIdPublico(), ...form });
     onSalvo();
   };

@@ -173,7 +173,7 @@ function CardIndicador({
   sub,
   corValor,
 }: {
-  label: string;
+  label: string | React.ReactNode;
   valor: string;
   sub?: string;
   corValor: string;
@@ -384,7 +384,7 @@ export function DREGerencial({
           corValor={dre.margemContribuicao >= 0 ? '#10b981' : '#ef4444'}
         />
         <CardIndicador
-          label="EBITDA"
+          label={<span title="Lucro Antes de Juros, Impostos, Depreciação e Amortização (Resultado Operacional)">EBITDA <span style={{ cursor: 'help', fontSize: 11 }}>❓</span></span>}
           valor={formatarMoeda(dre.ebitda)}
           sub={dreAnt ? `Anterior: ${formatarMoeda(dreAnt.ebitda)}` : undefined}
           corValor={dre.ebitda >= 0 ? '#1e3a8a' : '#ef4444'}
