@@ -60,7 +60,7 @@ export default function Configuracoes() {
     return { ...c, webPushSubscription: JSON.stringify(arr) };
   });
       alert('notificações ativadas com sucesso neste dispositivo! O sistema tentará entregar os pop-ups nativos quando o app estiver fechado. Lembre-se de clicar no botão Salvar Configurações no topo!');
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
       alert('Erro ao ativar notificações: ' + e);
     }
@@ -140,7 +140,7 @@ export default function Configuracoes() {
         const ls = await listarLogsBackup();
         setBackupsList(bs);
         setLogsList(ls);
-      } catch (e) {
+      } catch (e: any) {
         console.error('Erro ao carregar backups:', e);
       }
       setVersaoUi(localStorage.getItem('versao_ui') || 'v2');
@@ -233,7 +233,7 @@ export default function Configuracoes() {
       const ls = await listarLogsBackup();
       setLogsList(ls);
       alert('Backup manual realizado com sucesso!');
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
       alert('Erro ao realizar backup: ' + (e.message || String(e)));
     } finally {
@@ -247,7 +247,7 @@ export default function Configuracoes() {
     try {
       await restaurarBackup(id);
       window.location.reload();
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
       alert('Erro ao restaurar. Tente novamente.');
       setBackupLoading(false);
