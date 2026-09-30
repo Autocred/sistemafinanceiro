@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { FileSpreadsheet, Upload, CheckCircle2, AlertCircle, RefreshCw, ArrowRight } from 'lucide-react';
 import { ConciliacaoItem, Transacao } from '@/lib/types';
 import { parseConteudoConciliacao, executarMatchConciliacao } from '@/lib/conciliacao';
-import { getTransacoes, formatarMoeda } from '@/lib/storage';
+import { getTransacoes, formatarMoeda, atualizarTransacao, salvarTransacao } from '@/lib/storage';
 
 export function CentralConciliacao() {
   const [transacoes, setTransacoes] = useState<Transacao[]>([]);
@@ -44,21 +44,40 @@ export function CentralConciliacao() {
     reader.readAsText(file);
   };
 
-  const handleMatch = () => {
-    // Aqui seria a lógica para confirmar a conciliação não Firebase
-    avancarSwipe();
-  };
+  const handleMatch = async (item?: ConciliacaoItem) => {
+    const alvo = item || itemAtual;
+    if (!alvo) return;
 
-  const handleDescartar = () => {
-    // Ignãorar ou criar novo sem match
-    avancarSwipe();
-  };
-
-  const avancarSwipe = () => {
-    if (swipeIndex < itensExtrato.length - 1) {
-      setSwipeIndex(prev => prev + 1);
+    if (alvo.transacaoCorrespondenteId) {
+      await atualizarTransacao(alvo.transacaoCorrespondenteId, { conciliado: true, status: 'pago' });
     } else {
-      setModoSwipe(false); // Terminãou
+      await salvarTransacao({
+        descricao: alvo.descricao,
+        valor: alvo.valor,
+        tipo: alvo.tipo,
+        data: alvo.data,
+        status: 'pago',
+        conciliado: true,
+        categoriaNome: 'A Classificar (Banco)'
+      } as Transacao);
+    }
+    
+    setItensExtrato(prev => prev.filter(i => i.id !== alvo.id));
+    
+    if (modoSwipe && itensExtrato.length <= 1) {
+      setModoSwipe(false);
+      alert("Conciliação finalizada! 🎉");
+    }
+  };
+
+  const handleDescartar = (item?: ConciliacaoItem) => {
+    const alvo = item || itemAtual;
+    if (!alvo) return;
+
+    setItensExtrato(prev => prev.filter(i => i.id !== alvo.id));
+
+    if (modoSwipe && itensExtrato.length <= 1) {
+      setModoSwipe(false);
       alert("Conciliação finalizada! 🎉");
     }
   };
@@ -142,11 +161,11 @@ export function CentralConciliacao() {
              )}
 
              <div style={{ display: 'flex', gap: 16, justifyContent: 'center', marginTop: 20 }}>
-               <button onClick={handleDescartar} style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--bg-secondary)', border: '2px solid #ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.2s' }} onMouseOver={e => e.currentTarget.style.transform = 'scale(1.1)'} onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}>
+               <button onClick={() => handleDescartar()} style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--bg-secondary)', border: '2px solid #ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.2s' }} onMouseOver={e => e.currentTarget.style.transform = 'scale(1.1)'} onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}>
                  <span style={{ fontSize: 24 }}>❌</span>
                </button>
                
-               <button onClick={handleMatch} style={{ width: 80, height: 80, borderRadius: '50%', background: '#10b981', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 10px 20px rgba(16,185,129,0.4)', transition: 'transform 0.2s' }} onMouseOver={e => e.currentTarget.style.transform = 'scale(1.1)'} onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}>
+               <button onClick={() => handleMatch()} style={{ width: 80, height: 80, borderRadius: '50%', background: '#10b981', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 10px 20px rgba(16,185,129,0.4)', transition: 'transform 0.2s' }} onMouseOver={e => e.currentTarget.style.transform = 'scale(1.1)'} onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}>
                  <span style={{ fontSize: 32 }}>💚</span>
                </button>
              </div>
@@ -168,10 +187,11 @@ export function CentralConciliacao() {
                 padding: '14px 18px',
                 background: 'var(--bg-card)',
                 border: `1px solid ${item.status === 'conciliado' ? 'rgba(16,185,129,0.3)' : item.status === 'divergente' ? 'rgba(245,158,11,0.3)' : 'var(--border)'}`,
-                borderRadius: 14
+                borderRadius: 14,
+                gap: 16
               }}>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                     <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>{item.descricao}</span>
                     <span className={`badge ${item.status === 'conciliado' ? 'badge-green' : item.status === 'divergente' ? 'badge-yellow' : 'badge-gray'}`}>
                       {item.status === 'conciliado' ? 'MATCH 100%' : item.status === 'divergente' ? 'PARCIAL' : 'PENDENTE'}
@@ -182,10 +202,19 @@ export function CentralConciliacao() {
                   </span>
                 </div>
 
-                <div style={{ textAlign: 'right' }}>
+                <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
                   <span style={{ fontSize: 16, fontWeight: 800, color: item.tipo === 'receita' ? '#10b981' : '#ef4444' }}>
                     {item.tipo === 'receita' ? '+' : '-'}{fmt(item.valor)}
                   </span>
+                  
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button onClick={() => handleDescartar(item)} style={{ width: 32, height: 32, borderRadius: '50%', background: 'transparent', border: '1px solid #ef4444', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }} title="Descartar">
+                      ✕
+                    </button>
+                    <button onClick={() => handleMatch(item)} style={{ width: 32, height: 32, borderRadius: '50%', background: '#10b981', border: 'none', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }} title="Confirmar Match">
+                      ✓
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
