@@ -1680,6 +1680,111 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
 
+      {/* NOVO TOPO (Fornecedor, Recorrente, Comportamento) */}
+      <div className="grid-responsive-3" style={{ alignItems: 'flex-start', marginBottom: 16 }}>
+         <div style={{ zIndex: 10 }}>
+{(form.tipo as string) !== 'transferencia' && (
+      <div>
+        <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 5 }}>{(form.tipo as string) === 'receita' ? 'Cliente' : 'Fornecedor'}</label>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ flex: 1 }}>
+            <input list="clientes-fornecedores-list-manual" className="input-field" placeholder={`Buscar ${(form.tipo as string) === 'receita' ? 'cliente' : 'fornecedor'}...`} value={(form.tipo as string) === 'receita' ? (clientes.find(c => c.id === form.clienteId)?.nome || (form as any).clienteNome || '') : (fornecedores.find(f => f.id === form.fornecedorId)?.nome || (form as any).fornecedorNome || '')} onChange={e => {
+              const nome = e.target.value;
+              if ((form.tipo as string) === 'receita') {
+                const cli = clientes.find(c => c.nome.toLowerCase() === nome.toLowerCase());
+                if (cli) {
+                  setForm(f => ({ ...f, clienteId: cli.id, clienteNome: cli.nome } as any));
+                  const historicoSorted = [...historico].sort((a,b)=>b.count-a.count);
+                  const match = historicoSorted.find(h => h.fornecedorId === cli.id); // For clientes, currently using fornecedorId in schema for contatos
+                  if (match) {
+                      setForm(prev => {
+                          const nf = { ...prev };
+                          if (match.categoriaId && !prev.categoriaId) nf.categoriaId = match.categoriaId;
+                          if (match.centroCustoId && !prev.centroCustoId) nf.centroCustoId = match.centroCustoId;
+                          if (match.contaId && !prev.contaId) nf.contaId = match.contaId;
+                          if (match.formaPagamento && !prev.formaPagamento) nf.formaPagamento = match.formaPagamento;
+                          return nf;
+                      });
+                  }
+                }
+                else setForm(f => ({ ...f, clienteId: '', clienteNome: nome } as any));
+              } else {
+                const forn = fornecedores.find(f => f.nome.toLowerCase() === nome.toLowerCase());
+                if (forn) {
+                  setForm(f => ({ ...f, fornecedorId: forn.id, fornecedorNome: forn.nome } as any));
+                  const historicoSorted = [...historico].sort((a,b)=>b.count-a.count);
+                  const match = historicoSorted.find(h => h.fornecedorId === forn.id);
+                  if (match) {
+                      setForm(prev => {
+                          const nf = { ...prev };
+                          if (match.categoriaId && !prev.categoriaId) nf.categoriaId = match.categoriaId;
+                          if (match.centroCustoId && !prev.centroCustoId) nf.centroCustoId = match.centroCustoId;
+                          if (match.contaId && !prev.contaId) nf.contaId = match.contaId;
+                          if (match.formaPagamento && !prev.formaPagamento) nf.formaPagamento = match.formaPagamento;
+                          return nf;
+                      });
+                  }
+                }
+                else setForm(f => ({ ...f, fornecedorId: '', fornecedorNome: nome } as any));
+              }
+            }} />
+            <datalist id="clientes-fornecedores-list-manual">
+              {fornecedores.map(f => <option key={f.id} value={f.nome} />)}{clientes.map(c => <option key={c.id} value={c.nome} />)}
+            </datalist>
+          </div>
+          <button type="button" onClick={() => setNovoCadastro((form.tipo as string) === 'receita' ? 'cliente' : 'fornecedor')} className="btn-secondary hover-lift active-press" style={{ padding: '0 12px', flexShrink: 0 }}>
+            <Plus size={16} />
+          </button>
+        </div>
+
+        {novoCadastro && (
+          <div style={{ marginTop: 8, padding: 12, background: 'var(--bg-glass)', borderRadius: 10, border: '1px solid var(--border-hover)', display: 'flex', gap: 8 }}>
+            <input className="input-field" style={{ flex: 1, padding: '8px 12px' }} value={novoNome} onChange={e => setNovoNome(e.target.value)} placeholder={`Novo ${novoCadastro}`} autoFocus />
+            <button type="button" onClick={handleQuickAdd} className="btn-primary hover-lift active-press" style={{ padding: '8px 12px' }}>Salvar</button>
+            <button type="button" onClick={() => setNovoCadastro(null)} className="btn-secondary hover-lift active-press" style={{ padding: '8px' }}><X size={16} /></button>
+          </div>
+        )}
+      </div>
+      )}
+</div>
+         <div style={{ marginTop: 18 }}>
+{/* Recorrência */}
+      {(form.tipo as string) !== 'transferencia' && form.formaPagamento !== 'cartao_credito' && (
+      <div style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)', borderRadius: 12, padding: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: form.recorrente ? 12 : 0 }}>
+          <input type="checkbox" id="recorrente-manual" checked={form.recorrente} onChange={e => set({ recorrente: e.target.checked })} style={{ accentColor: '#f59e0b' }} />
+          <label htmlFor="recorrente-manual" style={{ fontSize: 12, fontWeight: 600, color: '#fbbf24' }}>🔄 Lançamento Recorrente</label>
+        </div>
+        {form.recorrente && (
+          <div className="grid-responsive-3">
+            <div>
+              <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>Frequência</label>
+              <select className="input-field" value={form.frequenciaRecorrencia} onChange={e => set({ frequenciaRecorrencia: e.target.value as 'semanal' | 'mensal' | 'trimestral' | 'anual' })}>
+                {Object.entries(FREQUENCIA_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>Quantidade</label>
+              <input className="input-field" type="number" min="2" max="60" value={form.quantidadeRecorrencias} onChange={e => set({ quantidadeRecorrencias: parseInt(e.target.value) || 2 })} />
+            </div>
+          </div>
+        )}
+      </div>
+      )}
+</div>
+         <div style={{ flex: 1, minWidth: 150 }}>
+{['master', '9yxuafoC0AV9BrIKem05ponbmgn2', 'autocred-promotora-de-credito'].includes(getTenantId()) && (form.tipo as string) !== 'transferencia' && (
+            <div style={{ width: "100%" }}>
+              <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 5 }}>Comportamento</label>
+              <select className="input-field" value={form.comportamento} onChange={e => setForm(f => ({ ...f, comportamento: e.target.value }))}>
+                <option value="fixa">Fixa</option>
+                <option value="variavel">Variável</option>
+              </select>
+            </div>
+          )}
+</div>
+      </div>
+
       <div className="grid-responsive-3">
         <div>
           <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 5 }}>Descrição *</label>
@@ -1931,41 +2036,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
         </div>
       )}
 
-      {(form.tipo as string) !== 'transferencia' && (
-      <div>
-        <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 5 }}>{(form.tipo as string) === 'receita' ? 'Cliente' : 'Fornecedor'}</label>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <div style={{ flex: 1 }}>
-            <input list="clientes-fornecedores-list-manual" className="input-field" placeholder={`Buscar ${(form.tipo as string) === 'receita' ? 'cliente' : 'fornecedor'}...`} value={(form.tipo as string) === 'receita' ? (clientes.find(c => c.id === form.clienteId)?.nome || (form as any).clienteNome || '') : (fornecedores.find(f => f.id === form.fornecedorId)?.nome || (form as any).fornecedorNome || '')} onChange={e => {
-              const nome = e.target.value;
-              if ((form.tipo as string) === 'receita') {
-                const cli = clientes.find(c => c.nome.toLowerCase() === nome.toLowerCase());
-                if (cli) setForm(f => ({ ...f, clienteId: cli.id, clienteNome: cli.nome } as any));
-                else setForm(f => ({ ...f, clienteId: '', clienteNome: nome } as any));
-              } else {
-                const forn = fornecedores.find(f => f.nome.toLowerCase() === nome.toLowerCase());
-                if (forn) setForm(f => ({ ...f, fornecedorId: forn.id, fornecedorNome: forn.nome } as any));
-                else setForm(f => ({ ...f, fornecedorId: '', fornecedorNome: nome } as any));
-              }
-            }} />
-            <datalist id="clientes-fornecedores-list-manual">
-              {fornecedores.map(f => <option key={f.id} value={f.nome} />)}{clientes.map(c => <option key={c.id} value={c.nome} />)}
-            </datalist>
-          </div>
-          <button type="button" onClick={() => setNovoCadastro((form.tipo as string) === 'receita' ? 'cliente' : 'fornecedor')} className="btn-secondary hover-lift active-press" style={{ padding: '0 12px', flexShrink: 0 }}>
-            <Plus size={16} />
-          </button>
-        </div>
-
-        {novoCadastro && (
-          <div style={{ marginTop: 8, padding: 12, background: 'var(--bg-glass)', borderRadius: 10, border: '1px solid var(--border-hover)', display: 'flex', gap: 8 }}>
-            <input className="input-field" style={{ flex: 1, padding: '8px 12px' }} value={novoNome} onChange={e => setNovoNome(e.target.value)} placeholder={`Novo ${novoCadastro}`} autoFocus />
-            <button type="button" onClick={handleQuickAdd} className="btn-primary hover-lift active-press" style={{ padding: '8px 12px' }}>Salvar</button>
-            <button type="button" onClick={() => setNovoCadastro(null)} className="btn-secondary hover-lift active-press" style={{ padding: '8px' }}><X size={16} /></button>
-          </div>
-        )}
-      </div>
-      )}
+      
 
       {/* Parcelamento (Apenas para Cartão de Crédito) */}
       {form.formaPagamento === 'cartao_credito' && (
@@ -1995,29 +2066,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
       </div>
       )}
 
-      {/* Recorrência */}
-      {(form.tipo as string) !== 'transferencia' && form.formaPagamento !== 'cartao_credito' && (
-      <div style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)', borderRadius: 12, padding: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: form.recorrente ? 12 : 0 }}>
-          <input type="checkbox" id="recorrente-manual" checked={form.recorrente} onChange={e => set({ recorrente: e.target.checked })} style={{ accentColor: '#f59e0b' }} />
-          <label htmlFor="recorrente-manual" style={{ fontSize: 12, fontWeight: 600, color: '#fbbf24' }}>🔄 Lançamento Recorrente</label>
-        </div>
-        {form.recorrente && (
-          <div className="grid-responsive-3">
-            <div>
-              <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>Frequência</label>
-              <select className="input-field" value={form.frequenciaRecorrencia} onChange={e => set({ frequenciaRecorrencia: e.target.value as 'semanal' | 'mensal' | 'trimestral' | 'anual' })}>
-                {Object.entries(FREQUENCIA_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-              </select>
-            </div>
-            <div>
-              <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>Quantidade</label>
-              <input className="input-field" type="number" min="2" max="60" value={form.quantidadeRecorrencias} onChange={e => set({ quantidadeRecorrencias: parseInt(e.target.value) || 2 })} />
-            </div>
-          </div>
-        )}
-      </div>
-      )}
+      
 
       {/* Observações moved to bottom */}
 <div style={{ marginBottom: 20, display: 'flex', gap: 12 }}>
@@ -2025,15 +2074,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
             <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 5 }}>Observações Gerais</label>
             <textarea className="input-field" rows={3} value={form.observacoes} onChange={e => setForm(f => ({ ...f, observacoes: e.target.value }))} placeholder="Deseja anotar mais algum detalhe sobre esse lançamento?" style={{ resize: 'vertical' }}></textarea>
           </div>
-          {['master', '9yxuafoC0AV9BrIKem05ponbmgn2', 'autocred-promotora-de-credito'].includes(getTenantId()) && (form.tipo as string) !== 'transferencia' && (
-            <div style={{ width: 150 }}>
-              <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 5 }}>Comportamento</label>
-              <select className="input-field" value={form.comportamento} onChange={e => setForm(f => ({ ...f, comportamento: e.target.value }))}>
-                <option value="fixa">Fixa</option>
-                <option value="variavel">Variável</option>
-              </select>
-            </div>
-          )}
+          
         </div>
 
       {/* Rateio, Conciliado & Comprovante - Movidos para o final da tela */}

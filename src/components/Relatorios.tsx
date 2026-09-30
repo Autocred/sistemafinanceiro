@@ -108,6 +108,7 @@ export default function Relatorios() {
   // Cálculos baseados nãos filtros (Em relatórios usamos soma direta, não o motor de saldos)
   const totalReceitas = transacoesFiltradas.filter(t => t.tipo === 'receita').reduce((acc, t) => acc + getValorFinal(t), 0);
   const totalDespesas = transacoesFiltradas.filter(t => t.tipo === 'despesa').reduce((acc, t) => acc + getValorFinal(t), 0);
+  const totalTransferencias = transacoesFiltradas.filter(t => t.tipo === 'transferencia').reduce((acc, t) => acc + getValorFinal(t), 0);
   const saldo = totalReceitas - totalDespesas;
 
   // Por categoria (DESPESAS SEMPRE VERMELHAS)
@@ -558,9 +559,9 @@ export default function Relatorios() {
                         {t.fornecedorNome && <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>{t.fornecedorNome}</div>}
                       </td>
                       <td style={{ padding: '12px 8px', color: '#475569' }}>{t.categoriaNome || '-'}</td>
-                      <td style={{ padding: '12px 8px', color: '#475569' }}>{t.contaNome || '-'}</td>
-                      <td style={{ padding: '12px 8px', textAlign: 'right', fontWeight: 700, color: t.tipo === 'receita' ? '#16a34a' : '#dc2626' }}>
-                        {t.tipo === 'receita' ? '+' : '-'}{fmt(getValorFinal(t))}
+                      <td style={{ padding: '12px 8px', color: '#475569' }}>{t.tipo === 'transferencia' ? `${t.contaNome || '?'} → ${t.contaDestinãoNome || '?'}` : (t.contaNome || '-')}</td>
+                      <td style={{ padding: '12px 8px', textAlign: 'right', fontWeight: 700, color: t.tipo === 'receita' ? '#16a34a' : t.tipo === 'transferencia' ? '#3b82f6' : '#dc2626' }}>
+                        {t.tipo === 'receita' ? '+' : t.tipo === 'transferencia' ? '' : '-'}{fmt(getValorFinal(t))}
                       </td>
                     </tr>
                   ))}
@@ -581,6 +582,12 @@ export default function Relatorios() {
                     <td colSpan={4} style={{ padding: '12px 8px', textAlign: 'right', fontWeight: 700, color: '#475569' }}>TOTAL DESPESAS:</td>
                     <td style={{ padding: '12px 8px', textAlign: 'right', fontWeight: 800, color: '#dc2626' }}>{fmt(totalDespesas)}</td>
                   </tr>
+                  {(filtros.tipo === 'transferencia' || totalTransferencias > 0) && (
+                    <tr style={{ background: '#f8fafc' }}>
+                      <td colSpan={4} style={{ padding: '12px 8px', textAlign: 'right', fontWeight: 700, color: '#475569' }}>TOTAL TRANSFERÊNCIAS:</td>
+                      <td style={{ padding: '12px 8px', textAlign: 'right', fontWeight: 800, color: '#3b82f6' }}>{fmt(totalTransferencias)}</td>
+                    </tr>
+                  )}
                   <tr style={{ background: '#f1f5f9' }}>
                     <td colSpan={4} style={{ padding: '16px 8px', textAlign: 'right', fontWeight: 800, color: '#1e293b', fontSize: 14 }}>SALDO LÍQUIDO DO PERÍODO:</td>
                     <td style={{ padding: '16px 8px', textAlign: 'right', fontWeight: 900, color: saldo >= 0 ? '#16a34a' : '#dc2626', fontSize: 15 }}>{fmt(saldo)}</td>
