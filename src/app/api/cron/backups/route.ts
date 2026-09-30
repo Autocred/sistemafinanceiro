@@ -8,7 +8,7 @@ const CRON_SECRET = process.env.CRON_SECRET || 'dev_secret_financeai';
 const DATA_COLLECTIONS = [
   'transacoes', 'categorias', 'centrosCusto', 'fornecedores', 
   'clientes', 'contas', 'cartoes', 'faturas', 
-  'financial_movements', 'alertas', 'historico_ia'
+  'financial_movements', 'alertas', 'historicoIA'
 ];
 
 function getCollectionPathAdmin(tenantId: string | null, col: string) {

@@ -235,7 +235,7 @@ export default function Configuracoes() {
       alert('Backup manual realizado com sucesso!');
     } catch (e) {
       console.error(e);
-      alert('Erro ao realizar backup');
+      alert('Erro ao realizar backup: ' + (e.message || String(e)));
     } finally {
       setBackupLoading(false);
     }

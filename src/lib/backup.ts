@@ -10,7 +10,7 @@ const LOGS_COLLECTION = 'logs_backups';
 const DATA_COLLECTIONS = [
   'transacoes', 'categorias', 'centrosCusto', 'fornecedores', 
   'clientes', 'contas', 'cartoes', 'faturas', 
-  'financial_movements', 'alertas', 'historico_ia'
+  'financial_movements', 'alertas', 'historicoIA'
 ];
 
 export async function fazerBackup(tipo: 'manual' | 'automatico' | 'pre_restauracao'): Promise<BackupApp> {
