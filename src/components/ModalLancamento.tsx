@@ -1747,32 +1747,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
       </div>
       )}
 </div>
-         <div style={{ marginTop: 18 }}>
-{/* Recorrência */}
-      {(form.tipo as string) !== 'transferencia' && form.formaPagamento !== 'cartao_credito' && (
-      <div style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)', borderRadius: 12, padding: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: form.recorrente ? 12 : 0 }}>
-          <input type="checkbox" id="recorrente-manual" checked={form.recorrente} onChange={e => set({ recorrente: e.target.checked })} style={{ accentColor: '#f59e0b' }} />
-          <label htmlFor="recorrente-manual" style={{ fontSize: 12, fontWeight: 600, color: '#fbbf24' }}>🔄 Lançamento Recorrente</label>
-        </div>
-        {form.recorrente && (
-          <div className="grid-responsive-3">
-            <div>
-              <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>Frequência</label>
-              <select className="input-field" value={form.frequenciaRecorrencia} onChange={e => set({ frequenciaRecorrencia: e.target.value as 'semanal' | 'mensal' | 'trimestral' | 'anual' })}>
-                {Object.entries(FREQUENCIA_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-              </select>
-            </div>
-            <div>
-              <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>Quantidade</label>
-              <input className="input-field" type="number" min="2" max="60" value={form.quantidadeRecorrencias} onChange={e => set({ quantidadeRecorrencias: parseInt(e.target.value) || 2 })} />
-            </div>
-          </div>
-        )}
-      </div>
-      )}
-</div>
-         <div style={{ flex: 1, minWidth: 150 }}>
+                  <div style={{ flex: 1, minWidth: 150 }}>
 {['master', '9yxuafoC0AV9BrIKem05ponbmgn2', 'autocred-promotora-de-credito'].includes(getTenantId()) && (form.tipo as string) !== 'transferencia' && (
             <div style={{ width: "100%" }}>
               <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 5 }}>Comportamento</label>
@@ -2012,6 +1987,30 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
             </button>
           </div>
         </div>
+      </div>
+      )}
+
+      {/* Recorrência */}
+      {(form.tipo as string) !== 'transferencia' && form.formaPagamento !== 'cartao_credito' && (
+      <div style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)', borderRadius: 12, padding: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: form.recorrente ? 12 : 0 }}>
+          <input type="checkbox" id="recorrente-manual" checked={form.recorrente} onChange={e => set({ recorrente: e.target.checked })} style={{ accentColor: '#f59e0b' }} />
+          <label htmlFor="recorrente-manual" style={{ fontSize: 12, fontWeight: 600, color: '#fbbf24' }}>🔄 Lançamento Recorrente</label>
+        </div>
+        {form.recorrente && (
+          <div className="grid-responsive-3">
+            <div>
+              <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>Frequência</label>
+              <select className="input-field" value={form.frequenciaRecorrencia} onChange={e => set({ frequenciaRecorrencia: e.target.value as 'semanal' | 'mensal' | 'trimestral' | 'anual' })}>
+                {Object.entries(FREQUENCIA_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>Quantidade</label>
+              <input className="input-field" type="number" min="2" max="60" value={form.quantidadeRecorrencias} onChange={e => set({ quantidadeRecorrencias: parseInt(e.target.value) || 2 })} />
+            </div>
+          </div>
+        )}
       </div>
       )}
 
