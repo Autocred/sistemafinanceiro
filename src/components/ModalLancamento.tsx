@@ -504,7 +504,7 @@ export default function ModalLancamento({ onClose, onSalvo, transacaoEditar }: P
                     background: texto.trim() ? 'linear-gradient(135deg, #10b981, #059669)' : 'var(--border)',
                     border: 'none', cursor: texto.trim() ? 'pointer' : 'not-allowed',
                     display: 'flex', alignItems: 'center', gap: 8, color: 'white',
-                    fontWeight: 600, fontSize: 13, transition: 'all 0.2s',
+                    fontWeight: 600, fontSize: 12, transition: 'all 0.2s',
                   }}>
                   {interpretando ? (
                     <><Loader2 size={16} className="animate-spin" /> Processando...</>
@@ -516,7 +516,7 @@ export default function ModalLancamento({ onClose, onSalvo, transacaoEditar }: P
             </div>
 
             {gravando && (
-              <p style={{ textAlign: 'center', color: '#ef4444', fontSize: 13, fontWeight: 600, animation: 'pulse 1.5s infinite' }}>
+              <p style={{ textAlign: 'center', color: '#ef4444', fontSize: 12, fontWeight: 600, animation: 'pulse 1.5s infinite' }}>
                 Ouvindo... {feedbackVoz}
               </p>
             )}
@@ -548,7 +548,7 @@ export default function ModalLancamento({ onClose, onSalvo, transacaoEditar }: P
                       <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0 }}>Tire foto de uma nota e a IA preenche o formulário.</p>
                     </div>
                   </div>
-                  <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 16px', background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: 'pointer', border: 'none' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 16px', background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', borderRadius: 10, fontWeight: 700, fontSize: 12, cursor: 'pointer', border: 'none' }}>
                     <Camera size={18} />
                     <span>Tirar Foto / Anexar</span>
                     <input type="file" accept="image/*,.pdf" capture="environment" style={{ display: 'none' }} onChange={handleScanReceiptGlobal} />
@@ -556,7 +556,7 @@ export default function ModalLancamento({ onClose, onSalvo, transacaoEditar }: P
                 </div>
 
                 <div style={{ textAlign: 'center', marginTop: 16 }}>
-                  <button onClick={() => setModo('manual')} style={{ background: 'var(--bg-glass)', border: '1px solid var(--border-hover)', color: 'var(--text-secondary)', padding: '10px 16px', borderRadius: 12, fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 8 }} onMouseOver={e => e.currentTarget.style.borderColor = 'var(--text-muted)'} onMouseOut={e => e.currentTarget.style.borderColor = 'var(--border-hover)'}>
+                  <button onClick={() => setModo('manual')} style={{ background: 'var(--bg-glass)', border: '1px solid var(--border-hover)', color: 'var(--text-secondary)', padding: '10px 16px', borderRadius: 12, fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 8 }} onMouseOver={e => e.currentTarget.style.borderColor = 'var(--text-muted)'} onMouseOut={e => e.currentTarget.style.borderColor = 'var(--border-hover)'}>
                     ✏️ Preencher Manualmente
                   </button>
                 </div>
@@ -573,14 +573,14 @@ export default function ModalLancamento({ onClose, onSalvo, transacaoEditar }: P
                 <AlertCircle size={18} />
                 {prelancamento.tipo === 'despesa' ? 'Fornecedor' : 'Cliente'} não exato
               </h3>
-              <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>
+              <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 16 }}>
                 A IA identificou "{prelancamento.tipo === 'despesa' ? prelancamento.fornecedorNome : prelancamento.clienteNome}", mas encontrou registros parecidos não banco de dados. Qual você deseja usar?
               </p>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {(prelancamento.tipo === 'despesa' ? prelancamento.fornecedorOpcoes : prelancamento.clienteOpcoes)?.map(op => (
                   <button key={op.id} onClick={() => resolverEntidade(op.id, op.nome)}
-                    style={{ background: 'var(--bg-glass)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', color: 'var(--text-primary)', fontWeight: 600, fontSize: 13, transition: 'all 0.2s' }}
+                    style={{ background: 'var(--bg-glass)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', color: 'var(--text-primary)', fontWeight: 600, fontSize: 12, transition: 'all 0.2s' }}
                     onMouseEnter={e => e.currentTarget.style.borderColor = '#10b981'}
                     onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}>
                     {op.nome}
@@ -668,7 +668,7 @@ export default function ModalLancamento({ onClose, onSalvo, transacaoEditar }: P
         {erro && (
           <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, padding: '10px 14px', marginTop: 12, display: 'flex', gap: 8, alignItems: 'flex-start' }}>
             <AlertCircle size={15} color="#ef4444" style={{ flexShrink: 0, marginTop: 1 }} />
-            <p style={{ fontSize: 13, color: '#f87171' }}>{erro}</p>
+            <p style={{ fontSize: 12, color: '#f87171' }}>{erro}</p>
           </div>
         )}
       </div>
@@ -702,7 +702,7 @@ function PreLancamentoCard({ prelancamento: p, onConfirmar, onEditar, onRefazer,
       {p.textoOriginal && (
         <div style={{ background: 'var(--bg-glass)', borderRadius: 10, padding: '10px 14px', marginBottom: 16, border: '1px solid var(--border)' }}>
           <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Interpretei:</p>
-          <p style={{ fontSize: 13, color: 'var(--text-secondary)', fontStyle: 'italic' }}>"{p.textoOriginal}"</p>
+          <p style={{ fontSize: 12, color: 'var(--text-secondary)', fontStyle: 'italic' }}>"{p.textoOriginal}"</p>
         </div>
       )}
 
@@ -750,7 +750,7 @@ function PreLancamentoCard({ prelancamento: p, onConfirmar, onEditar, onRefazer,
       {p.textoOriginal && (
         <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: 'var(--bg-glass)', borderRadius: 10, border: '1px solid var(--border)' }}>
           <input type="checkbox" id="ensinar" checked={ensinarIA} onChange={e => setEnsinarIA(e.target.checked)} style={{ accentColor: '#10b981', cursor: 'pointer', width: 16, height: 16 }} />
-          <label htmlFor="ensinar" style={{ fontSize: 13, color: 'var(--text-secondary)', cursor: 'pointer', flex: 1 }}>
+          <label htmlFor="ensinar" style={{ fontSize: 12, color: 'var(--text-secondary)', cursor: 'pointer', flex: 1 }}>
             <strong>Ensinar a IA</strong> a classificar gastos parecidos desta forma na próxima vez
           </label>
         </div>
@@ -881,7 +881,7 @@ function EditarPreLancamento({ prelancamento, categorias, centrosCusto, contas, 
               }
               set(updates);
             }} style={{ accentColor: '#3b82f6', width: 16, height: 16 }} />
-            <label htmlFor="cartao-edit" style={{ fontSize: 13, fontWeight: 600, color: '#3b82f6', cursor: 'pointer' }}>💳 Compra no Cartão de Crédito?</label>
+            <label htmlFor="cartao-edit" style={{ fontSize: 12, fontWeight: 600, color: '#3b82f6', cursor: 'pointer' }}>💳 Compra no Cartão de Crédito?</label>
           </div>
           
           {p.formaPagamento === 'cartao_credito' ? (
@@ -1105,7 +1105,7 @@ function EditarPreLancamento({ prelancamento, categorias, centrosCusto, contas, 
               
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, paddingTop: 8, borderTop: '1px dashed rgba(59,130,246,0.3)' }}>
                 <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)' }}>Soma do Rateio:</span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: (p.rateio.reduce((acc: number, curr: any) => acc + curr.valor, 0) === p.valor) ? '#10b981' : '#ef4444' }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: (p.rateio.reduce((acc: number, curr: any) => acc + curr.valor, 0) === p.valor) ? '#10b981' : '#ef4444' }}>
                   {formatarMoeda(p.rateio.reduce((acc: number, curr: any) => acc + curr.valor, 0))} / {formatarMoeda(p.valor)}
                 </span>
               </div>
@@ -1123,7 +1123,7 @@ function EditarPreLancamento({ prelancamento, categorias, centrosCusto, contas, 
         <div style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.15)', borderRadius: 12, padding: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <input type="checkbox" id="conciliado-edit" checked={!!p.conciliado} onChange={e => set({ conciliado: e.target.checked })} style={{ accentColor: '#10b981', width: 16, height: 16 }} />
-            <label htmlFor="conciliado-edit" style={{ fontSize: 13, fontWeight: 600, color: '#10b981', cursor: 'pointer' }}>Conciliado (Bate com Banco)</label>
+            <label htmlFor="conciliado-edit" style={{ fontSize: 12, fontWeight: 600, color: '#10b981', cursor: 'pointer' }}>Conciliado (Bate com Banco)</label>
           </div>
         </div>
         <div style={{ background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.15)', borderRadius: 12, padding: 12 }}>
@@ -1148,7 +1148,7 @@ function EditarPreLancamento({ prelancamento, categorias, centrosCusto, contas, 
       {p.textoOriginal && (
         <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: 'rgba(16,185,129,0.06)', borderRadius: 10, border: '1px solid rgba(16,185,129,0.2)' }}>
           <input type="checkbox" id="ensinar-edit" checked={ensinarIA} onChange={e => setEnsinarIA(e.target.checked)} style={{ accentColor: '#10b981', cursor: 'pointer', width: 16, height: 16 }} />
-          <label htmlFor="ensinar-edit" style={{ fontSize: 13, color: 'var(--text-primary)', cursor: 'pointer', flex: 1 }}>
+          <label htmlFor="ensinar-edit" style={{ fontSize: 12, color: 'var(--text-primary)', cursor: 'pointer', flex: 1 }}>
             <strong>Ensinar a IA</strong> a usar estes mesmos dados quando eu disser algo parecido
           </label>
         </div>
@@ -1226,7 +1226,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
     cartaoId: '',
     formaPagamento: 'pix' as 'pix' | 'dinheiro' | 'cartao_credito' | 'cartao_debito' | 'transferencia' | 'boleto',
     observacoes: initialData?.observacoes || '',
-      comportamento: initialData?.comportamento || 'fixa',
+      comportamento: initialData?.comportamento || 'variavel',
     parcelado: false,
     totalParcelas: 1,
     recorrente: false,
@@ -1555,16 +1555,16 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      <div className="grid-responsive-3">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
         {['despesa', 'receita', 'transferencia'].map(t => (
           <button key={t}
             onClick={() => set({ tipo: t as 'despesa' | 'receita' | 'transferencia', descricao: t === 'transferencia' ? 'Transferência entre contas' : form.descricao })}
             style={{
-              padding: '10px', borderRadius: 10,
+              padding: '8px 4px', borderRadius: 8, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
               border: `1px solid ${form.tipo === t ? (t === 'despesa' ? 'rgba(239,68,68,0.4)' : t === 'receita' ? 'rgba(16,185,129,0.4)' : 'rgba(59,130,246,0.4)') : 'var(--border)'}`,
               background: form.tipo === t ? (t === 'despesa' ? 'rgba(239,68,68,0.1)' : t === 'receita' ? 'rgba(16,185,129,0.1)' : 'rgba(59,130,246,0.1)') : 'transparent',
               color: form.tipo === t ? (t === 'despesa' ? '#f87171' : t === 'receita' ? '#34d399' : '#60a5fa') : 'var(--text-muted)',
-              cursor: 'pointer', fontWeight: 700, fontSize: 13,
+              cursor: 'pointer', fontWeight: 700, fontSize: 12,
             }}>
             {t === 'despesa' ? '↓ Despesa' : t === 'receita' ? '↑ Receita' : '↔ Transferência'}
           </button>
@@ -1668,7 +1668,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
 
           {/* Erro se houver */}
           {erroForm && (
-            <p style={{ fontSize: 13, color: '#f87171', background: 'rgba(239,68,68,0.1)', padding: '10px 14px', borderRadius: 10, border: '1px solid rgba(239,68,68,0.2)' }}>{erroForm}</p>
+            <p style={{ fontSize: 12, color: '#f87171', background: 'rgba(239,68,68,0.1)', padding: '10px 14px', borderRadius: 10, border: '1px solid rgba(239,68,68,0.2)' }}>{erroForm}</p>
           )}
 
           <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 10 }}>
@@ -1718,7 +1718,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
               }
               setForm(f => ({ ...f, ...updates }));
             }} style={{ accentColor: '#3b82f6', width: 16, height: 16, cursor: 'pointer' }} />
-            <label htmlFor="cartao-manual-check" style={{ fontSize: 13, fontWeight: 700, color: '#3b82f6', cursor: 'pointer' }}>Compra no Cartão de Crédito?</label>
+            <label htmlFor="cartao-manual-check" style={{ fontSize: 12, fontWeight: 700, color: '#3b82f6', cursor: 'pointer' }}>Compra no Cartão de Crédito?</label>
           </div>
           
           {form.formaPagamento === 'cartao_credito' ? (
@@ -1972,7 +1972,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
       <div style={{ background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.15)', borderRadius: 12, padding: 16, marginBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: form.parcelado ? 12 : 0 }}>
           <input type="checkbox" id="parcelado-manual" checked={form.parcelado} onChange={e => set({ parcelado: e.target.checked })} style={{ accentColor: '#3b82f6' }} />
-          <label htmlFor="parcelado-manual" style={{ fontSize: 13, fontWeight: 600, color: '#3b82f6' }}>💳 Compra Parcelada</label>
+          <label htmlFor="parcelado-manual" style={{ fontSize: 12, fontWeight: 600, color: '#3b82f6' }}>💳 Compra Parcelada</label>
         </div>
         {form.parcelado && (
           <div className="grid-responsive-3">
@@ -1983,7 +1983,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
                   <option key={i+2} value={i+2}>{i+2}x de {formatarMoeda(parseMoedaInput(form.valor.toString()) / (i+2))}</option>
                 ))}
               </select>
-              <div style={{ marginTop: 8, fontSize: 13, fontWeight: 600, color: '#3b82f6' }}>
+              <div style={{ marginTop: 8, fontSize: 12, fontWeight: 600, color: '#3b82f6' }}>
                 {form.totalParcelas}x parcelas de {formatarMoeda(parseMoedaInput(form.valor.toString()) / form.totalParcelas)}
               </div>
             </div>
@@ -2000,7 +2000,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
       <div style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)', borderRadius: 12, padding: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: form.recorrente ? 12 : 0 }}>
           <input type="checkbox" id="recorrente-manual" checked={form.recorrente} onChange={e => set({ recorrente: e.target.checked })} style={{ accentColor: '#f59e0b' }} />
-          <label htmlFor="recorrente-manual" style={{ fontSize: 13, fontWeight: 600, color: '#fbbf24' }}>🔄 Lançamento Recorrente</label>
+          <label htmlFor="recorrente-manual" style={{ fontSize: 12, fontWeight: 600, color: '#fbbf24' }}>🔄 Lançamento Recorrente</label>
         </div>
         {form.recorrente && (
           <div className="grid-responsive-3">
@@ -2043,7 +2043,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
         <div className="grid-responsive-2" style={{ marginBottom: 12 }}>
           <div style={{ background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.15)', borderRadius: 10, padding: 12 }}>
             <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 5 }}>Rateio de Despesas</label>
-            <button type="button" onClick={() => alert('Para salvar rateios complexos, a transação deve ser convertida em lote. Funcionalidade em beta.')} className="btn-secondary" style={{ padding: '8px 16px', fontSize: 13, gap: 8, width: '100%', justifyContent: 'center' }}>
+            <button type="button" onClick={() => alert('Para salvar rateios complexos, a transação deve ser convertida em lote. Funcionalidade em beta.')} className="btn-secondary" style={{ padding: '8px 16px', fontSize: 12, gap: 8, width: '100%', justifyContent: 'center' }}>
               <Plus size={16} /> Adicionar Rateio
             </button>
           </div>
@@ -2051,7 +2051,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
           <div style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.15)', borderRadius: 10, padding: 12, display: 'flex', alignItems: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
               <input type="checkbox" id="conciliado-manual" checked={form.conciliado} onChange={e => setForm(f => ({ ...f, conciliado: e.target.checked }))} style={{ accentColor: '#10b981', width: 20, height: 20 }} />
-              <label htmlFor="conciliado-manual" style={{ fontSize: 13, fontWeight: 600, color: '#10b981', cursor: 'pointer', flex: 1 }}>Conciliado (Bate com o Banco)</label>
+              <label htmlFor="conciliado-manual" style={{ fontSize: 12, fontWeight: 600, color: '#10b981', cursor: 'pointer', flex: 1 }}>Conciliado (Bate com o Banco)</label>
             </div>
           </div>
         </div>
@@ -2081,11 +2081,11 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
       </div>
 
       {erroForm && (
-        <p style={{ fontSize: 13, color: '#f87171', background: 'rgba(239,68,68,0.1)', padding: '10px 14px', borderRadius: 10, marginBottom: 16, border: '1px solid rgba(239,68,68,0.2)' }}>{erroForm}</p>
+        <p style={{ fontSize: 12, color: '#f87171', background: 'rgba(239,68,68,0.1)', padding: '10px 14px', borderRadius: 10, marginBottom: 16, border: '1px solid rgba(239,68,68,0.2)' }}>{erroForm}</p>
       )}
       <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: 'rgba(16,185,129,0.06)', borderRadius: 10, border: '1px solid rgba(16,185,129,0.2)' }}>
         <input type="checkbox" id="ensinar-manual" checked={ensinarIA} onChange={e => setEnsinarIA(e.target.checked)} style={{ accentColor: '#10b981', cursor: 'pointer', width: 16, height: 16 }} />
-        <label htmlFor="ensinar-manual" style={{ fontSize: 13, color: 'var(--text-primary)', cursor: 'pointer', flex: 1 }}>
+        <label htmlFor="ensinar-manual" style={{ fontSize: 12, color: 'var(--text-primary)', cursor: 'pointer', flex: 1 }}>
           <strong>Ensinar a IA</strong> a usar estes mesmos dados quando eu disser algo parecido
         </label>
       </div>
