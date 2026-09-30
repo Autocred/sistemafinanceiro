@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase-admin';
 import { ConfiguracaoApp, BackupApp } from '@/lib/types';
 import { shouldRunAutoBackup } from '@/lib/backup'; // We need this logic
+import LZString from 'lz-string';
 
 const CRON_SECRET = process.env.CRON_SECRET || 'dev_secret_financeai';
 
@@ -76,14 +77,16 @@ export async function GET(request: Request) {
             totalRegistros += 1;
           }
 
-          const payloadString = JSON.stringify(backupData);
+          const jsonRaw = JSON.stringify(backupData);
+          const payloadString = LZString.compressToUTF16(jsonRaw);
           const backupId = gerarId();
           const backup: BackupApp = {
             id: backupId,
             dataHora: new Date().toISOString(),
             tipo: 'automatico',
             tamanhoRegistros: totalRegistros,
-            dados: payloadString
+            dados: payloadString,
+            isCompressed: true
           };
 
           await backupsRef.doc(backupId).set(backup);

@@ -14,6 +14,7 @@ import { registrarBiometriaLocal, desabilitarBiometria, isBiometriaHabilitada } 
 import { playSound, isAudioEnabled, getAudioVolume, setAudioConfig } from '@/lib/audio';
 import { fazerBackup, restaurarBackup, desfazerRestauracao, listarBackups, listarLogsBackup, restaurarBackupDeJSON } from '@/lib/backup';
 import { BackupApp, LogBackup } from '@/lib/types';
+import LZString from 'lz-string';
 
 export default function Configuracoes() {
 
@@ -256,7 +257,11 @@ export default function Configuracoes() {
 
   const handleDownloadBackup = (backup: BackupApp) => {
     try {
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(backup.dados);
+      let dadosParaDownload = backup.dados;
+      if (backup.isCompressed || (!dadosParaDownload.startsWith('{') && !dadosParaDownload.startsWith('['))) {
+        dadosParaDownload = LZString.decompressFromUTF16(backup.dados) || backup.dados;
+      }
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(dadosParaDownload);
       const downloadAnchorNode = document.createElement('a');
       downloadAnchorNode.setAttribute("href", dataStr);
       downloadAnchorNode.setAttribute("download", `backup_financeai_${backup.dataHora.replace(/[:.]/g, '-')}.json`);

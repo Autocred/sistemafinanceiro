@@ -479,6 +479,7 @@ export interface BackupApp {
   tipo: 'manual' | 'automatico' | 'pre_restauracao';
   tamanhoRegistros: number;
   dados: string; // JSON content
+  isCompressed?: boolean;
 }
 
 export interface LogBackup {

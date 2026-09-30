@@ -1,4 +1,5 @@
 import { collection, doc, getDocs, getDoc, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
+import LZString from 'lz-string';
 import { getDb } from './firebase';
 import { getCollectionPath, gerarId } from './storage';
 import { BackupApp, LogBackup } from './types';
@@ -32,14 +33,16 @@ export async function fazerBackup(tipo: 'manual' | 'automatico' | 'pre_restaurac
     totalRegistros += 1;
   }
 
-  const payloadString = JSON.stringify(backupData);
+  const jsonRaw = JSON.stringify(backupData);
+  const payloadString = LZString.compressToUTF16(jsonRaw);
   
   const backup: BackupApp = {
     id: gerarId(),
     dataHora: new Date().toISOString(),
     tipo,
     tamanhoRegistros: totalRegistros,
-    dados: payloadString
+    dados: payloadString,
+    isCompressed: true
   };
 
   // Save the backup
@@ -64,7 +67,11 @@ export async function restaurarBackup(backupId: string): Promise<void> {
   await fazerBackup('pre_restauracao');
   
   // 2. Parse backup data
-  const parsedData = JSON.parse(backup.dados);
+  let rawJson = backup.dados;
+  if (backup.isCompressed || (!rawJson.startsWith('{') && !rawJson.startsWith('['))) {
+    rawJson = LZString.decompressFromUTF16(backup.dados) || backup.dados;
+  }
+  const parsedData = JSON.parse(rawJson);
   
   // 3. Clear existing collections and insert new data
   // Due to batch limits (500 writes), we will do this sequentially or in chunks
@@ -140,7 +147,11 @@ export async function desfazerRestauracao(): Promise<void> {
   const ultimoPonto = preRestauracoes[0];
   
   // We do exactly what restore does, but without creating another 'pre_restauracao'
-  const parsedData = JSON.parse(ultimoPonto.dados);
+  let rawJson = ultimoPonto.dados;
+  if (ultimoPonto.isCompressed || (!rawJson.startsWith('{') && !rawJson.startsWith('['))) {
+    rawJson = LZString.decompressFromUTF16(ultimoPonto.dados) || ultimoPonto.dados;
+  }
+  const parsedData = JSON.parse(rawJson);
   
   for (const col of DATA_COLLECTIONS) {
     const currentSnap = await getDocs(collection(db, getCollectionPath(col)));
