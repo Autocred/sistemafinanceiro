@@ -53,7 +53,10 @@ export async function GET(request: Request) {
         const backupsSnap = await backupsRef.where('tipo', '==', 'automatico').orderBy('dataHora', 'desc').limit(1).get();
         const ultimoBackup = !backupsSnap.empty ? backupsSnap.docs[0].data().dataHora : undefined;
 
-        if (shouldRunAutoBackup(cfg.frequenciaBackup, cfg.horarioBackup, ultimoBackup)) {
+        const last = ultimoBackup ? new Date(ultimoBackup).getTime() : 0;
+        const hours = (Date.now() - last) / (1000 * 60 * 60);
+        const shouldRun = !ultimoBackup || (cfg.frequenciaBackup === 'diario' && hours >= 20) || (cfg.frequenciaBackup === 'semanal' && hours >= 160) || (cfg.frequenciaBackup === 'mensal' && hours >= 700);
+        if (shouldRun) {
           console.log(`[CRON] Realizando backup automático para tenant: ${tenantId}`);
           
           const backupData: any = {};
