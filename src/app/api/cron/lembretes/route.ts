@@ -62,8 +62,7 @@ export async function GET(request: Request) {
       processados++;
 
       // Busca despesas pendentes
-      const transQ = query(collection(db, 'users', userId, 'transacoes'));
-      const transSnap = await getDocs(transQ);
+      const transSnap = await db.collection('users').doc(userId).collection('transacoes').get();
       
       const transacoes = transSnap.docs.map(d => ({ id: d.id, ...d.data() } as Transacao));
       
