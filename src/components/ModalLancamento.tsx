@@ -1953,10 +1953,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
             </select>
           </div>
         )}
-      </div>
-
-      <div className="grid-responsive-3">
-        {form.formaPagamento === 'cartao_credito' && (
+      {form.formaPagamento === 'cartao_credito' && (
           <div>
             <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 5 }}>Status</label>
             <select className="input-field" value={form.status} onChange={e => {
