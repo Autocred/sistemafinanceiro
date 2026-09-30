@@ -1,4 +1,4 @@
-// ─── PERMISSÕES DO SISTEMA ─────────────────────────────────
+﻿// ─── PERMISSÕES DO SISTEMA ─────────────────────────────────
 // Cada menu tem uma flag master (menu_*) que controla a visibilidade.
 // Se desmarcado, o menu e seu ícone desaparecem completamente.
 // Sub-permissões só são relevantes se o menu estiver habilitado.
@@ -95,6 +95,7 @@ export const MENU_PERMISSION_MAP: Record<string, string> = {
   'chat':           'menu_chat',
   'configuracoes':  'menu_configuracoes',
   'auditoria':      'menu_auditoria',
+  'inadimplencia':  'menu_relatorios',
 };
 
 export function getDefaultPermissionsForRole(role: string): Record<string, boolean> {

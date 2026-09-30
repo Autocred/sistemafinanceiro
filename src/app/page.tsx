@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
@@ -9,13 +9,13 @@ import { DashboardHeader } from '@/components/NewMobileBankApp';
 import {
   LayoutDashboard, ListOrdered, BarChart3, CreditCard,
   Settings, Server, Bot, PlusCircle, BookOpen, LogOut, ShieldCheck,
-  BrainCircuit, Calendar, RefreshCw, Zap, Users, TrendingUp, Target, ChevronDown, ChevronRight, Menu, Search, Download
+  BrainCircuit, Calendar, RefreshCw, Zap, Users, TrendingUp, Target, ChevronDown, ChevronRight, Menu, Search, Download, AlertTriangle
 } from 'lucide-react';
 import { setTenantId } from '@/lib/storage';
 import { MENU_PERMISSION_MAP } from '@/lib/permissions';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
-type Pagina = 'atualizacoes' | 'dashboard' | 'dashboard_mensal' | 'dashboard_v2' | 'cfo' | 'cfo_legacy' | 'extrato' | 'lancamentos' | 'calendario' | 'conciliacao' | 'aprovacoes' | 'regras' | 'relatorios' | 'relatorio_avancado' | 'contas' | 'cadastros' | 'equipe' | 'chat' | 'configuracoes' | 'admin' | 'auditoria' | 'licencas' | 'metas' | 'investimentos' | 'cartoes';
+type Pagina = 'atualizacoes' | 'dashboard' | 'dashboard_mensal' | 'dashboard_v2' | 'cfo' | 'cfo_legacy' | 'extrato' | 'lancamentos' | 'calendario' | 'conciliacao' | 'aprovacoes' | 'regras' | 'relatorios' | 'relatorio_avancado' | 'contas' | 'cadastros' | 'equipe' | 'chat' | 'configuracoes' | 'admin' | 'auditoria' | 'licencas' | 'metas' | 'investimentos' | 'cartoes' | 'inadimplencia';
 
 // ─── Todos os componentes que usam Firebase carregam APENAS no browser ────────
 const PlanejamentoOrcamentario = dynamic(() => import('@/components/PlanejamentoOrcamentario'), { ssr: false, loading: () => <div style={{display:'flex',justifyContent:'center',alignItems:'center',height:'100vh',flexDirection:'column'}}><div className='spinner'></div><p style={{marginTop:16,color:'var(--text-muted)'}}>Carregando módulo...</p></div> });
@@ -53,6 +53,7 @@ const HubInvestimentos = dynamic(() => import('@/components/HubInvestimentos').t
 const FloatingScroller = dynamic(() => import('@/components/FloatingScroller').then(m => ({ default: m.FloatingScroller })), { ssr: false, loading: () => <div style={{display:'flex',justifyContent:'center',alignItems:'center',height:'100vh',flexDirection:'column'}}><div className='spinner'></div><p style={{marginTop:16,color:'var(--text-muted)'}}>Carregando módulo...</p></div> });
 const RelatorioAvancado = dynamic(() => import('@/components/RelatorioAvancado'), { ssr: false, loading: () => <div style={{display:'flex',justifyContent:'center',alignItems:'center',height:'100vh',flexDirection:'column'}}><div className='spinner'></div><p style={{marginTop:16,color:'var(--text-muted)'}}>Carregando módulo...</p></div> });
 const AtualizacoesCliente = dynamic(() => import('@/components/AtualizacoesCliente'), { ssr: false, loading: () => <div style={{display:'flex',justifyContent:'center',alignItems:'center',height:'100vh',flexDirection:'column'}}><div className='spinner'></div><p style={{marginTop:16,color:'var(--text-muted)'}}>Carregando módulo...</p></div> });
+const AgingList          = dynamic(() => import('@/components/AgingList').then(m => ({ default: m.AgingList })), { ssr: false, loading: () => <div style={{display:'flex',justifyContent:'center',alignItems:'center',height:'100vh',flexDirection:'column'}}><div className='spinner'></div><p style={{marginTop:16,color:'var(--text-muted)'}}>Carregando módulo...</p></div> });
 
 const NAV_ITEMS = [
   { id: 'dashboard'    as Pagina, label: 'Dashboard',        icon: LayoutDashboard, grupo: 'Principal' },
@@ -65,6 +66,7 @@ const NAV_ITEMS = [
   { id: 'relatorio_avancado' as Pagina, label: 'Relatório Premium', icon: Target,   grupo: 'Inteligência' },
   { id: 'relatorios'   as Pagina, label: 'Relatórios',       icon: BarChart3,       grupo: 'Inteligência' },
   { id: 'investimentos'as Pagina, label: 'Hub Patrimônio',   icon: TrendingUp,      grupo: 'Inteligência' },
+  { id: 'inadimplencia' as Pagina, label: 'Inadimplência',   icon: AlertTriangle,   grupo: 'Inteligência' },
   
   { id: 'cartoes'      as Pagina, label: 'Cartões Corp.',    icon: CreditCard,      grupo: 'Kaminão (Banking)' },
   
@@ -983,6 +985,7 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
       case 'metas':         return versaoUi === 'v1' ? <MetasGamificadas key={refreshKey} /> : <MetasGamificadasV2 key={refreshKey} />;
       case 'cartoes':       return <CorporateCards key={refreshKey} />;
       case 'investimentos': return <HubInvestimentos key={refreshKey} />;
+      case 'inadimplencia': return <AgingList key={refreshKey} />;
       case 'dashboard_v2':  return <Dashboard key={refreshKey} onNovoLancamento={() => { setTransacaoEditar(null); setModalAberto(true); }} onEditarLancamento={(t) => { setTransacaoEditar(t); setModalAberto(true); }} onDuplicarLancamento={(t: any) => { setTransacaoEditar({...t, id: undefined, dataVencimento: new Date().toISOString().split('T')[0], dataPagamento: null, status: 'pendente'}); setModalAberto(true); }} onNavigateToLancamentos={(filtro?: string) => { setFiltroRapidoLancamentos(filtro || ''); setPaginaAtual('lancamentos'); }} onNavigateToCartoes={(id?: string) => { setFaturaDestinoId(id || null); setPaginaAtual('contas'); }} />;
       case 'cfo_legacy':    return <Dashboard key={refreshKey} onNovoLancamento={() => setModalAberto(true)} onNavigateToLancamentos={(filtro?: string) => { setFiltroRapidoLancamentos(filtro || ''); setPaginaAtual('lancamentos'); }} onNavigateToCartoes={(id?: string) => { setFaturaDestinoId(id || null); setPaginaAtual('contas'); }} />;
       default:              return <Dashboard key={refreshKey} onNovoLancamento={() => { setTransacaoEditar(null); setModalAberto(true); }} onEditarLancamento={(t) => { setTransacaoEditar(t); setModalAberto(true); }} onDuplicarLancamento={(t: any) => { setTransacaoEditar({...t, id: undefined, dataVencimento: new Date().toISOString().split('T')[0], dataPagamento: null, status: 'pendente'}); setModalAberto(true); }} onNavigateToLancamentos={(filtro?: string) => { setFiltroRapidoLancamentos(filtro || ''); setPaginaAtual('lancamentos'); }} onNavigateToCartoes={(id?: string) => { setFaturaDestinoId(id || null); setPaginaAtual('contas'); }} />;

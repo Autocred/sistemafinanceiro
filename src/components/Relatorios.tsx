@@ -380,12 +380,47 @@ export default function Relatorios() {
       </div>
 
       <div className="glass" style={{ padding: 24, borderRadius: 24, minHeight: 400, overflow: 'hidden' }}>
-        {tipoRelatorio === 'dre' && (
-          <div style={{ marginTop: 24 }}>
-             {/* Dynamic import do DREGerencial que acabei de criar, mas vou importar não topo se quiser ou renderizar inline, vou importar não topo */}
-             <DREGerencial transacoes={transacoesFiltradas} dataInicio={filtros.dataInicio} dataFim={filtros.dataFim} />
-          </div>
-        )}
+        {tipoRelatorio === 'dre' && (() => {
+          // ── Calcula o período anterior equivalente (mesma duração) ──────────
+          const msInicio = new Date(filtros.dataInicio).getTime();
+          const msFim    = new Date(filtros.dataFim).getTime();
+          const duracao  = msFim - msInicio;
+          const antFim   = new Date(msInicio - 1).toISOString().split('T')[0];
+          const antIni   = new Date(msInicio - 1 - duracao).toISOString().split('T')[0];
+
+          const transacoesAnteriores = transacoes.filter(t => {
+            const rawRef =
+              filtros.tipoData === 'lancamento' ? (t.dataLancamento || t.data) :
+              filtros.tipoData === 'pagamento'  ? (t.dataPagamento  || t.data) :
+              (t.dataPagamento || t.dataVencimento || t.data);
+            const dataRef = normalizeDate(rawRef);
+            if (dataRef < antIni || dataRef > antFim) return false;
+            const matchCat    = !filtros.categoriaId    || t.categoriaId    === filtros.categoriaId;
+            const matchCC     = !filtros.centroCustoId  || t.centroCustoId  === filtros.centroCustoId;
+            const matchConta  = !filtros.contaId        || t.contaId        === filtros.contaId;
+            const matchForma  = !filtros.formaPagamento || t.formaPagamento === filtros.formaPagamento;
+            const matchTipo   = filtros.tipo === 'ambos' || t.tipo === filtros.tipo;
+            let   matchStatus = true;
+            if (filtros.status === 'pago')     matchStatus = t.status === 'pago';
+            if (filtros.status === 'pendente') matchStatus = t.status === 'pendente' || t.status === 'atrasado';
+            const matchContato = !filtros.contatoNome ||
+              (t.tipo === 'despesa' && t.fornecedorNome === filtros.contatoNome) ||
+              (t.tipo === 'receita' && t.clienteNome   === filtros.contatoNome);
+            if (t.categoriaNome === 'Pagamento de Fatura' || (t.descricao && t.descricao.includes('Pagamento de Fatura'))) return false;
+            return matchCat && matchCC && matchConta && matchForma && matchContato && matchTipo && matchStatus;
+          });
+
+          return (
+            <div style={{ marginTop: 24 }}>
+              <DREGerencial
+                transacoes={transacoesFiltradas}
+                dataInicio={filtros.dataInicio}
+                dataFim={filtros.dataFim}
+                transacoesAnteriores={transacoesAnteriores}
+              />
+            </div>
+          );
+        })()}
         {tipoRelatorio === 'mensal' && (
           <div>
             <h2 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 24, textAlign: 'center' }}>Visão Geral do Período Filtrado</h2>
