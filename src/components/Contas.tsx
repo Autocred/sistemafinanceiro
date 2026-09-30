@@ -59,10 +59,10 @@ export default function Contas({ faturaOpenId, onClearFaturaOpen }: { faturaOpen
         const transRef = collection(db, getCollectionPath('transacoes'));
         
         const faturasSnap = await getDocs(faturasRef);
-        const faturasMp = faturasSnap.docs.map(d => ({ id: d.id, ...d.data() })).filter((f) => f.cartaoNome === 'Mercado Pago' && f.status !== 'paga');
+        const faturasMp = faturasSnap.docs.map(d => ({ id: d.id, ...d.data() })).filter((f: any) => f.cartaoNome === 'Mercado Pago' && f.status !== 'paga');
         
         const transSnap = await getDocs(transRef);
-        const transMp = transSnap.docs.map(d => ({ id: d.id, ...d.data() })).filter((t) => t.cartaoNome === 'Mercado Pago' && t.status === 'pendente' && faturasMp.some(f => f.id === t.faturaId));
+        const transMp = transSnap.docs.map(d => ({ id: d.id, ...d.data() })).filter((t: any) => t.cartaoNome === 'Mercado Pago' && t.status === 'pendente' && faturasMp.some(f => f.id === t.faturaId));
         
         for (const t of transMp) {
           await updateDoc(doc(db, getCollectionPath('transacoes'), t.id), { faturaId: null });
