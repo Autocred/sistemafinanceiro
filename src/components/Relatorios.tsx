@@ -286,6 +286,7 @@ export default function Relatorios() {
                 <option value="ambos">Todas</option>
                 <option value="despesa">Despesas</option>
                 <option value="receita">Receitas</option>
+                <option value="transferencia">Transferências</option>
               </select>
             </div>
             <div>

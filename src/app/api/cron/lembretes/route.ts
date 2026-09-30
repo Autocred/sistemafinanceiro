@@ -48,7 +48,7 @@ export async function GET(request: Request) {
       const confSnap = await db.collection('users').doc(userId).collection('configuracoes').get();
       let cfg: ConfiguracaoApp | null = null;
       if (!confSnap.empty) {
-        cfg = confSnap.docs[0].data();
+        cfg = confSnap.docs[0].data() as ConfiguracaoApp;
       }
       
       if (!cfg) continue;

@@ -444,7 +444,7 @@ export default function ModalLancamento({ onClose, onSalvo, transacaoEditar }: P
 
   return (
     <div className="modal-overlay">
-      <div className="modal-box slide-up" style={{ padding: 24 }}>
+      <div className="modal-box slide-up" style={{ padding: 24, maxWidth: 840 }}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -731,7 +731,7 @@ function PreLancamentoCard({ prelancamento: p, onConfirmar, onEditar, onRefazer,
           </div>
         </div>
 
-        <div className="grid-responsive-2">
+        <div className="grid-responsive-3">
           <Campo label="Descrição" valor={p.descricao} />
           <Campo label="Data de Vencimento" valor={p.dataVencimento ? `${(p.dataVencimento || '').split('-')[2]}/${(p.dataVencimento || '').split('-')[1]}/${(p.dataVencimento || '').split('-')[0]}` : `${(p.data || '').split('-')[2]}/${(p.data || '').split('-')[1]}/${(p.data || '').split('-')[0]}`} />
           {p.dataPagamento && <Campo label="Data de Pagamento" valor={`${p.dataPagamento.split('-')[2]}/${p.dataPagamento.split('-')[1]}/${p.dataPagamento.split('-')[0]}`} />}
@@ -814,7 +814,8 @@ function EditarPreLancamento({ prelancamento, categorias, centrosCusto, contas, 
     <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>✏️ Editar Lançamento</h3>
 
-      <div className="grid-responsive-2">
+      <div className="grid-responsive-3">
+
         <div>
           <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>Tipo</label>
           <select className="input-field" value={p.tipo} onChange={e => set({ tipo: e.target.value as 'despesa' | 'receita' | 'transferencia' })}>
@@ -826,8 +827,13 @@ function EditarPreLancamento({ prelancamento, categorias, centrosCusto, contas, 
         <div>
           <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>Valor (R$)</label>
           <input className="input-field" type="text" value={formatarMoedaInput(p.valor || '')} onChange={e => set({ valor: parseMoedaInput(e.target.value) })} />
-        </div>
-      </div>
+        
+  </div>
+  <div>
+    <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>Data</label>
+    <input className="input-field" type="date" value={p.dataLancamento || p.data} onChange={e => set({ dataLancamento: e.target.value, data: e.target.value })} />
+  </div>
+</div>
 
       <div>
         <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>Descrição</label>
@@ -904,7 +910,7 @@ function EditarPreLancamento({ prelancamento, categorias, centrosCusto, contas, 
               </select>
             </div>
           ) : (
-            <div className="grid-responsive-2">
+            <div className="grid-responsive-3">
               <div>
                 <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>Forma de Pgto</label>
                 <select className="input-field" value={p.formaPagamento} onChange={e => set({ formaPagamento: e.target.value as any })}>
@@ -935,7 +941,7 @@ function EditarPreLancamento({ prelancamento, categorias, centrosCusto, contas, 
         </div>
       )}
 
-      <div className="grid-responsive-2">
+      <div className="grid-responsive-3">
         <div>
           <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>Data da Compra / Lançamento</label>
           <input className="input-field" type="date" value={p.dataLancamento || p.data} onChange={e => set({ dataLancamento: e.target.value, data: e.target.value })} />
@@ -950,7 +956,7 @@ function EditarPreLancamento({ prelancamento, categorias, centrosCusto, contas, 
         </div>
       </div>
       
-      <div className="grid-responsive-2">
+      <div className="grid-responsive-3">
         <div>
           <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>Status</label>
           <select className="input-field" value={p.status} onChange={e => {
@@ -977,11 +983,11 @@ function EditarPreLancamento({ prelancamento, categorias, centrosCusto, contas, 
           else set({ categoriaId: '', categoriaNome: nome });
         }} />
         <datalist id="cats-list-edit">
-          {categorias.map(c => <option key={c.id} value={c.nome} />)}
+          {categorias.filter(c => c.nome.toLowerCase().includes((p.categoriaNome||'').toLowerCase())).slice(0,30).map(c => <option key={c.id} value={c.nome} />)}
         </datalist>
       </div>
 
-      <div className="grid-responsive-2">
+      <div className="grid-responsive-3">
         <div>
           <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>Centro de Custo</label>
           <input list="cc-list-edit" className="input-field" placeholder="Buscar centro de custo..." value={p.centroCustoNome || ''} onChange={e => {
@@ -991,7 +997,7 @@ function EditarPreLancamento({ prelancamento, categorias, centrosCusto, contas, 
             else set({ centroCustoId: '', centroCustoNome: nome });
           }} />
           <datalist id="cc-list-edit">
-            {centrosCusto.map(c => <option key={c.id} value={c.nome} />)}
+            {centrosCusto.filter(c => c.nome.toLowerCase().includes((p.centroCustoNome||'').toLowerCase())).slice(0,30).map(c => <option key={c.id} value={c.nome} />)}
           </datalist>
         </div>
       </div>
@@ -1025,7 +1031,7 @@ function EditarPreLancamento({ prelancamento, categorias, centrosCusto, contas, 
         </div>
       )}
 
-      <div className="grid-responsive-2">
+      <div className="grid-responsive-3">
         <div>
           <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>{p.tipo === 'receita' ? 'Cliente' : 'Fornecedor'}</label>
           <input list="clientes-fornecedores-list-edit" className="input-field" placeholder={`Buscar ${p.tipo === 'receita' ? 'cliente' : 'fornecedor'}...`} value={p.tipo === 'receita' ? (p.clienteNome || '') : (p.fornecedorNome || '')} onChange={e => {
@@ -1041,7 +1047,10 @@ function EditarPreLancamento({ prelancamento, categorias, centrosCusto, contas, 
             }
           }} />
           <datalist id="clientes-fornecedores-list-edit">
-            {p.tipo === 'receita' ? clientes.map(c => <option key={c.id} value={c.nome} />) : fornecedores.map(f => <option key={f.id} value={f.nome} />)}
+            {p.tipo === 'receita' 
+    ? clientes.filter(c => c.nome.toLowerCase().includes((p.clienteNome||'').toLowerCase())).slice(0,30).map(c => <option key={c.id} value={c.nome} />) 
+    : fornecedores.filter(f => f.nome.toLowerCase().includes((p.fornecedorNome||'').toLowerCase())).slice(0,30).map(f => <option key={f.id} value={f.nome} />)
+  }
           </datalist>
         </div>
       </div>
@@ -1103,7 +1112,7 @@ function EditarPreLancamento({ prelancamento, categorias, centrosCusto, contas, 
             </div>
           )}
           <datalist id="cats-list-rateio-edit">
-            {categorias.map(c => <option key={c.id} value={c.nome} />)}
+            {categorias.filter(c => c.nome.toLowerCase().includes((p.categoriaNome||'').toLowerCase())).slice(0,30).map(c => <option key={c.id} value={c.nome} />)}
           </datalist>
         </div>
       </div>
@@ -1671,7 +1680,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
 
-      <div className="grid-responsive-2">
+      <div className="grid-responsive-3">
         <div>
           <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 5 }}>Descrição *</label>
           <div style={{ display: 'flex', gap: 8 }}>
@@ -1739,7 +1748,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
               </select>
             </div>
           ) : (
-            <div className="grid-responsive-2">
+            <div className="grid-responsive-3">
               <div>
                 <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 5 }}>Conta Bancária</label>
                 <select className="input-field" value={form.contaId} onChange={e => {
@@ -1785,7 +1794,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
         </div>
       )}
 
-      <div className="grid-responsive-2">
+      <div className="grid-responsive-3">
         <div>
           <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 5 }}>
             {form.formaPagamento === 'cartao_credito' ? 'Data da Compra *' : 'Data de Vencimento *'}
@@ -1841,7 +1850,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
         )}
       </div>
 
-      <div className="grid-responsive-2">
+      <div className="grid-responsive-3">
         {form.formaPagamento === 'cartao_credito' && (
           <div>
             <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 5 }}>Status</label>
@@ -1862,7 +1871,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
       </div>
 
       {(form.tipo as string) !== 'transferencia' && (
-      <div className="grid-responsive-2">
+      <div className="grid-responsive-3">
         <div>
           <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 5 }}>Categoria</label>
           <div style={{ display: 'flex', gap: 8 }}>
@@ -1874,7 +1883,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
                 else setForm(f => ({ ...f, categoriaId: '', categoriaNome: nome } as any));
               }} />
               <datalist id="cats-list-manual">
-                {categorias.map(c => <option key={c.id} value={c.nome} />)}
+                {categorias.filter(c => c.nome.toLowerCase().includes((p.categoriaNome||'').toLowerCase())).slice(0,30).map(c => <option key={c.id} value={c.nome} />)}
               </datalist>
             </div>
             <button type="button" onClick={() => setNovoCadastro('categoria')} className="btn-secondary hover-lift active-press" style={{ padding: '0 12px', flexShrink: 0 }}>
@@ -1893,7 +1902,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
                 else setForm(f => ({ ...f, centroCustoId: '', centroCustoNome: nome } as any));
               }} />
               <datalist id="cc-list-manual">
-                {centrosCusto.map(c => <option key={c.id} value={c.nome} />)}
+                {centrosCusto.filter(c => c.nome.toLowerCase().includes((p.centroCustoNome||'').toLowerCase())).slice(0,30).map(c => <option key={c.id} value={c.nome} />)}
               </datalist>
             </div>
             <button type="button" onClick={() => setNovoCadastro('centroCusto')} className="btn-secondary hover-lift active-press" style={{ padding: '0 12px', flexShrink: 0 }}>
@@ -1966,7 +1975,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
           <label htmlFor="parcelado-manual" style={{ fontSize: 13, fontWeight: 600, color: '#3b82f6' }}>💳 Compra Parcelada</label>
         </div>
         {form.parcelado && (
-          <div className="grid-responsive-2">
+          <div className="grid-responsive-3">
             <div>
               <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>Total de Parcelas</label>
               <select className="input-field" value={form.totalParcelas} onChange={e => set({ totalParcelas: parseInt(e.target.value) || 2 })}>
@@ -1994,7 +2003,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
           <label htmlFor="recorrente-manual" style={{ fontSize: 13, fontWeight: 600, color: '#fbbf24' }}>🔄 Lançamento Recorrente</label>
         </div>
         {form.recorrente && (
-          <div className="grid-responsive-2">
+          <div className="grid-responsive-3">
             <div>
               <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>Frequência</label>
               <select className="input-field" value={form.frequenciaRecorrencia} onChange={e => set({ frequenciaRecorrencia: e.target.value as 'semanal' | 'mensal' | 'trimestral' | 'anual' })}>
