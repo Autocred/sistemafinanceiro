@@ -1,47 +1,31 @@
 const fs = require('fs');
-const glob = require('glob'); // Not available? We can just manually list files.
 
-const filesToPatch = [
-  'src/components/Dashboard.tsx',
-  'src/components/DashboardMensal.tsx',
-  'src/components/Relatorios.tsx',
-  'src/components/MetasGamificadasV2.tsx',
-  'src/components/Lancamentos.tsx',
-  'src/components/LancamentosV2.tsx',
-  'src/app/page.tsx',
-  'src/components/Sidebar.tsx'
-];
+let c = fs.readFileSync('src/components/DashboardMensal.tsx', 'utf8');
 
-function patchFile(filePath) {
-  if (!fs.existsSync(filePath)) return;
-  let content = fs.readFileSync(filePath, 'utf8');
+// Fix Grafico 1 (Gastos por Categoria) - Make them all Red
+c = c.replace(/<stop offset="5%" stopColor=\{COLORS\[index % COLORS\.length\]\} stopOpacity=\{0\.9\}\/>/g, '<stop offset="5%" stopColor="#ef4444" stopOpacity={0.9}/>');
+c = c.replace(/<stop offset="95%" stopColor=\{COLORS\[index % COLORS\.length\]\} stopOpacity=\{0\.5\}\/>/g, '<stop offset="95%" stopColor="#ef4444" stopOpacity={0.5}/>');
 
-  // Replace primary blues with var(--primary)
-  content = content.replace(/#3b82f6/gi, 'var(--primary)');
-  content = content.replace(/#2563eb/gi, 'var(--primary)');
-  content = content.replace(/#1d4ed8/gi, 'var(--primary-dark)');
-  content = content.replace(/#0284c7/gi, 'var(--primary)');
-  content = content.replace(/#0369a1/gi, 'var(--primary-dark)');
+// Fix Grafico 2 (Gastos por CC) - Make them all Red
+c = c.replace(/<stop offset="5%" stopColor=\{COLORS\[\(index \+ 3\) % COLORS\.length\]\} stopOpacity=\{0\.9\}\/>/g, '<stop offset="5%" stopColor="#ef4444" stopOpacity={0.9}/>');
+c = c.replace(/<stop offset="95%" stopColor=\{COLORS\[\(index \+ 3\) % COLORS\.length\]\} stopOpacity=\{0\.5\}\/>/g, '<stop offset="95%" stopColor="#ef4444" stopOpacity={0.5}/>');
 
-  // Replace secondary purples/cyans with var(--primary)
-  content = content.replace(/#8b5cf6/gi, 'var(--primary)');
-  content = content.replace(/#9333ea/gi, 'var(--primary)');
-  content = content.replace(/#7e22ce/gi, 'var(--primary-dark)');
+// Fix Table Bars (Tabela Resumida) - Make them Red
+c = c.replace(/background: COLORS\[idx % COLORS\.length\]/g, "background: '#ef4444'");
 
-  // Fix RGB transparent blues
-  content = content.replace(/rgba\(59,\s*130,\s*246,\s*0\.3\)/gi, 'rgba(0, 0, 0, 0.2)');
-  content = content.replace(/rgba\(59,\s*130,\s*246,\s*0\.1\)/gi, 'var(--bg-secondary)');
+// If there's any other place using COLORS inside a style
+// c = c.replace(/COLORS\[.*?\]/g, "'#ef4444'"); // maybe too aggressive
 
-  // Replace hardcoded '--blue' with '--primary' just in case
-  // content = content.replace(/var\(--blue\)/gi, 'var(--primary)'); 
-  
-  // Dashboard Mensal specific COLORS array
-  if (filePath.includes('DashboardMensal.tsx')) {
-    content = content.replace(/const COLORS = \[/g, 'const COLORS = [\n      \'var(--primary)\', \'var(--primary-hover)\', \'var(--primary-dark)\', \'#f59e0b\', \'#10b981\', \'#ef4444\',\n    //');
-  }
+// Also let's change Saldo do Mês to "card-darkblue" and add the CSS for it if they want really dark blue.
+c = c.replace(/\.card-cyan \.card-icon/g, '.card-darkblue .card-icon { background: linear-gradient(135deg, #1e3a8a, #172554); }\n        .card-cyan .card-icon');
+c = c.replace(/<div className="bi-card card-blue glass-panel hover-lift fade-in-up" style={{ animationDelay: '0\.3s' }}>\s*<div className="card-icon"><DollarSign size={24} \/><\/div>\s*<div className="card-info">\s*<h3>Saldo do Mês<\/h3>/g, 
+  `<div className="bi-card card-darkblue glass-panel hover-lift fade-in-up" style={{ animationDelay: '0.3s' }}>
+          <div className="card-icon"><DollarSign size={24} /></div>
+          <div className="card-info">
+            <h3>Saldo do Mês</h3>`);
 
-  fs.writeFileSync(filePath, content, 'utf8');
-  console.log('Patched', filePath);
-}
+// And in "Indicadores Automáticos", Saldo do Mês color
+c = c.replace(/<b style=\{\{color: saldoMes >= 0 \? '#10b981' : '#ef4444'\}\}>\{formatarMoeda\(saldoMes\)\}<\/b>/g, "<b style={{color: '#1e3a8a'}}>{formatarMoeda(saldoMes)}</b>");
 
-filesToPatch.forEach(patchFile);
+fs.writeFileSync('src/components/DashboardMensal.tsx', c);
+console.log('Patched colors');

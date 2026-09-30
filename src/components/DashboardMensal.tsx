@@ -322,6 +322,7 @@ export default function DashboardMensal() {
       <style>{`
         .card-red .card-icon { background: linear-gradient(135deg, #ef4444, #dc2626); }
         .card-emerald .card-icon { background: linear-gradient(135deg, #10b981, #059669); }
+        .card-darkblue .card-icon { background: linear-gradient(135deg, #1e3a8a, #172554); }
         .card-cyan .card-icon { background: linear-gradient(135deg, #06b6d4, #0891b2); }
       `}</style>
       <div className="bi-cards-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
@@ -346,14 +347,14 @@ export default function DashboardMensal() {
             <h2>{formatarMoeda(saldoMes)}</h2>
           </div>
         </div>
-        <div className="bi-card card-cyan glass-panel hover-lift fade-in-up" style={{ animationDelay: '0.4s' }}>
+        <div className="bi-card card-red glass-panel hover-lift fade-in-up" style={{ animationDelay: '0.4s' }}>
           <div className="card-icon"><FileText size={24} /></div>
           <div className="card-info">
             <h3>Qtd. Despesas</h3>
             <h2>{qtdDespesas} lançamentos</h2>
           </div>
         </div>
-        <div className="bi-card card-orange glass-panel hover-lift fade-in-up" style={{ animationDelay: '0.5s' }}>
+        <div className="bi-card card-red glass-panel hover-lift fade-in-up" style={{ animationDelay: '0.5s' }}>
           <div className="card-icon"><BarChart3 size={24} /></div>
           <div className="card-info">
             <h3>Categoria (Maior Gasto)</h3>
@@ -361,7 +362,7 @@ export default function DashboardMensal() {
             <p>{catMaiorGasto ? formatarMoeda(catMaiorGasto.valor) : ''}</p>
           </div>
         </div>
-        <div className="bi-card card-purple glass-panel hover-lift fade-in-up" style={{ animationDelay: '0.6s' }}>
+        <div className="bi-card card-red glass-panel hover-lift fade-in-up" style={{ animationDelay: '0.6s' }}>
           <div className="card-icon"><TrendingUp size={24} /></div>
           <div className="card-info">
             <h3>Média Diária (Gastos)</h3>
@@ -390,8 +391,8 @@ export default function DashboardMensal() {
                 <defs>
                   {gastosPorCategoria.map((entry, index) => (
                     <linearGradient key={`grad-${index}`} id={`colorUv-${index}`} x1="0" y1="0" x2="1" y2="0">
-                      <stop offset="5%" stopColor={COLORS[index % COLORS.length]} stopOpacity={0.9}/>
-                      <stop offset="95%" stopColor={COLORS[index % COLORS.length]} stopOpacity={0.5}/>
+                      <stop offset="5%" stopColor="#ef4444" stopOpacity={0.9}/>
+                      <stop offset="95%" stopColor="#ef4444" stopOpacity={0.5}/>
                     </linearGradient>
                   ))}
                 </defs>
@@ -419,8 +420,8 @@ export default function DashboardMensal() {
                 <defs>
                   {gastosPorCentroCusto.map((entry, index) => (
                     <linearGradient key={`grad-cc-${index}`} id={`colorCc-${index}`} x1="0" y1="0" x2="1" y2="0">
-                      <stop offset="5%" stopColor={COLORS[(index + 3) % COLORS.length]} stopOpacity={0.9}/>
-                      <stop offset="95%" stopColor={COLORS[(index + 3) % COLORS.length]} stopOpacity={0.5}/>
+                      <stop offset="5%" stopColor="#ef4444" stopOpacity={0.9}/>
+                      <stop offset="95%" stopColor="#ef4444" stopOpacity={0.5}/>
                     </linearGradient>
                   ))}
                 </defs>
@@ -485,14 +486,14 @@ export default function DashboardMensal() {
         <div className="bi-indicators-panel glass-panel">
           <h3 className="chart-title" style={{ marginBottom: 16 }}>Indicadores Automáticos</h3>
           <div className="indicators-grid">
-            <div className="ind-item"><span>Maior Despesa</span> <b>{formatarMoeda(maiorLcto)}</b></div>
-            <div className="ind-item"><span>Menor Despesa</span> <b>{formatarMoeda(menorLcto)}</b></div>
-            <div className="ind-item"><span>Cat. Mais Gastou</span> <b>{catMaiorGasto?.nome || '-'}</b></div>
-            <div className="ind-item"><span>Cat. Menos Gastou</span> <b>{catMenorGasto?.nome || '-'}</b></div>
+            <div className="ind-item"><span>Maior Despesa</span> <b style={{color: '#ef4444'}}>{formatarMoeda(maiorLcto)}</b></div>
+            <div className="ind-item"><span>Menor Despesa</span> <b style={{color: '#ef4444'}}>{formatarMoeda(menorLcto)}</b></div>
+            <div className="ind-item"><span>Cat. Mais Gastou</span> <b style={{color: '#ef4444'}}>{catMaiorGasto?.nome || '-'}</b></div>
+            <div className="ind-item"><span>Cat. Menos Gastou</span> <b style={{color: '#ef4444'}}>{catMenorGasto?.nome || '-'}</b></div>
             <div className="ind-item"><span>Receitas Pagas</span> <b style={{color: '#10b981'}}>{formatarMoeda(totalReceitas)}</b></div>
             <div className="ind-item"><span>Despesas Pagas</span> <b style={{color: '#ef4444'}}>{formatarMoeda(totalDespesas)}</b></div>
-            <div className="ind-item"><span>Saldo do Mês</span> <b style={{color: saldoMes >= 0 ? '#10b981' : '#ef4444'}}>{formatarMoeda(saldoMes)}</b></div>
-            <div className="ind-item"><span>Média por Lcto.</span> <b>{qtdDespesas > 0 ? formatarMoeda(totalDespesas / qtdDespesas) : 'R$ 0,00'}</b></div>
+            <div className="ind-item"><span>Saldo do Mês</span> <b style={{color: '#1e3a8a'}}>{formatarMoeda(saldoMes)}</b></div>
+            <div className="ind-item"><span>Média por Lcto.</span> <b style={{color: '#ef4444'}}>{qtdDespesas > 0 ? formatarMoeda(totalDespesas / qtdDespesas) : 'R$ 0,00'}</b></div>
           </div>
         </div>
 
@@ -530,7 +531,7 @@ export default function DashboardMensal() {
                     <td>
                       <div style={{display: 'flex', alignItems: 'center', gap: 6}}>
                         <div style={{flex: 1, height: 6, background: 'var(--bg-hover)', borderRadius: 3, overflow: 'hidden'}}>
-                          <div style={{height: '100%', width: `${Math.min(c.percentual, 100)}%`, background: COLORS[idx % COLORS.length]}} />
+                          <div style={{height: '100%', width: `${Math.min(c.percentual, 100)}%`, background: '#ef4444'}} />
                         </div>
                         <span style={{fontSize: 12, minWidth: 40}}>{c.percentual.toFixed(1)}%</span>
                       </div>
