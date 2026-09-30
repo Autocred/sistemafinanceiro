@@ -145,33 +145,33 @@ export default function DashboardMensal() {
   const catMaiorGasto = gastosPorCategoria.length > 0 ? gastosPorCategoria[0] : null;
   const catMenorGasto = gastosPorCategoria.length > 0 ? gastosPorCategoria[gastosPorCategoria.length - 1] : null;
 
-  // Evolução Ano (Despesas)
+// Evolução Ano (Receitas e Despesas)
   const evolucaoAno = useMemo(() => {
-    const dados = MESES.map((nome, idx) => {
-      const txMesAtual = txAno.filter(t => {
+    return MESES.map((nome, idx) => {
       const mesStr = `${ano}-${String(idx + 1).padStart(2, '0')}`;
       
-      if (t.tipo !== 'despesa' || t.formaPagamento === 'cartao_credito' || t.categoriaNome === 'Pagamento de Fatura') return false;
-      if (!normalizeDate(t.dataPagamento || t.dataVencimento || t.data || '').startsWith(mesStr)) return false;
-      
-      if (statusFiltro !== 'Todos') {
-        if (statusFiltro === 'pago' && t.status !== 'pago') return false;
-        if (statusFiltro === 'pendente' && t.status !== 'pendente') return false;
-      }
-      
-      const cat = t.categoriaNome || t.categoriaId || 'Outros';
-      if (categoriaFiltro !== 'Todas' && cat !== categoriaFiltro) return false;
-      
-      const cc = t.centroCustoNome || t.centroCustoId || 'Não Informado';
-      if (centroCustoFiltro !== 'Todos' && cc !== centroCustoFiltro) return false;
-      
-      return true;
+      const txMesAtual = txAno.filter(t => {
+        if (!normalizeDate(t.dataPagamento || t.dataVencimento || t.data || '').startsWith(mesStr)) return false;
+        if (statusFiltro !== 'Todos') {
+          if (statusFiltro === 'pago' && t.status !== 'pago') return false;
+          if (statusFiltro === 'pendente' && t.status !== 'pendente') return false;
+        }
+        const cat = t.categoriaNome || t.categoriaId || 'Outros';
+        if (categoriaFiltro !== 'Todas' && cat !== categoriaFiltro) return false;
+        const cc = t.centroCustoNome || t.centroCustoId || 'Não Informado';
+        if (centroCustoFiltro !== 'Todos' && cc !== centroCustoFiltro) return false;
+        return true;
+      });
+
+      const tDespesas = txMesAtual.filter(t => t.tipo === 'despesa' && t.formaPagamento !== 'cartao_credito' && t.categoriaNome !== 'Pagamento de Fatura')
+        .reduce((acc, t) => acc + (Number(t.valor) || 0), 0);
+        
+      const tReceitas = txMesAtual.filter(t => t.tipo === 'receita')
+        .reduce((acc, t) => acc + (Number(t.valor) || 0), 0);
+
+      return { mes: nome, despesas: tDespesas, receitas: tReceitas, isSelected: idx === mes };
     });
-      const total = txMesAtual.reduce((acc, t) => acc + (Number(t.valor) || 0), 0);
-      return { mes: nome, valor: total, isSelected: idx === mes };
-    });
-    return dados;
-  }, [txAno, mes]);
+  }, [txAno, mes, ano, statusFiltro, categoriaFiltro, centroCustoFiltro]);
 
   const receitasXDespesas = useMemo(() => {
     return [
@@ -319,33 +319,52 @@ export default function DashboardMensal() {
       </div>
 
       {/* CARDS SUPERIORES */}
-      <div className="bi-cards-grid">
-        <div className="bi-card card-blue glass-panel hover-lift fade-in-up" style={{ animationDelay: '0.2s' }}>
-          <div className="card-icon"><DollarSign size={24} /></div>
+      <style>{`
+        .card-red .card-icon { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        .card-emerald .card-icon { background: linear-gradient(135deg, #10b981, #059669); }
+        .card-cyan .card-icon { background: linear-gradient(135deg, #06b6d4, #0891b2); }
+      `}</style>
+      <div className="bi-cards-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
+        <div className="bi-card card-emerald glass-panel hover-lift fade-in-up" style={{ animationDelay: '0.1s' }}>
+          <div className="card-icon"><TrendingUp size={24} /></div>
           <div className="card-info">
-            <h3>Total Gasto no Mês</h3>
+            <h3>Total de Receitas</h3>
+            <h2>{formatarMoeda(totalReceitas)}</h2>
+          </div>
+        </div>
+        <div className="bi-card card-red glass-panel hover-lift fade-in-up" style={{ animationDelay: '0.2s' }}>
+          <div className="card-icon"><TrendingDown size={24} /></div>
+          <div className="card-info">
+            <h3>Total de Despesas</h3>
             <h2>{formatarMoeda(totalDespesas)}</h2>
           </div>
         </div>
-        <div className="bi-card card-green glass-panel hover-lift fade-in-up" style={{ animationDelay: '0.3s' }}>
+        <div className="bi-card card-blue glass-panel hover-lift fade-in-up" style={{ animationDelay: '0.3s' }}>
+          <div className="card-icon"><DollarSign size={24} /></div>
+          <div className="card-info">
+            <h3>Saldo do Mês</h3>
+            <h2>{formatarMoeda(saldoMes)}</h2>
+          </div>
+        </div>
+        <div className="bi-card card-cyan glass-panel hover-lift fade-in-up" style={{ animationDelay: '0.4s' }}>
           <div className="card-icon"><FileText size={24} /></div>
           <div className="card-info">
-            <h3>Quantidade de Despesas</h3>
+            <h3>Qtd. Despesas</h3>
             <h2>{qtdDespesas} lançamentos</h2>
           </div>
         </div>
-        <div className="bi-card card-orange glass-panel hover-lift fade-in-up" style={{ animationDelay: '0.4s' }}>
+        <div className="bi-card card-orange glass-panel hover-lift fade-in-up" style={{ animationDelay: '0.5s' }}>
           <div className="card-icon"><BarChart3 size={24} /></div>
           <div className="card-info">
-            <h3>Categoria com Maior Gasto</h3>
+            <h3>Categoria (Maior Gasto)</h3>
             <h2>{catMaiorGasto ? catMaiorGasto.nome : '-'}</h2>
             <p>{catMaiorGasto ? formatarMoeda(catMaiorGasto.valor) : ''}</p>
           </div>
         </div>
-        <div className="bi-card card-purple glass-panel hover-lift fade-in-up" style={{ animationDelay: '0.5s' }}>
+        <div className="bi-card card-purple glass-panel hover-lift fade-in-up" style={{ animationDelay: '0.6s' }}>
           <div className="card-icon"><TrendingUp size={24} /></div>
           <div className="card-info">
-            <h3>Média Diária de Gastos</h3>
+            <h3>Média Diária (Gastos)</h3>
             <h2>{formatarMoeda(mediaDiaria)}</h2>
           </div>
         </div>
