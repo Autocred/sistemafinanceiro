@@ -41,6 +41,32 @@ export default function Cadastros() {
 
   useEffect(() => { carregar(); }, [carregar]);
 
+  const limparDuplicidades = async () => {
+    if (!confirm("Isso irá buscar e apagar permanentemente cadastros com nomes duplicados. Deseja continuar?")) return;
+
+    let count = 0;
+    const removerDuplicatas = async (lista: any[], deletarFn: (id: string) => Promise<void>) => {
+      const vistos = new Set<string>();
+      for (const item of lista) {
+        const norm = normalizarTexto(item.nome);
+        if (vistos.has(norm)) {
+          await deletarFn(item.id);
+          count++;
+        } else {
+          vistos.add(norm);
+        }
+      }
+    };
+
+    await removerDuplicatas(categorias, deletarCategoria);
+    await removerDuplicatas(centrosCusto, deletarCentroCusto);
+    await removerDuplicatas(fornecedores, deletarFornecedor);
+    await removerDuplicatas(clientes, deletarCliente);
+
+    await carregar();
+    alert(`Foram removidos ${count} cadastros duplicados!`);
+  };
+
   const catsFiltradas = categorias.filter(c => !busca || c.nome.toLowerCase().includes(busca.toLowerCase()));
   const ccsFiltrados = centrosCusto.filter(c => !busca || c.nome.toLowerCase().includes(busca.toLowerCase()));
   const fornFiltrados = fornecedores.filter(f => !busca || f.nome.toLowerCase().includes(busca.toLowerCase()));
@@ -58,12 +84,19 @@ export default function Cadastros() {
     <div style={{ maxWidth: 1000, margin: '0 auto' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <h1 style={{ fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>Cadastros</h1>
-        <button
-          className="btn-primary"
-          onClick={() => { if (aba === 'categorias') setModalCat(true); else if (aba === 'centros-custo') setModalCC(true); else if (aba === 'fornecedores') setModalForn(true); else if (aba === 'formas-pagamento') setModalFormaPgto(true); else setModalCli(true); }}>
-          <PlusCircle size={16} />
-          Novo
-        </button>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button
+            className="btn-secondary"
+            onClick={limparDuplicidades}>
+            🧹 Limpar Duplicados
+          </button>
+          <button
+            className="btn-primary"
+            onClick={() => { if (aba === 'categorias') setModalCat(true); else if (aba === 'centros-custo') setModalCC(true); else if (aba === 'fornecedores') setModalForn(true); else if (aba === 'formas-pagamento') setModalFormaPgto(true); else setModalCli(true); }}>
+            <PlusCircle size={16} />
+            Novo
+          </button>
+        </div>
       </div>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
