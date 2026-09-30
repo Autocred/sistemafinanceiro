@@ -246,8 +246,9 @@ export async function salvarTransacao(transacao: Omit<Transacao, 'id' | 'criadoE
   const nova = { ...transacao, id, criadoEm: now, atualizadoEm: now };
   
   // VALIDAÇÃO ESTRITA ANTES DA TRANSAÇÃO
-  if (!nova.descricao || !nova.valor || !nova.tipo) {
-    throw new Error("Preencha os campos obrigatórios (Descrição, Valor e Tipo) para salvar.");
+  if (!nova.descricao || nova.descricao.trim() === '') nova.descricao = "Lançamento sem descrição";
+  if (!nova.valor || !nova.tipo) {
+    throw new Error("Preencha os campos obrigatórios (Valor e Tipo) para salvar.");
   }
   if (nova.status === 'pago' && nova.formaPagamento !== 'cartao_credito' && !nova.contaId) {
     throw new Error("Selecione uma Conta Financeira válida para salvar um lançamento PAGO.");

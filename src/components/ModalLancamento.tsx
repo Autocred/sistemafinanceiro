@@ -694,7 +694,7 @@ function PreLancamentoCard({ prelancamento: p, onConfirmar, onEditar, onRefazer,
   const faltaContaDestinão = p.tipo === 'transferencia' && !p.contaDestinãoId;
   const faltaFornecedor = p.tipo === 'despesa' && !p.fornecedorId && !p.fornecedorNome;
   const faltaCategoria = !p.categoriaId || p.categoriaId === 'outros_despesa' || p.categoriaId === 'outros_receita';
-  const isValid = !faltaConta && !faltaCartao && !faltaContaDestinão && !faltaFornecedor && p.valor > 0 && p.descricao.trim() !== '';
+  const isValid = !faltaConta && !faltaCartao && !faltaContaDestinão && !faltaFornecedor && p.valor > 0;
 
   return (
     <div className="fade-in">
@@ -1496,7 +1496,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
         console.error("Falha ao autocadastrar entidade:", e);
     }
 
-    if (!form.descricao.trim()) { setErroForm('Informe a descrição'); return; }
+    
     const parsedValor = parseInt(form.valor || '0', 10) / 100;
     const parsedMulta = parseInt(form.multa || '0', 10) / 100;
     const parsedJuros = parseInt(form.juros || '0', 10) / 100;
@@ -1762,7 +1762,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
 
       <div className="grid-responsive-3">
         <div>
-          <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 5 }}>Descrição *</label>
+          <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 5 }}>Descrição</label>
           <div style={{ display: 'flex', gap: 8 }}>
             <input className="input-field" style={{ flex: 1 }} value={form.descricao} onChange={e => handleDescricaoChange(e.target.value)} placeholder="Ex: Gasolina" />
             <button type="button" onClick={aprenderDescricao} className="btn-secondary hover-lift active-press" title="Fazer a IA aprender esta descrição" style={{ padding: '0 12px' }}>
