@@ -994,7 +994,8 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
 
   return (
     <>
-      {/* AutoBackup movido para CRON server-side */}
+      {/* AutoBackup ativado novamente (roda silenciosamente no browser) */}
+      <AutoBackup />
       <ToastContainer />
       <FloatingScroller />
       <NotificationDrawer aberto={drawerNotificacoesAberto} onClose={() => setDrawerNotificacoesAberto(false)} />
