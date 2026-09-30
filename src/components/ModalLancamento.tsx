@@ -1883,7 +1883,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
                 else setForm(f => ({ ...f, categoriaId: '', categoriaNome: nome } as any));
               }} />
               <datalist id="cats-list-manual">
-                {categorias.filter(c => c.nome.toLowerCase().includes((p.categoriaNome||'').toLowerCase())).slice(0,30).map(c => <option key={c.id} value={c.nome} />)}
+                {categorias.filter(c => c.nome.toLowerCase().includes(((form as any).categoriaNome||'').toLowerCase())).slice(0,30).map(c => <option key={c.id} value={c.nome} />)}
               </datalist>
             </div>
             <button type="button" onClick={() => setNovoCadastro('categoria')} className="btn-secondary hover-lift active-press" style={{ padding: '0 12px', flexShrink: 0 }}>
@@ -1902,7 +1902,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
                 else setForm(f => ({ ...f, centroCustoId: '', centroCustoNome: nome } as any));
               }} />
               <datalist id="cc-list-manual">
-                {centrosCusto.filter(c => c.nome.toLowerCase().includes((p.centroCustoNome||'').toLowerCase())).slice(0,30).map(c => <option key={c.id} value={c.nome} />)}
+                {centrosCusto.filter(c => c.nome.toLowerCase().includes(((form as any).centroCustoNome||'').toLowerCase())).slice(0,30).map(c => <option key={c.id} value={c.nome} />)}
               </datalist>
             </div>
             <button type="button" onClick={() => setNovoCadastro('centroCusto')} className="btn-secondary hover-lift active-press" style={{ padding: '0 12px', flexShrink: 0 }}>
