@@ -833,7 +833,8 @@ export async function vincularTransacaoFatura(
   let strVencimento = '';
   let mesRef = '';
 
-  if (dataVencimentoManual) {
+    const ciclo = calcularCicloFatura(data, _diaFechamento, _diaVencimento);
+  if (dataVencimentoManual && dataVencimentoManual !== ciclo.dataVencimento) {
     strVencimento = dataVencimentoManual;
     const [anoStr, mesStr] = dataVencimentoManual.split('-');
     mesRef = `${anoStr}-${mesStr}`;

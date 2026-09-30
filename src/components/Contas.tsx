@@ -48,7 +48,7 @@ export default function Contas({ faturaOpenId, onClearFaturaOpen }: { faturaOpen
 
   useEffect(() => {
     const fixMercadoPago = async () => {
-      if (localStorage.getItem('fix_mp_2026_v3') === '1') return;
+      if (localStorage.getItem('fix_mp_2026_v4') === '1') return;
       try {
         const { collection, getDocs, doc, updateDoc, deleteDoc } = await import('firebase/firestore');
         // Usar import dinamico para evitar erro de inicializacao
@@ -71,7 +71,7 @@ export default function Contas({ faturaOpenId, onClearFaturaOpen }: { faturaOpen
           await deleteDoc(doc(db, getCollectionPath('faturas'), f.id));
         }
         
-        localStorage.setItem('fix_mp_2026_v3', '1');
+        localStorage.setItem('fix_mp_2026_v4', '1');
         window.location.reload();
       } catch (e) {
         console.error(e);
