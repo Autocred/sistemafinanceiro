@@ -81,7 +81,7 @@ const NAV_ITEMS = [
   { id: 'auditoria'    as Pagina, label: 'Auditoria',        icon: ShieldCheck,     grupo: 'Operacional' },
 
   { id: 'atualizacoes' as Pagina, label: 'Atualizações',     icon: Server,          grupo: 'Configurações' },
-  { id: 'cadastros'    as Pagina, label: 'Cadastros',        icon: BookOpen,        grupo: 'Configurações' },
+  { id: 'cadastros'    as Pagina, label: 'Cadastros',        icon: BookOpen,        grupo: 'Gestão' },
   { id: 'configuracoes'as Pagina, label: 'Configurações',    icon: Settings,        grupo: 'Configurações' },
 ];
 

@@ -39,7 +39,34 @@ export default function Cadastros() {
     setFormasPgto(fpgtos);
   }, []);
 
-  useEffect(() => { carregar(); }, [carregar]);
+  const limparDuplicidadesSilencioso = useCallback(async () => {
+    const [cats, ccs, forns, clis] = await Promise.all([getCategorias(), getCentrosCusto(), getFornecedores(), getClientes()]);
+    const removerDuplicatas = async (lista: any[], deletarFn: (id: string) => Promise<void>) => {
+      const vistos = new Set<string>();
+      for (const item of lista) {
+        const norm = normalizarTexto(item.nome);
+        if (vistos.has(norm)) {
+          await deletarFn(item.id);
+        } else {
+          vistos.add(norm);
+        }
+      }
+    };
+    await removerDuplicatas(cats, deletarCategoria);
+    await removerDuplicatas(ccs, deletarCentroCusto);
+    await removerDuplicatas(forns, deletarFornecedor);
+    await removerDuplicatas(clis, deletarCliente);
+    await carregar();
+  }, [carregar]);
+
+  useEffect(() => { 
+    carregar().then(() => {
+      if (typeof window !== 'undefined' && !localStorage.getItem('dedupe_done_v3')) {
+        localStorage.setItem('dedupe_done_v3', 'true');
+        limparDuplicidadesSilencioso();
+      }
+    }); 
+  }, [carregar, limparDuplicidadesSilencioso]);
 
   const limparDuplicidades = async () => {
     if (!confirm("Isso irá buscar e apagar permanentemente cadastros com nomes duplicados. Deseja continuar?")) return;

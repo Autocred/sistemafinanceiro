@@ -1047,10 +1047,9 @@ function EditarPreLancamento({ prelancamento, categorias, centrosCusto, contas, 
             }
           }} />
           <datalist id="clientes-fornecedores-list-edit">
-            {p.tipo === 'receita' 
-    ? clientes.filter(c => c.nome.toLowerCase().includes((p.clienteNome||'').toLowerCase())).slice(0,30).map(c => <option key={c.id} value={c.nome} />) 
-    : fornecedores.filter(f => f.nome.toLowerCase().includes((p.fornecedorNome||'').toLowerCase())).slice(0,30).map(f => <option key={f.id} value={f.nome} />)
-  }
+            {Array.from(new Set(
+              (p.tipo === 'receita' ? clientes : fornecedores).map(x => x.nome)
+            )).map((nome, i) => <option key={i} value={nome} />)}
           </datalist>
         </div>
       </div>
@@ -1729,7 +1728,9 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
               }
             }} />
             <datalist id="clientes-fornecedores-list-manual">
-              {fornecedores.map(f => <option key={f.id} value={f.nome} />)}{clientes.map(c => <option key={c.id} value={c.nome} />)}
+              {Array.from(new Set(
+                (form.tipo === 'receita' ? clientes : fornecedores).map(x => x.nome)
+              )).map((nome, i) => <option key={i} value={nome} />)}
             </datalist>
           </div>
           <button type="button" onClick={() => setNovoCadastro((form.tipo as string) === 'receita' ? 'cliente' : 'fornecedor')} className="btn-secondary hover-lift active-press" style={{ padding: '0 12px', flexShrink: 0 }}>
