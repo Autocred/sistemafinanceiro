@@ -484,10 +484,10 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
             </div>
             <div>
               <div style={{ fontSize: 18, fontWeight: 900, color: '#9f1239', display: 'flex', alignItems: 'center', gap: 8 }}>
-                ï¿½xï¿½ Fatura Fechada ï¿½ {f.cartaoNome || 'Cartão'}
+                💳 Fatura Fechada — {f.cartaoNome || 'Cartão'}
               </div>
               <p style={{ fontSize: 15, color: '#be123c', margin: '6px 0 0 0', fontWeight: 700 }}>
-                Valor: <span className="valor-sensivel">{formatarMoeda(f.valorTotal)}</span> • Vencimento: {f.dataVencimento ? format(new Date(f.dataVencimento + 'T12:00:00'), 'dd/MM/yyyy') : 'ï¿½'}
+                Valor: <span className="valor-sensivel">{formatarMoeda(f.valorTotal)}</span> • Vencimento: {f.dataVencimento ? format(new Date(f.dataVencimento + 'T12:00:00'), 'dd/MM/yyyy') : '---'}
                 <span style={{ marginLeft: 6, fontWeight: 900, color: '#7f1d1d', background: 'rgba(255,255,255,0.6)', padding: '2px 8px', borderRadius: 12 }}>{diasRestantesStr}</span>
               </p>
             </div>
@@ -666,7 +666,7 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
               </div>
             </div>
 
-            {/* 1.3 VENCE EM ATï¿½0 2 DIAS A PAGAR */}
+            {/* 1.3 VENCE EM ATÉ 2 DIAS A PAGAR */}
             <div 
               onClick={() => onNavigateToLancamentos && onNavigateToLancamentos('2dias_pagar')}
               className={pagar2DiasItems.length > 0 ? 'glow-pulse-yellow' : ''}
@@ -821,7 +821,7 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
               </div>
             </div>
 
-            {/* 2.3 VENCE EM ATï¿½0 2 DIAS A RECEBER */}
+            {/* 2.3 VENCE EM ATÉ 2 DIAS A RECEBER */}
             <div 
               onClick={() => onNavigateToLancamentos && onNavigateToLancamentos('2dias_receber')}
               className={receber2DiasItems.length > 0 ? 'glow-pulse-green' : ''}
