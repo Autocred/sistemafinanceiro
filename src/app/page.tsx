@@ -579,20 +579,7 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
              const storedLogin = localStorage.getItem('master_lastLogin');
              const agora = storedLogin ? new Date(storedLogin) : new Date();
              
-             // Master backup check
-             if (c?.backupAutomatico && c?.frequenciaBackup && c.frequenciaBackup !== 'nunca') {
-                import('@/lib/backup').then(({ listarBackups, fazerBackup, shouldRunAutoBackup }) => {
-                  listarBackups().then(backups => {
-                    const autos = backups.filter(b => b.tipo === 'automatico');
-                    const lastAuto = autos.length > 0 ? autos[0].dataHora : undefined;
-                    
-                    if (shouldRunAutoBackup(c.frequenciaBackup, c.horarioBackup, lastAuto)) {
-                      console.log('Rodando backup automático (Master)...');
-                      fazerBackup('automatico').catch(console.error);
-                    }
-                  }).catch(console.error);
-                });
-             }
+             /* Master backup agora via CRON */
              setDataAcesso(`${agora.toLocaleDateString('pt-BR')} - ${agora.getHours().toString().padStart(2,'0')}h${agora.getMinutes().toString().padStart(2,'0')}`);
              
              sessionStorage.setItem('current_user_name', 'Clovis (Master)');
@@ -707,20 +694,7 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
                  setCfg(c);
                  await seedDadosPadraoSeVazio();
                  
-                 // Auto backup check
-                 if (c?.backupAutomatico && c?.frequenciaBackup && c.frequenciaBackup !== 'nunca') {
-                    import('@/lib/backup').then(({ listarBackups, fazerBackup, shouldRunAutoBackup }) => {
-                      listarBackups().then(backups => {
-                        const autos = backups.filter(b => b.tipo === 'automatico');
-                        const lastAuto = autos.length > 0 ? autos[0].dataHora : undefined;
-                        
-                        if (shouldRunAutoBackup(c.frequenciaBackup, c.horarioBackup, lastAuto)) {
-                          console.log('Rodando backup automático...');
-                          fazerBackup('automatico').catch(console.error);
-                        }
-                      }).catch(console.error);
-                    });
-                 }
+                 /* Auto backup agora via CRON */
                  
                  let temaAtivo = c?.tema || (typeof window !== 'undefined' ? localStorage.getItem('theme_preference') : null) || 'dark';
   if (temaAtivo === 'auto' && typeof window !== 'undefined') {
@@ -1017,7 +991,7 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
 
   return (
     <>
-      <AutoBackup />
+      {/* AutoBackup movido para CRON server-side */}
       <ToastContainer />
       <FloatingScroller />
       <NotificationDrawer aberto={drawerNotificacoesAberto} onClose={() => setDrawerNotificacoesAberto(false)} />

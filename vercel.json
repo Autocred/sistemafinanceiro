@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/lembretes",
+      "schedule": "0 10 * * *"
+    },
+    {
+      "path": "/api/cron/backups",
+      "schedule": "0 2-23/2 * * *"
+    }
+  ]
+}
