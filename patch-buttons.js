@@ -1,15 +1,34 @@
 const fs = require('fs');
-let c = fs.readFileSync('src/components/ModalLancamento.tsx', 'utf8');
 
-// 1. Change the buttons wrapper
-c = c.replace(
-  /<div className="grid-responsive-3">\s*\{\['despesa', 'receita', 'transferencia'\]/g,
-  `<div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-        {['despesa', 'receita', 'transferencia']`
-);
+let src = fs.readFileSync('src/components/Configuracoes.tsx', 'utf8');
 
-// 2. Change the default comportamento to 'variavel'
-c = c.replace(/comportamento: initialData\?\.comportamento \|\| 'fixa',/g, "comportamento: initialData?.comportamento || 'variavel',");
+// 1. Ensure getTenantId is imported from storage
+if (!src.includes('getTenantId')) {
+  src = src.replace("import { getConfiguracoes, salvarConfiguracoes } from '@/lib/storage';", "import { getConfiguracoes, salvarConfiguracoes, getTenantId } from '@/lib/storage';");
+}
 
-fs.writeFileSync('src/components/ModalLancamento.tsx', c);
-console.log('Fixed buttons and default comportamento');
+// 2. Update the test buttons to pass tenantId, numero and nome
+const oldFechamentoBtn = `                      alert('Disparando teste de Fechamento Diário...');
+                      const res = await fetch('/api/cron/fechamento-diario');`;
+
+const newFechamentoBtn = `                      alert('Disparando teste de Fechamento Diário...');
+                      const currentTenant = typeof getTenantId === 'function' ? getTenantId() : 'master';
+                      const nomeAtual = cfg.nomeSistema || cfg.nomeUsuario || (currentTenant === 'master' ? 'Clovis Master' : 'Autocred Promotora');
+                      const res = await fetch(\`/api/cron/fechamento-diario?tenantId=\${encodeURIComponent(currentTenant)}&numero=\${encodeURIComponent(cfg.whatsappNumeros || '')}&nome=\${encodeURIComponent(nomeAtual)}\`);`;
+
+const oldLembreteBtn = `                      alert('Disparando teste de Lembrete de Contas...');
+                      const res = await fetch('/api/cron/lembretes');`;
+
+const newLembreteBtn = `                      alert('Disparando teste de Lembrete de Contas...');
+                      const currentTenant = typeof getTenantId === 'function' ? getTenantId() : 'master';
+                      const nomeAtual = cfg.nomeSistema || cfg.nomeUsuario || (currentTenant === 'master' ? 'Clovis Master' : 'Autocred Promotora');
+                      const res = await fetch(\`/api/cron/lembretes?tenantId=\${encodeURIComponent(currentTenant)}&numero=\${encodeURIComponent(cfg.whatsappNumeros || '')}&nome=\${encodeURIComponent(nomeAtual)}\`);`;
+
+if (src.includes(oldFechamentoBtn) && src.includes(oldLembreteBtn)) {
+  src = src.replace(oldFechamentoBtn, newFechamentoBtn);
+  src = src.replace(oldLembreteBtn, newLembreteBtn);
+  fs.writeFileSync('src/components/Configuracoes.tsx', src);
+  console.log('✅ Botões de teste em Configuracoes.tsx agora passam o tenantId ativo!');
+} else {
+  console.error('❌ Botões de teste não encontrados no arquivo.');
+}

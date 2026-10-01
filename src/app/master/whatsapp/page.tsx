@@ -194,6 +194,23 @@ export default function MasterWhatsappConfig() {
           </div>
 
           <div style={{ gridColumn: '1 / -1' }}>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 6 }}>
+              🏢 Licença para Disparo / Teste neste Painel
+            </label>
+            <select
+              value={tenantId || 'autocred-promotora-de-credito'}
+              onChange={e => setTenantId(e.target.value)}
+              style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-title)', fontSize: 14 }}
+            >
+              <option value="autocred-promotora-de-credito">🏢 AUTOCRED Promotora de Crédito</option>
+              <option value="master">👤 Conta Clovis Master (Pessoal)</option>
+            </select>
+            <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', marginTop: 4 }}>
+              Escolha qual licença terá seus lançamentos enviados ao testar pelos botões abaixo.
+            </span>
+          </div>
+
+          <div style={{ gridColumn: '1 / -1' }}>
             <label style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 6 }}>Número que receberá o Resumo Diário (Seu WhatsApp)</label>
             <input 
               type="text" 
@@ -233,7 +250,9 @@ export default function MasterWhatsappConfig() {
                     const btn = document.getElementById('btn-test-fechamento');
                     if (btn) btn.innerText = 'Enviando...';
                     try {
-                      const res = await fetch('/api/cron/fechamento-diario');
+                      const selTenant = tenantId || 'autocred-promotora-de-credito';
+                      const selNome = selTenant === 'master' ? 'Clovis Master' : 'Autocred Promotora';
+                      const res = await fetch(`/api/cron/fechamento-diario?tenantId=${selTenant}&numero=${encodeURIComponent(numeroMaster)}&nome=${encodeURIComponent(selNome)}`);
                       const data = await res.json();
                       alert(data.success ? '✅ Fechamento enviado com sucesso no WhatsApp!' : ('Erro: ' + (data.error || data.message)));
                     } catch (e: any) {
@@ -254,7 +273,9 @@ export default function MasterWhatsappConfig() {
                     const btn = document.getElementById('btn-test-lembrete');
                     if (btn) btn.innerText = 'Enviando...';
                     try {
-                      const res = await fetch('/api/cron/lembretes');
+                      const selTenant = tenantId || 'autocred-promotora-de-credito';
+                      const selNome = selTenant === 'master' ? 'Clovis Master' : 'Autocred Promotora';
+                      const res = await fetch(`/api/cron/lembretes?tenantId=${selTenant}&numero=${encodeURIComponent(numeroMaster)}&nome=${encodeURIComponent(selNome)}`);
                       const data = await res.json();
                       alert(data.success ? '✅ Notificação de Contas a Pagar e Receber enviada com sucesso no WhatsApp!' : ('Erro: ' + (data.error || data.message)));
                     } catch (e: any) {

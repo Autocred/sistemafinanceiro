@@ -34,12 +34,14 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const paramTenantId = searchParams.get('tenantId');
     const paramNumero = searchParams.get('numero');
+    const paramNome = searchParams.get('nome');
 
     let telefoneMaster = paramNumero || (configSnap.exists ? (configSnap.data()?.telefoneWhatsApp || configSnap.data()?.whatsappNumeroMaster) : process.env.WHATSAPP_NUMERO_MASTER);
     const apiUrl = configSnap.exists ? configSnap.data()?.whatsappApiUrl : undefined;
     const apiToken = configSnap.exists ? configSnap.data()?.whatsappApiToken : undefined;
-    // tenantId configurado ou passado por parâmetro
-    const tenantId = paramTenantId || (configSnap.exists ? configSnap.data()?.whatsappTenantId : undefined);
+    
+    // tenantId passado por parâmetro ou fallback
+    const tenantId = paramTenantId || undefined;
 
     if (!telefoneMaster) {
       telefoneMaster = '5511999999999'; // Fallback / evitar erro se não tiver configurado ainda
@@ -50,7 +52,8 @@ export async function GET(request: Request) {
     // Se tenantId for master ou vazio, usa raiz. Caso contrário usa tenants/{id}/transacoes
     const isMasterTenant = !tenantId || tenantId === 'master' || tenantId === '9yxuafoC0AV9BrIKem05ponbmgn2';
     const transacoesPath = isMasterTenant ? 'transacoes' : `tenants/${tenantId}/transacoes`;
-    console.log(`Buscando transações em: ${transacoesPath}`);
+    const nomeSistema = paramNome || (isMasterTenant ? (configSnap.data()?.nomeSistema || 'Clovis Master') : 'Autocred Promotora');
+    console.log(`[FECHAMENTO] Licença: ${nomeSistema} | Buscando transações em: ${transacoesPath}`);
 
     // Buscar transações de HOJE do tenant correto (status pago OU recebido)
     const transacoesSnap = await adminDb!.collection(transacoesPath)
@@ -93,7 +96,8 @@ export async function GET(request: Request) {
     principais.sort((a, b) => b.valor - a.valor);
 
     // Montar a mensagem
-    let mensagem = `📊 *Resumo Diário - ${displayData}*\n\n`;
+    let mensagem = `📊 *Resumo Diário - ${displayData}*\n`;
+    mensagem += `*${nomeSistema}*\n\n`;
     mensagem += `🟢 *Total Entradas:* ${fmt(totalReceitas)}\n`;
     mensagem += `🔴 *Total Saídas:* ${fmt(totalDespesas)}\n\n`;
     
@@ -109,7 +113,7 @@ export async function GET(request: Request) {
       });
     }
 
-    mensagem += `\n_Gerado automaticamente por Autocred Finanças_`;
+    mensagem += `\n_Gerado automaticamente por ${nomeSistema}_`;
 
     // Enviar mensagem
     if (telefoneMaster && telefoneMaster !== '5511999999999') {

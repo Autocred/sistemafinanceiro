@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { getConfiguracoes, salvarConfiguracoes } from '@/lib/storage';
+import { getConfiguracoes, salvarConfiguracoes, getTenantId } from '@/lib/storage';
 import { getFirebaseAuth } from '@/lib/auth';
 import { ConfiguracaoApp } from '@/lib/types';
 import { getUserProfile, AppUser } from '@/lib/auth';
@@ -1223,7 +1223,9 @@ document.cookie = 'app_pin_code=' + encodeURIComponent(novoPin) + '; max-age=315
                     }
                     try {
                       alert('Disparando teste de Fechamento Diário...');
-                      const res = await fetch('/api/cron/fechamento-diario');
+                      const currentTenant = typeof getTenantId === 'function' ? getTenantId() : 'master';
+                      const nomeAtual = cfg.nomeSistema || cfg.nomeUsuario || (currentTenant === 'master' ? 'Clovis Master' : 'Autocred Promotora');
+                      const res = await fetch(`/api/cron/fechamento-diario?tenantId=${encodeURIComponent(currentTenant)}&numero=${encodeURIComponent(cfg.whatsappNumeros || '')}&nome=${encodeURIComponent(nomeAtual)}`);
                       const json = await res.json();
                       if (json.success) alert('✅ Mensagem de fechamento entregue no seu WhatsApp!');
                       else alert('Resposta: ' + (json.message || json.error));
@@ -1246,7 +1248,9 @@ document.cookie = 'app_pin_code=' + encodeURIComponent(novoPin) + '; max-age=315
                     }
                     try {
                       alert('Disparando teste de Lembrete de Contas...');
-                      const res = await fetch('/api/cron/lembretes');
+                      const currentTenant = typeof getTenantId === 'function' ? getTenantId() : 'master';
+                      const nomeAtual = cfg.nomeSistema || cfg.nomeUsuario || (currentTenant === 'master' ? 'Clovis Master' : 'Autocred Promotora');
+                      const res = await fetch(`/api/cron/lembretes?tenantId=${encodeURIComponent(currentTenant)}&numero=${encodeURIComponent(cfg.whatsappNumeros || '')}&nome=${encodeURIComponent(nomeAtual)}`);
                       const json = await res.json();
                       if (json.success) alert('✅ Mensagem de lembrete entregue no seu WhatsApp!');
                       else alert('Resposta: ' + (json.message || json.error));
