@@ -829,25 +829,12 @@ export async function vincularTransacaoFatura(
   data: string, valor: number, _diaFechamento: number, _diaVencimento: number,
   dataVencimentoManual?: string
 ) {
-  let strFechamento = '';
-  let strVencimento = '';
-  let mesRef = '';
-
-    const ciclo = calcularCicloFatura(data, _diaFechamento, _diaVencimento);
-  if (dataVencimentoManual && dataVencimentoManual !== ciclo.dataVencimento) {
-    strVencimento = dataVencimentoManual;
-    const [anoStr, mesStr] = dataVencimentoManual.split('-');
-    mesRef = `${anoStr}-${mesStr}`;
-    const d = new Date(dataVencimentoManual + 'T12:00:00Z');
-    d.setDate(d.getDate() - 7);
-    strFechamento = d.toISOString().split('T')[0];
-  } else {
-    // ⚠️ REGRA DE OURO IMPLEMENTADA ⚠️
-    const ciclo = calcularCicloFatura(data, _diaFechamento, _diaVencimento);
-    mesRef = ciclo.mesReferencia;
-    strFechamento = ciclo.dataFechamento;
-    strVencimento = ciclo.dataVencimento;
-  }
+  // REGRA DE OURO: SEMPRE calcula ciclo pela configuracao do cartao (fechamento e vencimento)
+  // NUNCA usa dataVencimentoManual para derivar mesReferencia — isso causava bug de fatura errada!
+  const ciclo = calcularCicloFatura(data, _diaFechamento, _diaVencimento);
+  const mesRef = ciclo.mesReferencia;
+  const strFechamento = ciclo.dataFechamento;
+  const strVencimento = ciclo.dataVencimento;
 
   let fatura = await getFaturaAberta(cartaoId, mesRef);
   if (!fatura) {
@@ -862,6 +849,9 @@ export async function vincularTransacaoFatura(
     if (!fatura.transacaoIds.includes(transacaoId)) {
       fatura.transacaoIds.push(transacaoId);
     }
+    // ✅ Sempre corrige o vencimento e fechamento para o calculado corretamente
+    fatura.dataVencimento = strVencimento;
+    fatura.dataFechamento = strFechamento;
     // ⚠️ BLINDAGEM: Recalcula o total SEMPRE a partir dos lançamentos reais do banco
     let totalRecalculado = 0;
     for (const tid of fatura.transacaoIds) {
@@ -880,7 +870,7 @@ export async function vincularTransacaoFatura(
   await salvarFatura(fatura);
   
   // PREVINE LOOP INFINITO: passamos __skipFaturaRelink para que atualizarTransacao não chame vincular novamente
-  await atualizarTransacao(transacaoId, { faturaId: fatura.id, __oldCartaoId: cartaoId, __skipFaturaRelink: true } as any);
+  await atualizarTransacao(transacaoId, { faturaId: fatura.id, dataVencimento: strVencimento, __oldCartaoId: cartaoId, __skipFaturaRelink: true } as any);
 }
 
 export async function pagarFatura(

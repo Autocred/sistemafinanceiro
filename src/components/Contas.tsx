@@ -47,37 +47,50 @@ export default function Contas({ faturaOpenId, onClearFaturaOpen }: { faturaOpen
   useEffect(() => { carregar(); }, [carregar]);
 
   useEffect(() => {
-    const fixMercadoPago = async () => {
-      if (localStorage.getItem('fix_mp_2026_v4') === '1') return;
+    const fixFaturas = async () => {
+      if (localStorage.getItem('fix_faturas_v5') === '1') return;
       try {
-        const { collection, getDocs, doc, updateDoc, deleteDoc } = await import('firebase/firestore');
-        // Usar import dinamico para evitar erro de inicializacao
+        const { collection, getDocs, doc, updateDoc } = await import('firebase/firestore');
         const { getCollectionPath } = await import('@/lib/storage');
         const { getDb } = await import('@/lib/firebase');
         const db = getDb();
+        
+        // Fix all open invoices for Mercado Pago that have wrong due date
+        // Card config: fechamento=28, vencimento=4
         const faturasRef = collection(db, getCollectionPath('faturas'));
-        const transRef = collection(db, getCollectionPath('transacoes'));
-        
         const faturasSnap = await getDocs(faturasRef);
-        const faturasMp = faturasSnap.docs.map(d => ({ id: d.id, ...d.data() })).filter((f: any) => f.cartaoNome === 'Mercado Pago' && f.status !== 'paga');
         
-        const transSnap = await getDocs(transRef);
-        const transMp = transSnap.docs.map(d => ({ id: d.id, ...d.data() })).filter((t: any) => t.cartaoNome === 'Mercado Pago' && t.status === 'pendente' && faturasMp.some(f => f.id === t.faturaId));
-        
-        for (const t of transMp) {
-          await updateDoc(doc(db, getCollectionPath('transacoes'), t.id), { faturaId: null });
+        for (const d of faturasSnap.docs) {
+          const f = { id: d.id, ...d.data() } as any;
+          if (f.cartaoNome !== 'Mercado Pago' || f.status === 'paga') continue;
+          
+          // Parse mesReferencia e recalculate correct due date
+          // mesReferencia = "2026-10" means invoice closes on 28/10 and is due on 04/11
+          const [ano, mes] = (f.mesReferencia || '').split('-').map(Number);
+          if (!ano || !mes) continue;
+          
+          // Due date = day 4 of next month (since 4 < 28)
+          const mesVenc = mes === 12 ? 1 : mes + 1;
+          const anoVenc = mes === 12 ? ano + 1 : ano;
+          const correctDue = `${anoVenc}-${String(mesVenc).padStart(2,'0')}-04`;
+          const correctClose = `${ano}-${String(mes).padStart(2,'0')}-28`;
+          
+          if (f.dataVencimento !== correctDue || f.dataFechamento !== correctClose) {
+            await updateDoc(doc(db, getCollectionPath('faturas'), f.id), {
+              dataVencimento: correctDue,
+              dataFechamento: correctClose
+            });
+            console.log(`Fixed fatura ${f.mesReferencia}: ${f.dataVencimento} -> ${correctDue}`);
+          }
         }
-        for (const f of faturasMp) {
-          await deleteDoc(doc(db, getCollectionPath('faturas'), f.id));
-        }
         
-        localStorage.setItem('fix_mp_2026_v4', '1');
+        localStorage.setItem('fix_faturas_v5', '1');
         window.location.reload();
       } catch (e) {
-        console.error(e);
+        console.error('Fix faturas error:', e);
       }
     };
-    fixMercadoPago();
+    fixFaturas();
   }, []);
 
 
