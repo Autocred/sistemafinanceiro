@@ -23,6 +23,7 @@ export default function MasterLayout({ children }: { children: React.ReactNode }
     { nome: 'Suporte', url: '/master/suporte', icone: <LifeBuoy className="w-5 h-5" /> },
     { nome: 'Segurança', url: '/master/seguranca', icone: <ShieldCheck className="w-5 h-5" /> },
     { nome: 'Configurações', url: '/master/configuracoes', icone: <Settings className="w-5 h-5" /> },
+    { nome: 'WhatsApp API', url: '/master/whatsapp', icone: <MessageSquare className="w-5 h-5" /> },
   ];
 
   // ─── Ir ao App Principal COM dados do Master (Clovis) ────────────────────────
