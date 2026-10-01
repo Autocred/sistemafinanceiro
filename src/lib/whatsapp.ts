@@ -19,29 +19,35 @@ export async function enviarMensagemWhatsApp(numero: string, mensagem: string, a
     
     const WHATSAPP_API_URL = apiUrl || process.env.WHATSAPP_API_URL;
     const WHATSAPP_API_TOKEN = apiToken || process.env.WHATSAPP_API_TOKEN;
-    // Nome da instância configurada na Evolution API
     const INSTANCE_NAME = process.env.WHATSAPP_INSTANCE_NAME || 'autocred';
 
     if (WHATSAPP_API_URL && WHATSAPP_API_TOKEN) {
-      // Evolution API v1: endpoint inclui o nome da instância
+      // 1. Ping para acordar o servidor Railway (pode estar dormindo)
+      console.log('[WHATSAPP] Acordando servidor Railway...');
+      try {
+        await fetch(`${WHATSAPP_API_URL}/`, { signal: AbortSignal.timeout(8000) });
+      } catch (e) {
+        console.log('[WHATSAPP] Ping timeout (normal se servidor estava dormindo). Aguardando 3s...');
+        await new Promise(r => setTimeout(r, 3000));
+      }
+
+      // 2. Enviar mensagem com timeout de 15s
       const endpoint = `${WHATSAPP_API_URL}/message/sendText/${INSTANCE_NAME}`;
-      console.log(`[WHATSAPP] Enviando para endpoint: ${endpoint}`);
+      console.log(`[WHATSAPP] Enviando para: ${endpoint}`);
 
       const response = await fetch(endpoint, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': WHATSAPP_API_TOKEN,
-        },
+        headers: { 'Content-Type': 'application/json', 'apikey': WHATSAPP_API_TOKEN },
         body: JSON.stringify({
           number: numStr,
-          options: { delay: 1200, presence: 'composing' },
-          textMessage: { text: mensagem }
-        })
+          text: mensagem,
+          options: { delay: 1200, presence: 'composing' }
+        }),
+        signal: AbortSignal.timeout(15000)
       });
 
       const result = await response.text();
-      console.log(`[WHATSAPP] Resposta da API (${response.status}):`, result);
+      console.log(`[WHATSAPP] Resposta (${response.status}):`, result);
 
       if (!response.ok) {
         console.error('[WHATSAPP] Erro na API:', result);
