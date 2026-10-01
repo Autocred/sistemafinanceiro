@@ -203,9 +203,51 @@ export default function MasterWhatsappConfig() {
         <div style={{ textAlign: 'center', padding: 24, border: '1px dashed var(--border)', borderRadius: 12, background: 'var(--bg-secondary)' }}>
           {status === 'connected' ? (
             <div style={{ color: '#10b981', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-              <CheckCircle2 size={48} />
-              <h3 style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>WhatsApp Conectado!</h3>
               <p style={{ fontSize: 13, opacity: 0.8 }}>O sistema já pode fazer disparos a partir deste número.</p>
+              
+              <div style={{ display: 'flex', gap: 12, marginTop: 14, flexWrap: 'wrap', justifyContent: 'center' }}>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const btn = document.getElementById('btn-test-fechamento');
+                    if (btn) btn.innerText = 'Enviando...';
+                    try {
+                      const res = await fetch('/api/cron/fechamento-diario');
+                      const data = await res.json();
+                      alert(data.success ? '✅ Fechamento enviado com sucesso no WhatsApp!' : ('Erro: ' + (data.error || data.message)));
+                    } catch (e: any) {
+                      alert('Erro ao disparar: ' + e.message);
+                    } finally {
+                      if (btn) btn.innerText = '📊 Disparar Resumo Diário (17h)';
+                    }
+                  }}
+                  id="btn-test-fechamento"
+                  style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '10px 18px', borderRadius: 8, fontWeight: 700, cursor: 'pointer', fontSize: 13 }}
+                >
+                  📊 Disparar Resumo Diário (17h)
+                </button>
+
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const btn = document.getElementById('btn-test-lembrete');
+                    if (btn) btn.innerText = 'Enviando...';
+                    try {
+                      const res = await fetch('/api/cron/lembretes');
+                      const data = await res.json();
+                      alert(data.success ? '✅ Notificação de Contas a Pagar e Receber enviada com sucesso no WhatsApp!' : ('Erro: ' + (data.error || data.message)));
+                    } catch (e: any) {
+                      alert('Erro ao disparar: ' + e.message);
+                    } finally {
+                      if (btn) btn.innerText = '🔔 Disparar Contas a Pagar/Receber (08h)';
+                    }
+                  }}
+                  id="btn-test-lembrete"
+                  style={{ background: '#10b981', color: '#fff', border: 'none', padding: '10px 18px', borderRadius: 8, fontWeight: 700, cursor: 'pointer', fontSize: 13 }}
+                >
+                  🔔 Disparar Contas a Pagar/Receber (08h)
+                </button>
+              </div>
             </div>
           ) : qrCode ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
