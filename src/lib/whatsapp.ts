@@ -5,7 +5,7 @@
  * Função principal para disparar mensagens de WhatsApp.
  * Esta função deve ser adaptada para a API escolhida (Z-API, Evolution API, Meta API, etc).
  */
-export async function enviarMensagemWhatsApp(numero: string, mensagem: string) {
+export async function enviarMensagemWhatsApp(numero: string, mensagem: string, apiUrl?: string, apiToken?: string) {
   try {
     // FORMATAR NÚMERO
     // Remove tudo que não for dígito
@@ -17,8 +17,8 @@ export async function enviarMensagemWhatsApp(numero: string, mensagem: string) {
 
     // =========================================================================
     
-    const WHATSAPP_API_URL = process.env.WHATSAPP_API_URL;
-    const WHATSAPP_API_TOKEN = process.env.WHATSAPP_API_TOKEN;
+    const WHATSAPP_API_URL = apiUrl || process.env.WHATSAPP_API_URL;
+    const WHATSAPP_API_TOKEN = apiToken || process.env.WHATSAPP_API_TOKEN;
 
     if (WHATSAPP_API_URL && WHATSAPP_API_TOKEN) {
       // Exemplo padrão (Evolution API ou Z-API)

@@ -26,7 +26,11 @@ export async function GET(request: Request) {
     
     // Buscar config global para pegar o celular do master
     const configSnap = await adminDb!.collection('configuracoes').doc('geral').get();
-    let telefoneMaster = configSnap.exists ? configSnap.data()?.telefoneWhatsApp : process.env.WHATSAPP_NUMERO_MASTER;
+    
+    let telefoneMaster = configSnap.exists ? (configSnap.data()?.telefoneWhatsApp || configSnap.data()?.whatsappNumeroMaster) : process.env.WHATSAPP_NUMERO_MASTER;
+    const apiUrl = configSnap.exists ? configSnap.data()?.whatsappApiUrl : undefined;
+    const apiToken = configSnap.exists ? configSnap.data()?.whatsappApiToken : undefined;
+
 
     if (!telefoneMaster) {
       telefoneMaster = '5511999999999'; // Fallback / evitar erro se não tiver configurado ainda
@@ -96,7 +100,7 @@ export async function GET(request: Request) {
 
     // Enviar mensagem
     if (telefoneMaster && telefoneMaster !== '5511999999999') {
-      await enviarMensagemWhatsApp(telefoneMaster, mensagem);
+      await enviarMensagemWhatsApp(telefoneMaster, mensagem, apiUrl, apiToken);
     } else {
       console.log('Mensagem simulada (telefone não real):', mensagem);
     }
