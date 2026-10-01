@@ -28,16 +28,7 @@ export async function GET(request: Request) {
     const configSnap = await adminDb!.collection('configuracoes').doc('geral').get();
     
     
-    const savedHorario = configSnap.exists ? (configSnap.data()?.whatsappHorario || '23:00') : '23:00';
-    const targetHour = parseInt(savedHorario.split(':')[0]);
     
-    // Pegar a hora atual no fuso do Brasil
-    const nowSp = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
-    const currentHour = nowSp.getHours();
-
-    if (currentHour !== targetHour) {
-      return NextResponse.json({ message: `Agendado para ${targetHour}h. Agora são ${currentHour}h. Pulando...` });
-    }
 
     let telefoneMaster = configSnap.exists ? (configSnap.data()?.telefoneWhatsApp || configSnap.data()?.whatsappNumeroMaster) : process.env.WHATSAPP_NUMERO_MASTER;
     const apiUrl = configSnap.exists ? configSnap.data()?.whatsappApiUrl : undefined;
