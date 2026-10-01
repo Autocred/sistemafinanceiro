@@ -25,7 +25,7 @@ export async function GET(request: Request) {
     // Idealmente você teria uma lista de contatos na config.
     
     // Buscar config global para pegar o celular do master
-    const configSnap = await adminDb.collection('configuracoes').doc('geral').get();
+    const configSnap = await adminDb!.collection('configuracoes').doc('geral').get();
     let telefoneMaster = configSnap.exists ? configSnap.data()?.telefoneWhatsApp : process.env.WHATSAPP_NUMERO_MASTER;
 
     if (!telefoneMaster) {
@@ -35,7 +35,7 @@ export async function GET(request: Request) {
 
     // Buscar transações de HOJE
     // Assumimos tenant root se for o master (conforme correções anteriores)
-    const transacoesSnap = await adminDb.collection('transacoes')
+    const transacoesSnap = await adminDb!.collection('transacoes')
       .where('data', '==', hojeStr)
       .where('status', '==', 'pago')
       .get();
