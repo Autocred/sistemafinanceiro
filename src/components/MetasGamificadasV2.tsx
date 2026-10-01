@@ -766,7 +766,7 @@ export default function MetasGamificadasV2() {
             Nenhuma meta cadastrada. Clique em "Nova Meta" para começar!
           </div>
         )}
-        {metas.map(meta => {
+        {[...metas].sort((a, b) => b.dataInicio.localeCompare(a.dataInicio)).map(meta => {
           const prog = calcularMeta(meta);
           const isClosed = meta.status !== 'ativa';
           const cor = prog.pct >= 100 ? '#10b981' : isClosed ? '#ef4444' : 'var(--primary)';
