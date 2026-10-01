@@ -1028,13 +1028,16 @@ export async function deletarFatura(id: string) {
     if (faturaSnap.exists()) {
        const fatData = faturaSnap.data() as Fatura;
        const tIds = fatData.transacaoIds || [];
+       // NUNCA apaga os lancamentos — apenas desvincula (limpa faturaId)
+       // para que sincronizarFaturasPendentes possa reagrupa-los na fatura correta
        for (const tid of tIds) {
-          // Isso deletar a transao, remover da fatura (que j vamos deletar de qlq forma) e RESTAURAR O LIMITE!
-          await deletarTransacao(tid);
+          try {
+            await updateDoc(doc(db, getCollectionPath('transacoes'), tid), { faturaId: null });
+          } catch(e) {}
        }
     }
   } catch(e) {
-    console.warn("Failed to delete fatura transactions", e);
+    console.warn("Failed to unlink fatura transactions", e);
   }
 
   await remove('faturas', id);
