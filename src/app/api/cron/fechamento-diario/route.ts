@@ -33,18 +33,24 @@ export async function GET(request: Request) {
     let telefoneMaster = configSnap.exists ? (configSnap.data()?.telefoneWhatsApp || configSnap.data()?.whatsappNumeroMaster) : process.env.WHATSAPP_NUMERO_MASTER;
     const apiUrl = configSnap.exists ? configSnap.data()?.whatsappApiUrl : undefined;
     const apiToken = configSnap.exists ? configSnap.data()?.whatsappApiToken : undefined;
-
+    // tenantId configurado na tela de WhatsApp API do painel master
+    const tenantId = configSnap.exists ? configSnap.data()?.whatsappTenantId : undefined;
 
     if (!telefoneMaster) {
       telefoneMaster = '5511999999999'; // Fallback / evitar erro se não tiver configurado ainda
       console.log('Telefone do Master não configurado. Usando mock.');
     }
 
-    // Buscar transações de HOJE
-    // Assumimos tenant root se for o master (conforme correções anteriores)
-    const transacoesSnap = await adminDb!.collection('transacoes')
+    // Definir caminho da coleção baseado no tenantId configurado
+    // Se tenantId for master ou vazio, usa raiz. Caso contrário usa tenants/{id}/transacoes
+    const isMasterTenant = !tenantId || tenantId === 'master' || tenantId === '9yxuafoC0AV9BrIKem05ponbmgn2';
+    const transacoesPath = isMasterTenant ? 'transacoes' : `tenants/${tenantId}/transacoes`;
+    console.log(`Buscando transações em: ${transacoesPath}`);
+
+    // Buscar transações de HOJE do tenant correto (status pago OU recebido)
+    const transacoesSnap = await adminDb!.collection(transacoesPath)
       .where('data', '==', hojeStr)
-      .where('status', '==', 'pago')
+      .where('status', 'in', ['pago', 'recebido'])
       .get();
 
     let totalReceitas = 0;

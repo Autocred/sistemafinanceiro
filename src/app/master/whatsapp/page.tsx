@@ -10,6 +10,7 @@ export default function MasterWhatsappConfig() {
   const [apiKey, setApiKey] = useState('');
   const [numeroMaster, setNumeroMaster] = useState('');
   const [horario, setHorario] = useState('23:00');
+  const [tenantId, setTenantId] = useState('');
   const [instanceName, setInstanceName] = useState('autocred');
   
   const [loading, setLoading] = useState(false);
@@ -29,6 +30,7 @@ export default function MasterWhatsappConfig() {
           if (data.whatsappApiToken) setApiKey(data.whatsappApiToken);
           if (data.whatsappNumeroMaster) setNumeroMaster(data.whatsappNumeroMaster);
           if (data.whatsappHorario) setHorario(data.whatsappHorario);
+          if (data.whatsappTenantId) setTenantId(data.whatsappTenantId);
 
           if (data.whatsappApiUrl && data.whatsappApiToken) {
             fetch(`${data.whatsappApiUrl}/instance/connectionState/autocred`, { headers: { apikey: data.whatsappApiToken } })
