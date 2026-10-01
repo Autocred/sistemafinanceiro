@@ -9,6 +9,7 @@ export default function MasterWhatsappConfig() {
   const [apiUrl, setApiUrl] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [numeroMaster, setNumeroMaster] = useState('');
+  const [horario, setHorario] = useState('23:00');
   const [instanceName, setInstanceName] = useState('autocred');
   
   const [loading, setLoading] = useState(false);
@@ -27,6 +28,14 @@ export default function MasterWhatsappConfig() {
           if (data.whatsappApiUrl) setApiUrl(data.whatsappApiUrl);
           if (data.whatsappApiToken) setApiKey(data.whatsappApiToken);
           if (data.whatsappNumeroMaster) setNumeroMaster(data.whatsappNumeroMaster);
+          if (data.whatsappHorario) setHorario(data.whatsappHorario);
+
+          if (data.whatsappApiUrl && data.whatsappApiToken) {
+            fetch(`${data.whatsappApiUrl}/instance/connectionState/autocred`, { headers: { apikey: data.whatsappApiToken } })
+              .then(r => r.json())
+              .then(d => { if (d?.instance?.state === 'open' || d?.state === 'open') setStatus('connected'); })
+              .catch(() => {});
+          }
         }
       } catch (err) {
         console.error('Erro ao carregar configurações do whatsapp', err);
@@ -42,6 +51,7 @@ export default function MasterWhatsappConfig() {
         whatsappApiUrl: apiUrl,
         whatsappApiToken: apiKey,
         whatsappNumeroMaster: numeroMaster,
+        whatsappHorario: horario,
       }, { merge: true });
       alert('Configurações salvas com sucesso no banco de dados!');
     } catch (err) {
@@ -142,6 +152,24 @@ export default function MasterWhatsappConfig() {
               style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-title)' }}
             />
           </div>
+          
+          <div>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 6 }}>Horário do Fechamento Diário</label>
+            <select 
+              value={horario}
+              onChange={e => setHorario(e.target.value)}
+              style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-title)' }}
+            >
+              <option value="18:00">18:00</option>
+              <option value="19:00">19:00</option>
+              <option value="20:00">20:00</option>
+              <option value="21:00">21:00</option>
+              <option value="22:00">22:00</option>
+              <option value="23:00">23:00</option>
+              <option value="08:00">08:00 (dia seguinte)</option>
+            </select>
+          </div>
+
           <div style={{ gridColumn: '1 / -1' }}>
             <label style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 6 }}>Número que receberá o Resumo Diário (Seu WhatsApp)</label>
             <input 

@@ -10,7 +10,7 @@
     },
     {
       "path": "/api/cron/fechamento-diario",
-      "schedule": "50 2 * * *"
+      "schedule": "0 * * * *"
     }
   ]
 }
