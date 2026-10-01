@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { QrCode, Smartphone, RefreshCw, CheckCircle2, AlertTriangle, MessageSquare, Save } from 'lucide-react';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { getDb } from '@/lib/firebase';
 
 export default function MasterWhatsappConfig() {
   const [apiUrl, setApiUrl] = useState('');
@@ -21,7 +21,7 @@ export default function MasterWhatsappConfig() {
     // Carregar configurações do Firebase
     const carregarConfig = async () => {
       try {
-        const snap = await getDoc(doc(db, 'configuracoes', 'geral'));
+        const snap = await getDoc(doc(getDb(), 'configuracoes', 'geral'));
         if (snap.exists()) {
           const data = snap.data();
           if (data.whatsappApiUrl) setApiUrl(data.whatsappApiUrl);
@@ -38,7 +38,7 @@ export default function MasterWhatsappConfig() {
   const salvarConfiguracoes = async () => {
     setSaving(true);
     try {
-      await setDoc(doc(db, 'configuracoes', 'geral'), {
+      await setDoc(doc(getDb(), 'configuracoes', 'geral'), {
         whatsappApiUrl: apiUrl,
         whatsappApiToken: apiKey,
         whatsappNumeroMaster: numeroMaster,
