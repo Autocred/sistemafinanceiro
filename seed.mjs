@@ -11,14 +11,15 @@ const db = getFirestore(app);
 
 async function run() {
   await addDoc(collection(db, 'saas_releases'), {
-    version: '1.4.3',
+    version: '1.4.5',
     date: new Date().toISOString(),
-    title: 'Novo Desbloqueio por PIN de 4 Dígitos',
-    description: 'Criado sistema de PIN rápido (estilo app de banco) para contornar bloqueios de biometria nativa em aplicativos gerados via WebViews (ex: Appilix).',
+    title: 'Sincronização e Salvamento Imediato de Horários WhatsApp',
+    description: 'Garantido que qualquer alteração de horário ou número feita na tela salva imediatamente e é respeitada com precisão minuto a minuto pelo robô.',
     features: [
-      'Novo teclado numérico virtual elegante e responsivo na tela de bloqueio.',
-      'Possibilidade de cadastrar um PIN fixo nas configurações.',
-      'Funciona 100% offline no WebView, acelerando o login sem precisar digitar a senha completa.'
+      'Salvamento automático imediato ao sair do campo e botão dedicado na tela de configurações.',
+      'Suporte a troca de licença dinâmica no painel Master carregando e salvando dados isolados por tenant.',
+      'Sincronização bidirecional entre coleções Master para evitar qualquer discrepância de agendamento.',
+      'Reagendamento automático sem bloqueio de disparo mesmo alterando o horário várias vezes no mesmo dia.'
     ],
     type: 'feature'
   });

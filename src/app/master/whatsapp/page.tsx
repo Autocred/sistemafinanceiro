@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { QrCode, Smartphone, RefreshCw, CheckCircle2, AlertTriangle, MessageSquare, Save } from 'lucide-react';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, getDocs } from 'firebase/firestore';
 import { getDb } from '@/lib/firebase';
 
 export default function MasterWhatsappConfig() {
@@ -11,8 +11,12 @@ export default function MasterWhatsappConfig() {
   const [numeroMaster, setNumeroMaster] = useState('');
   const [horarioFechamento, setHorarioFechamento] = useState('17:00');
   const [horarioLembretes, setHorarioLembretes] = useState('08:00');
-  const [tenantId, setTenantId] = useState('');
+  const [tenantId, setTenantId] = useState('autocred-promotora-de-credito');
   const [instanceName, setInstanceName] = useState('autocred');
+  const [listaTenants, setListaTenants] = useState<{ id: string; nome: string }[]>([
+    { id: 'master', nome: '👤 Conta Clovis Master (Pessoal)' },
+    { id: 'autocred-promotora-de-credito', nome: '🏢 AUTOCRED Promotora de Crédito' }
+  ]);
   
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -20,8 +24,35 @@ export default function MasterWhatsappConfig() {
   const [status, setStatus] = useState<'idle' | 'connected' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
 
+  const carregarConfigTenant = async (tId: string) => {
+    try {
+      let data: any = null;
+      if (tId === 'master') {
+        const snap = await getDoc(doc(getDb(), 'configuracoes', 'geral'));
+        const snapConfig = await getDoc(doc(getDb(), 'config', 'geral'));
+        data = { ...(snap.exists() ? snap.data() : {}), ...(snapConfig.exists() ? snapConfig.data() : {}) };
+      } else {
+        const snap = await getDoc(doc(getDb(), `tenants/${tId}/config`, 'geral'));
+        data = snap.exists() ? snap.data() : null;
+      }
+      if (data) {
+        setNumeroMaster(data.whatsappNumeros || data.whatsappNumeroMaster || '');
+        if (data.whatsappHorarioFechamento || data.whatsappHorario) {
+          setHorarioFechamento(data.whatsappHorarioFechamento || data.whatsappHorario);
+        }
+        if (data.whatsappHorarioLembretes) {
+          setHorarioLembretes(data.whatsappHorarioLembretes);
+        }
+      } else {
+        setNumeroMaster('');
+      }
+    } catch (err) {
+      console.error('Erro ao carregar dados do tenant', err);
+    }
+  };
+
   useEffect(() => {
-    // Carregar configurações do Firebase
+    // Carregar configurações globais e lista de licenças
     const carregarConfig = async () => {
       try {
         const snap = await getDoc(doc(getDb(), 'configuracoes', 'geral'));
@@ -29,14 +60,6 @@ export default function MasterWhatsappConfig() {
           const data = snap.data();
           if (data.whatsappApiUrl) setApiUrl(data.whatsappApiUrl);
           if (data.whatsappApiToken) setApiKey(data.whatsappApiToken);
-          if (data.whatsappNumeroMaster) setNumeroMaster(data.whatsappNumeroMaster);
-          if (data.whatsappHorarioFechamento || data.whatsappHorario) {
-            setHorarioFechamento(data.whatsappHorarioFechamento || data.whatsappHorario);
-          }
-          if (data.whatsappHorarioLembretes) {
-            setHorarioLembretes(data.whatsappHorarioLembretes);
-          }
-          if (data.whatsappTenantId) setTenantId(data.whatsappTenantId);
 
           if (data.whatsappApiUrl && data.whatsappApiToken) {
             fetch(`${data.whatsappApiUrl}/instance/connectionState/autocred`, { headers: { apikey: data.whatsappApiToken } })
@@ -45,6 +68,23 @@ export default function MasterWhatsappConfig() {
               .catch(() => {});
           }
         }
+
+        // Buscar todas as licenças
+        const snapLicencas = await getDocs(collection(getDb(), 'admin_master_licencas'));
+        const tenants: { id: string; nome: string }[] = [
+          { id: 'master', nome: '👤 Conta Clovis Master (Pessoal)' }
+        ];
+        snapLicencas.forEach(d => {
+          const lic = d.data();
+          tenants.push({
+            id: d.id,
+            nome: lic.nomeFantasia ? `🏢 ${lic.nomeFantasia}` : (lic.razaoSocial ? `🏢 ${lic.razaoSocial}` : `🏢 ${d.id}`)
+          });
+        });
+        setListaTenants(tenants);
+
+        // Carrega os dados do tenant selecionado inicialmente (autocred)
+        await carregarConfigTenant('autocred-promotora-de-credito');
       } catch (err) {
         console.error('Erro ao carregar configurações do whatsapp', err);
       }
@@ -55,15 +95,33 @@ export default function MasterWhatsappConfig() {
   const salvarConfiguracoes = async () => {
     setSaving(true);
     try {
+      // 1. Salva credenciais globais da API
       await setDoc(doc(getDb(), 'configuracoes', 'geral'), {
         whatsappApiUrl: apiUrl,
         whatsappApiToken: apiKey,
+      }, { merge: true });
+
+      // 2. Salva horários e número para a licença selecionada
+      const payloadTenant = {
+        whatsappAtivo: true,
+        whatsappNumeros: numeroMaster,
         whatsappNumeroMaster: numeroMaster,
         whatsappHorarioFechamento: horarioFechamento,
         whatsappHorarioLembretes: horarioLembretes,
         whatsappHorario: horarioFechamento,
-      }, { merge: true });
-      alert('Configurações salvas com sucesso no banco de dados!');
+        ultimoEnvioFechamento: '', // Reseta para liberar disparo no novo horário imediatamente
+        ultimoEnvioLembretes: ''
+      };
+
+      if (tenantId === 'master') {
+        await setDoc(doc(getDb(), 'configuracoes', 'geral'), payloadTenant, { merge: true });
+        await setDoc(doc(getDb(), 'config', 'geral'), payloadTenant, { merge: true });
+      } else {
+        await setDoc(doc(getDb(), `tenants/${tenantId}/config`, 'geral'), payloadTenant, { merge: true });
+      }
+
+      const nomeTenant = listaTenants.find(t => t.id === tenantId)?.nome || tenantId;
+      alert(`✅ Configurações salvas com sucesso para:\n${nomeTenant}\n\n📊 Fechamento Diário: ${horarioFechamento}\n🔔 Lembretes: ${horarioLembretes}\n📱 Número: ${numeroMaster || '(vazio)'}\n\nO robô disparará automaticamente no minuto configurado!`);
     } catch (err) {
       console.error(err);
       alert('Erro ao salvar as configurações.');
@@ -195,18 +253,23 @@ export default function MasterWhatsappConfig() {
 
           <div style={{ gridColumn: '1 / -1' }}>
             <label style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 6 }}>
-              🏢 Licença para Disparo / Teste neste Painel
+              🏢 Licença para Configuração & Disparo
             </label>
             <select
               value={tenantId || 'autocred-promotora-de-credito'}
-              onChange={e => setTenantId(e.target.value)}
+              onChange={async e => {
+                const newTid = e.target.value;
+                setTenantId(newTid);
+                await carregarConfigTenant(newTid);
+              }}
               style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-title)', fontSize: 14 }}
             >
-              <option value="autocred-promotora-de-credito">🏢 AUTOCRED Promotora de Crédito</option>
-              <option value="master">👤 Conta Clovis Master (Pessoal)</option>
+              {listaTenants.map(t => (
+                <option key={t.id} value={t.id}>{t.nome}</option>
+              ))}
             </select>
             <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', marginTop: 4 }}>
-              Escolha qual licença terá seus lançamentos enviados ao testar pelos botões abaixo.
+              Ao selecionar uma licença, os horários e telefone cadastrados para ela serão carregados automaticamente.
             </span>
           </div>
 

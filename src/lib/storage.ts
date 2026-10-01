@@ -1223,8 +1223,23 @@ export async function getConfiguracoes(uid: string = 'app'): Promise<Configuraca
 
 export async function salvarConfiguracoes(c: ConfiguracaoApp, uid: string = 'app'): Promise<void> {
   if (!isBrowser()) return;
-  await setDoc(doc(getDb(), getCollectionPath('config'), 'geral'), c, { merge: true });
-  await setDoc(doc(getDb(), getCollectionPath('config'), uid), c, { merge: true });
+  const col = getCollectionPath('config');
+  await setDoc(doc(getDb(), col, 'geral'), c, { merge: true });
+  await setDoc(doc(getDb(), col, uid), c, { merge: true });
+  
+  // Se for master, manter espelhado em configuracoes/geral para compatibilidade total com o painel master e crons
+  if (!activeTenantId || activeTenantId === 'master' || activeTenantId === '9yxuafoC0AV9BrIKem05ponbmgn2') {
+    try {
+      await setDoc(doc(getDb(), 'configuracoes', 'geral'), {
+        ...c,
+        whatsappNumeroMaster: c.whatsappNumeros || c.whatsappNumeroMaster,
+        whatsappHorarioFechamento: c.whatsappHorarioFechamento || c.whatsappHorario,
+        whatsappHorarioLembretes: c.whatsappHorarioLembretes
+      }, { merge: true });
+    } catch (e) {
+      // ignore
+    }
+  }
 }
 
 // ─── ALERTAS ─────────────────────────────────────────────────────────────────

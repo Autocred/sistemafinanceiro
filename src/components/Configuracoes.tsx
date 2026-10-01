@@ -1177,8 +1177,9 @@ document.cookie = 'app_pin_code=' + encodeURIComponent(novoPin) + '; max-age=315
                   placeholder="Ex: 49998266304"
                   value={cfg.whatsappNumeros || ''}
                   onChange={e => setCfg(c => ({ ...c, whatsappNumeros: e.target.value }))}
+                  onBlur={() => salvar({ ...cfg, ultimoEnvioFechamento: '', ultimoEnvioLembretes: '' })}
                 />
-                <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>Informe o número com DDD que receberá as mensagens.</p>
+                <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>Informe o número com DDD que receberá as mensagens (somente números ou formato internacional).</p>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
@@ -1191,6 +1192,7 @@ document.cookie = 'app_pin_code=' + encodeURIComponent(novoPin) + '; max-age=315
                     className="input-field"
                     value={cfg.whatsappHorarioLembretes || '08:00'}
                     onChange={e => setCfg(c => ({ ...c, whatsappHorarioLembretes: e.target.value }))}
+                    onBlur={() => salvar({ ...cfg, ultimoEnvioFechamento: '', ultimoEnvioLembretes: '' })}
                   />
                   <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', marginTop: 4 }}>
                     Lista as contas que vencem hoje e recebimentos previstos.
@@ -1206,6 +1208,7 @@ document.cookie = 'app_pin_code=' + encodeURIComponent(novoPin) + '; max-age=315
                     className="input-field"
                     value={cfg.whatsappHorarioFechamento || cfg.whatsappHorario || '17:00'}
                     onChange={e => setCfg(c => ({ ...c, whatsappHorarioFechamento: e.target.value, whatsappHorario: e.target.value }))}
+                    onBlur={() => salvar({ ...cfg, ultimoEnvioFechamento: '', ultimoEnvioLembretes: '' })}
                   />
                   <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', marginTop: 4 }}>
                     Extrato consolidado de receitas, despesas e saldo do dia.
@@ -1213,7 +1216,28 @@ document.cookie = 'app_pin_code=' + encodeURIComponent(novoPin) + '; max-age=315
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: 10, marginTop: 6, flexWrap: 'wrap' }}>
+              <div style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.2)', borderRadius: 8, padding: 12 }}>
+                <p style={{ fontSize: 12, color: '#10b981', fontWeight: 700, margin: 0, marginBottom: 4 }}>
+                  ⏰ Programação Automática Ativa
+                </p>
+                <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0, lineHeight: 1.4 }}>
+                  Os disparos respeitarão rigorosamente os horários acima (fuso de Brasília). Sempre que você alterar e salvar, o sistema atualizará a programação imediatamente.
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', gap: 10, marginTop: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await salvar({ ...cfg, ultimoEnvioFechamento: '', ultimoEnvioLembretes: '' });
+                    alert(`✅ Horários e telefone salvos com sucesso!\n\nLembrete Matinal: ${cfg.whatsappHorarioLembretes || '08:00'}\nFechamento Diário: ${cfg.whatsappHorarioFechamento || cfg.whatsappHorario || '17:00'}\nTelefone: ${cfg.whatsappNumeros || '(não preenchido)'}`);
+                  }}
+                  className="btn-primary"
+                  style={{ fontSize: 12, padding: '8px 16px', background: '#10b981', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+                >
+                  <Save size={14} /> Salvar Horários do WhatsApp
+                </button>
+
                 <button
                   type="button"
                   onClick={async () => {
@@ -1272,44 +1296,12 @@ document.cookie = 'app_pin_code=' + encodeURIComponent(novoPin) + '; max-age=315
         {/* Automação de WhatsApp */}
         {abaAtiva === 'ia' && (
         <SecaoConfig titulo="Automação de WhatsApp" icone={<MessageCircle size={18} color="#10b981" />}>
-          <ToggleConfig
-            label="Enviar Resumo Diário"
-            descricao="Você receberá um resumo financeiro e alertas de vencimento todos os dias"
-            ativo={cfg.whatsappAtivo ?? false}
-            onChange={v => setCfg(c => ({ ...c, whatsappAtivo: v }))}
-          />
-          
-          {cfg.whatsappAtivo && (
-            <div style={{ background: 'var(--bg-glass)', border: '1px solid var(--border)', borderRadius: 10, padding: 16, marginTop: 12, display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div>
-                <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>Níºmeros de WhatsApp</label>
-                <input
-                  className="input-field"
-                  placeholder="Ex: 11999999999, 11888888888"
-                  value={cfg.whatsappNumeros || ''}
-                  onChange={e => setCfg(c => ({ ...c, whatsappNumeros: e.target.value }))}
-                />
-                <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>Separe os níºmeros por vírgula (com DDD).</p>
-              </div>
-              <div>
-                <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>Horário do Envio</label>
-                <input
-                  type="time"
-                  className="input-field"
-                  value={cfg.whatsappHorario || '09:00'}
-                  onChange={e => setCfg(c => ({ ...c, whatsappHorario: e.target.value }))}
-                />
-              </div>
-              <div style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.15)', borderRadius: 8, padding: 12, marginTop: 4 }}>
-                <p style={{ fontSize: 12, color: '#34d399', fontWeight: 600, marginBottom: 4 }}>x Como funciona?</p>
-                <p style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                  Todos os dias nao horário configurado, o sistema gerará automaticamente um resumo do que vence hoje e naos próximos dias, além de um panaorama rápido do seu saldo.
-                </p>
-              </div>
-            </div>
-          )}
-          
-          <div style={{ marginTop: 24, borderTop: '1px solid var(--border)', paddingTop: 24 }}>
+          <div style={{ background: 'rgba(59, 130, 246, 0.08)', border: '1px solid rgba(59, 130, 246, 0.2)', borderRadius: 8, padding: 12, marginBottom: 16 }}>
+            <p style={{ fontSize: 12, color: 'var(--text-primary)', margin: 0, lineHeight: 1.4 }}>
+              💡 <strong>Resumo Diário & Lembretes:</strong> Os horários de envio do Fechamento e Lembretes de Contas são configurados na aba <strong>Notificações & Sons</strong>.
+            </p>
+          </div>
+          <div>
             <ToggleConfig
               label="Bot Financeiro (Lançamentos por WhatsApp)"
               descricao="Permite criar lançamentos financeiros enviando mensagens de texto pelo WhatsApp"

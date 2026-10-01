@@ -302,9 +302,12 @@ export interface ConfiguracaoApp {
   lembretesSinao?: boolean;
   whatsappAtivo?: boolean;
   whatsappNumeros?: string; // separados por vírgula
+  whatsappNumeroMaster?: string;
   whatsappHorario?: string;
   whatsappHorarioLembretes?: string;
   whatsappHorarioFechamento?: string;
+  ultimoEnvioFechamento?: string;
+  ultimoEnvioLembretes?: string;
   webPushSubscription?: string;
   pushDias?: string[];
   pushHorario?: string; // ex: '09:00'

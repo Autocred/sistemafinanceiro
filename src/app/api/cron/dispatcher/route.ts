@@ -56,6 +56,20 @@ export async function GET(request: Request) {
         configRef = db.collection('configuracoes').doc('geral');
         const snap = await configRef.get();
         configData = snap.exists ? snap.data() : {};
+
+        // Também ler config/geral (onde o app do Clovis Master salva na tela de Configurações)
+        const snapConfig = await db.collection('config').doc('geral').get();
+        if (snapConfig.exists) {
+          const cData = snapConfig.data() || {};
+          configData = {
+            ...configData,
+            ...cData,
+            whatsappAtivo: cData.whatsappAtivo !== undefined ? cData.whatsappAtivo : configData.whatsappAtivo,
+            whatsappNumeros: cData.whatsappNumeros || configData.whatsappNumeros || configData.whatsappNumeroMaster,
+            whatsappHorarioFechamento: cData.whatsappHorarioFechamento || configData.whatsappHorarioFechamento || cData.whatsappHorario || configData.whatsappHorario,
+            whatsappHorarioLembretes: cData.whatsappHorarioLembretes || configData.whatsappHorarioLembretes
+          };
+        }
       } else {
         // Tenta ler a config da licença do cliente
         configRef = db.collection(`tenants/${tenant.id}/config`).doc('geral');
@@ -102,7 +116,12 @@ export async function GET(request: Request) {
           const url = `${protocol}://${host}/api/cron/lembretes?tenantId=${tenant.id}&numero=${numero}&nome=${encodeURIComponent(tenant.nome)}`;
           const res = await fetch(url);
           const json = await res.json();
-          await configRef.set({ ultimoEnvioLembretes: flagLembrete }, { merge: true });
+          if (tenant.isMaster) {
+            await db.collection('configuracoes').doc('geral').set({ ultimoEnvioLembretes: flagLembrete }, { merge: true });
+            await db.collection('config').doc('geral').set({ ultimoEnvioLembretes: flagLembrete }, { merge: true });
+          } else {
+            await configRef.set({ ultimoEnvioLembretes: flagLembrete }, { merge: true });
+          }
           acoesDisparadas.push({ tipo: 'lembretes', tenant: tenant.id, numero, sucesso: true, retorno: json });
         } catch (err: any) {
           console.error(`[DISPATCHER] Erro ao disparar lembrete para ${tenant.id}:`, err);
@@ -118,7 +137,12 @@ export async function GET(request: Request) {
           const url = `${protocol}://${host}/api/cron/fechamento-diario?tenantId=${tenant.id}&numero=${numero}&nome=${encodeURIComponent(tenant.nome)}`;
           const res = await fetch(url);
           const json = await res.json();
-          await configRef.set({ ultimoEnvioFechamento: flagFechamento }, { merge: true });
+          if (tenant.isMaster) {
+            await db.collection('configuracoes').doc('geral').set({ ultimoEnvioFechamento: flagFechamento }, { merge: true });
+            await db.collection('config').doc('geral').set({ ultimoEnvioFechamento: flagFechamento }, { merge: true });
+          } else {
+            await configRef.set({ ultimoEnvioFechamento: flagFechamento }, { merge: true });
+          }
           acoesDisparadas.push({ tipo: 'fechamento', tenant: tenant.id, numero, sucesso: true, retorno: json });
         } catch (err: any) {
           console.error(`[DISPATCHER] Erro ao disparar fechamento para ${tenant.id}:`, err);
