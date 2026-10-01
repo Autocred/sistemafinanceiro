@@ -95,13 +95,14 @@ export async function GET(request: Request) {
       if (!ativo || !numero) continue;
 
       // Disparo de Lembrete Matinal (Contas a Pagar/Receber)
-      if (agoraSp === horarioLembretes && ultimoEnvioLembretes !== hojeSp) {
+      const flagLembrete = `${hojeSp}_${horarioLembretes}`;
+      if (agoraSp === horarioLembretes && ultimoEnvioLembretes !== flagLembrete) {
         console.log(`[DISPATCHER] Disparando Lembrete para ${tenant.nome} (${numero})...`);
         try {
           const url = `${protocol}://${host}/api/cron/lembretes?tenantId=${tenant.id}&numero=${numero}&nome=${encodeURIComponent(tenant.nome)}`;
           const res = await fetch(url);
           const json = await res.json();
-          await configRef.set({ ultimoEnvioLembretes: hojeSp }, { merge: true });
+          await configRef.set({ ultimoEnvioLembretes: flagLembrete }, { merge: true });
           acoesDisparadas.push({ tipo: 'lembretes', tenant: tenant.id, numero, sucesso: true, retorno: json });
         } catch (err: any) {
           console.error(`[DISPATCHER] Erro ao disparar lembrete para ${tenant.id}:`, err);
@@ -110,13 +111,14 @@ export async function GET(request: Request) {
       }
 
       // Disparo de Fechamento Diário
-      if (agoraSp === horarioFechamento && ultimoEnvioFechamento !== hojeSp) {
+      const flagFechamento = `${hojeSp}_${horarioFechamento}`;
+      if (agoraSp === horarioFechamento && ultimoEnvioFechamento !== flagFechamento) {
         console.log(`[DISPATCHER] Disparando Fechamento Diário para ${tenant.nome} (${numero})...`);
         try {
           const url = `${protocol}://${host}/api/cron/fechamento-diario?tenantId=${tenant.id}&numero=${numero}&nome=${encodeURIComponent(tenant.nome)}`;
           const res = await fetch(url);
           const json = await res.json();
-          await configRef.set({ ultimoEnvioFechamento: hojeSp }, { merge: true });
+          await configRef.set({ ultimoEnvioFechamento: flagFechamento }, { merge: true });
           acoesDisparadas.push({ tipo: 'fechamento', tenant: tenant.id, numero, sucesso: true, retorno: json });
         } catch (err: any) {
           console.error(`[DISPATCHER] Erro ao disparar fechamento para ${tenant.id}:`, err);
