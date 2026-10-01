@@ -5,8 +5,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
   Building2, CreditCard, Settings, ShieldCheck, 
-  BarChart3, LifeBuoy, Server, Database, Activity, LogOut, Search, Bell, Home
-} from 'lucide-react';
+  BarChart3, LifeBuoy, Server, Database, Activity, LogOut, Search, Bell, Home, MessageSquare
+} fromde-react';
 
 export default function MasterLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
