@@ -84,24 +84,23 @@ export async function GET(request: Request) {
     // Formatação de moeda
     const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-    // Ordenar principais por valor (maiores primeiro)
+    // Ordenar todos os lançamentos por valor (maiores primeiro)
     principais.sort((a, b) => b.valor - a.valor);
-    const top3 = principais.slice(0, 3);
 
     // Montar a mensagem
     let mensagem = `📊 *Resumo Diário - ${displayData}*\n\n`;
-    mensagem += `🟢 *Entradas:* ${fmt(totalReceitas)}\n`;
-    mensagem += `🔴 *Saídas:* ${fmt(totalDespesas)}\n\n`;
+    mensagem += `🟢 *Total Entradas:* ${fmt(totalReceitas)}\n`;
+    mensagem += `🔴 *Total Saídas:* ${fmt(totalDespesas)}\n\n`;
     
     const saldoTxt = saldoDia >= 0 ? 'positivo no dia' : 'negativo no dia';
     const bancoIcon = saldoDia >= 0 ? '🏦' : '📉';
     mensagem += `${bancoIcon} *Saldo do Dia:* ${fmt(Math.abs(saldoDia))} ${saldoTxt}\n`;
 
-    if (top3.length > 0) {
-      mensagem += `\n*Principais Movimentações:*\n`;
-      top3.forEach(t => {
+    if (principais.length > 0) {
+      mensagem += `\n*Lançamentos do Dia (${principais.length}):*\n`;
+      principais.forEach(t => {
         const icon = t.tipo === 'receita' ? '🟢' : '🔴';
-        mensagem += `- ${icon} ${t.descricao} (${fmt(t.valor)})\n`;
+        mensagem += `${icon} ${t.descricao}: ${fmt(t.valor)}\n`;
       });
     }
 
