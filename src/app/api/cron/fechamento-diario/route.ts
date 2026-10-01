@@ -30,11 +30,16 @@ export async function GET(request: Request) {
     
     
 
-    let telefoneMaster = configSnap.exists ? (configSnap.data()?.telefoneWhatsApp || configSnap.data()?.whatsappNumeroMaster) : process.env.WHATSAPP_NUMERO_MASTER;
+    // Suporte a chamada parametrizada por licença (Multi-tenant SaaS)
+    const { searchParams } = new URL(request.url);
+    const paramTenantId = searchParams.get('tenantId');
+    const paramNumero = searchParams.get('numero');
+
+    let telefoneMaster = paramNumero || (configSnap.exists ? (configSnap.data()?.telefoneWhatsApp || configSnap.data()?.whatsappNumeroMaster) : process.env.WHATSAPP_NUMERO_MASTER);
     const apiUrl = configSnap.exists ? configSnap.data()?.whatsappApiUrl : undefined;
     const apiToken = configSnap.exists ? configSnap.data()?.whatsappApiToken : undefined;
-    // tenantId configurado na tela de WhatsApp API do painel master
-    const tenantId = configSnap.exists ? configSnap.data()?.whatsappTenantId : undefined;
+    // tenantId configurado ou passado por parâmetro
+    const tenantId = paramTenantId || (configSnap.exists ? configSnap.data()?.whatsappTenantId : undefined);
 
     if (!telefoneMaster) {
       telefoneMaster = '5511999999999'; // Fallback / evitar erro se não tiver configurado ainda

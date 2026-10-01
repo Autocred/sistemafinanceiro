@@ -303,6 +303,8 @@ export interface ConfiguracaoApp {
   whatsappAtivo?: boolean;
   whatsappNumeros?: string; // separados por vírgula
   whatsappHorario?: string;
+  whatsappHorarioLembretes?: string;
+  whatsappHorarioFechamento?: string;
   webPushSubscription?: string;
   pushDias?: string[];
   pushHorario?: string; // ex: '09:00'

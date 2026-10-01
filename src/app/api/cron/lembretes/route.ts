@@ -17,15 +17,21 @@ export async function GET(request: Request) {
     const hojeStr = format(hojeData, 'yyyy-MM-dd');
     const displayData = format(hojeData, 'dd/MM/yyyy');
 
+    // Suporte a chamada parametrizada por licença (Multi-tenant SaaS)
+    const { searchParams } = new URL(request.url);
+    const paramTenantId = searchParams.get('tenantId');
+    const paramNumero = searchParams.get('numero');
+    const paramNome = searchParams.get('nome');
+
     // 1. Carregar configurações gerais do WhatsApp e do Tenant
     const configSnap = await db.collection('configuracoes').doc('geral').get();
     const configData = configSnap.exists ? configSnap.data() : {};
 
     const apiUrl = configData?.whatsappApiUrl;
     const apiToken = configData?.whatsappApiToken;
-    const telefoneMaster = configData?.whatsappNumeroMaster || configData?.telefoneWhatsApp;
-    const tenantId = configData?.whatsappTenantId || 'autocred-promotora-de-credito';
-    const nomeSistema = configData?.nomeSistema || 'Autocred Promotora';
+    const telefoneMaster = paramNumero || configData?.whatsappNumeroMaster || configData?.telefoneWhatsApp;
+    const tenantId = paramTenantId || configData?.whatsappTenantId || 'autocred-promotora-de-credito';
+    const nomeSistema = paramNome || configData?.nomeSistema || 'Autocred Promotora';
 
     if (!telefoneMaster) {
       return NextResponse.json({ error: 'Nenhum telefone master configurado.' }, { status: 400 });
