@@ -17,7 +17,7 @@ import { Transacao, MetaFinanceira } from '@/lib/types';
 import {
   format, parseISO, isWithinInterval, startOfMonth, endOfMonth,
   eachDayOfInterval, isAfter, isBefore, addDays, differenceInDays,
-  isSameDay
+  isSameDay, addMonths
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
@@ -108,13 +108,32 @@ export default function MetasGamificadasV2() {
     const unsubs: (() => void)[] = [];
     unsubs.push(subscribeTransacoes((dados) => setTransacoes(dados as Transacao[])));
     const u = subscribeMetasFinanceiras((dados) => {
-      const lista = dados as MetaFinanceira[];
+      const listaOriginal = dados as MetaFinanceira[];
+      const hojeStr = format(new Date(), 'yyyy-MM-dd');
+      
+      const lista = listaOriginal.map(m => {
+        if (m.status === 'ativa' && m.dataTermino < hojeStr) {
+          const concluida = { ...m, status: 'concluida' as const };
+          salvarMetaFinanceira(concluida); // Salva no banco assincronamente
+          return concluida;
+        }
+        return m;
+      });
+
       setMetas(lista);
       setLoading(false);
+      
+      // Tenta manter a meta atualmente selecionada se ela ainda existir
+      if (metaDestaqueId && !lista.find(m => m.id === metaDestaqueId)) {
+        setMetaDestaqueId(null);
+      }
+      
       if (!metaDestaqueId && lista.length > 0) {
-        // Prioriza receita ativa
-        const ativa = lista.find(m => m.status === 'ativa' && m.tipo === 'receita') || lista[0];
-        setMetaDestaqueId(ativa.id);
+        // Prioriza receita ativa, depois qualquer ativa, depois qualquer uma
+        const ativa = lista.find(m => m.status === 'ativa' && m.tipo === 'receita') || 
+                      lista.find(m => m.status === 'ativa') || 
+                      lista[0];
+        if (ativa) setMetaDestaqueId(ativa.id);
       }
     });
     unsubs.push(u);
@@ -252,6 +271,31 @@ export default function MetasGamificadasV2() {
     setModalOpen(true);
   };
 
+
+  const clonarParaProximoMes = (meta: MetaFinanceira) => {
+    try {
+      const dataTerminoAtual = parseISO(meta.dataTermino);
+      const dataInicioNovo = startOfMonth(addMonths(dataTerminoAtual, 1));
+      const dataTerminoNovo = endOfMonth(dataInicioNovo);
+
+      setEditingMeta({
+        ...meta,
+        id: '', // Força a criação de uma nova
+        dataInicio: format(dataInicioNovo, 'yyyy-MM-dd'),
+        dataTermino: format(dataTerminoNovo, 'yyyy-MM-dd'),
+        status: 'ativa', // Reseta para ativa
+      });
+      const display = meta.valorAlvo > 0
+        ? meta.valorAlvo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        : '';
+      setValorAlvoStr(display);
+      setModalOpen(true);
+    } catch(e) {
+      console.error(e);
+      alert('Erro ao clonar a meta');
+    }
+  };
+
   const abrirEditarMeta = (meta: MetaFinanceira) => {
     setEditingMeta({ ...meta });
     // Pré-formata o valor existente como moeda
@@ -379,8 +423,9 @@ export default function MetasGamificadasV2() {
       </div>
 
       {/* ── Seletor de Meta Destaque ── */}
-      {metas.length > 1 && (
-        <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+      {metas.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16, alignItems: 'center' }}>
+          <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600, marginRight: 4 }}>Ativas:</div>
           {metas.filter(m => m.status === 'ativa').map(m => (
             <button key={m.id} onClick={() => setMetaDestaqueId(m.id)} style={{
               padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: 'pointer',
@@ -391,6 +436,26 @@ export default function MetasGamificadasV2() {
               {m.nome}
             </button>
           ))}
+          {metas.filter(m => m.status === 'ativa').length === 0 && <span style={{ fontSize: 12, color: '#64748b' }}>Nenhuma meta ativa</span>}
+          
+          {metas.filter(m => m.status === 'concluida').length > 0 && (
+            <>
+              <div style={{ width: 1, height: 20, background: '#334155', margin: '0 8px' }} />
+              <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600, marginRight: 4 }}>Histórico:</div>
+              {metas.filter(m => m.status === 'concluida').map(m => (
+                <button key={m.id} onClick={() => setMetaDestaqueId(m.id)} style={{
+                  padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                  background: metaDestaqueId === m.id ? '#4b5563' : 'transparent',
+                  color: metaDestaqueId === m.id ? '#fff' : '#94a3b8',
+                  border: `1px solid ${metaDestaqueId === m.id ? '#6b7280' : '#334155'}`,
+                  display: 'flex', alignItems: 'center', gap: 4
+                }}>
+                  <CheckCircle2 size={12} color="#fcd34d" />
+                  {m.nome}
+                </button>
+              ))}
+            </>
+          )}
         </div>
       )}
 
@@ -413,13 +478,24 @@ export default function MetasGamificadasV2() {
                 </span>
               </div>
             </div>
-            <button onClick={() => abrirEditarMeta(metaDestaque)} style={{
-              background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
-              color: '#fff', borderRadius: 8, padding: '8px 14px',
-              fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6
-            }}>
-              <Edit2 size={14} /> Editar Meta
-            </button>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {metaDestaque.status === 'concluida' && (
+                <button onClick={() => clonarParaProximoMes(metaDestaque)} style={{
+                  background: 'rgba(52, 211, 153, 0.2)', border: '1px solid rgba(52, 211, 153, 0.4)',
+                  color: '#34d399', borderRadius: 8, padding: '8px 14px',
+                  fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6
+                }}>
+                  <RefreshCw size={14} /> Recriar (Mês Seguinte)
+                </button>
+              )}
+              <button onClick={() => abrirEditarMeta(metaDestaque)} style={{
+                background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
+                color: '#fff', borderRadius: 8, padding: '8px 14px',
+                fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6
+              }}>
+                <Edit2 size={14} /> Editar Meta
+              </button>
+            </div>
           </div>
 
           {/* ── Linha 1: Alvo | Atingido | Falta | Meta Diária ── */}
