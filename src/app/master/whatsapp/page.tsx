@@ -9,7 +9,8 @@ export default function MasterWhatsappConfig() {
   const [apiUrl, setApiUrl] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [numeroMaster, setNumeroMaster] = useState('');
-  const [horario, setHorario] = useState('23:00');
+  const [horarioFechamento, setHorarioFechamento] = useState('17:00');
+  const [horarioLembretes, setHorarioLembretes] = useState('08:00');
   const [tenantId, setTenantId] = useState('');
   const [instanceName, setInstanceName] = useState('autocred');
   
@@ -29,7 +30,12 @@ export default function MasterWhatsappConfig() {
           if (data.whatsappApiUrl) setApiUrl(data.whatsappApiUrl);
           if (data.whatsappApiToken) setApiKey(data.whatsappApiToken);
           if (data.whatsappNumeroMaster) setNumeroMaster(data.whatsappNumeroMaster);
-          if (data.whatsappHorario) setHorario(data.whatsappHorario);
+          if (data.whatsappHorarioFechamento || data.whatsappHorario) {
+            setHorarioFechamento(data.whatsappHorarioFechamento || data.whatsappHorario);
+          }
+          if (data.whatsappHorarioLembretes) {
+            setHorarioLembretes(data.whatsappHorarioLembretes);
+          }
           if (data.whatsappTenantId) setTenantId(data.whatsappTenantId);
 
           if (data.whatsappApiUrl && data.whatsappApiToken) {
@@ -53,7 +59,9 @@ export default function MasterWhatsappConfig() {
         whatsappApiUrl: apiUrl,
         whatsappApiToken: apiKey,
         whatsappNumeroMaster: numeroMaster,
-        whatsappHorario: horario,
+        whatsappHorarioFechamento: horarioFechamento,
+        whatsappHorarioLembretes: horarioLembretes,
+        whatsappHorario: horarioFechamento,
       }, { merge: true });
       alert('Configurações salvas com sucesso no banco de dados!');
     } catch (err) {
@@ -156,20 +164,33 @@ export default function MasterWhatsappConfig() {
           </div>
           
           <div>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 6 }}>Horário do Fechamento Diário</label>
-            <select 
-              value={horario}
-              onChange={e => setHorario(e.target.value)}
-              style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-title)' }}
-            >
-              <option value="18:00">18:00</option>
-              <option value="19:00">19:00</option>
-              <option value="20:00">20:00</option>
-              <option value="21:00">21:00</option>
-              <option value="22:00">22:00</option>
-              <option value="23:00">23:00</option>
-              <option value="08:00">08:00 (dia seguinte)</option>
-            </select>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 6 }}>
+              🔔 Horário do Lembrete (Contas a Pagar/Receber)
+            </label>
+            <input 
+              type="time" 
+              value={horarioLembretes}
+              onChange={e => setHorarioLembretes(e.target.value)}
+              style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-title)', fontSize: 14 }}
+            />
+            <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', marginTop: 4 }}>
+              Envia resumo matinal das contas a pagar e a receber do dia.
+            </span>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 6 }}>
+              📊 Horário do Fechamento Diário
+            </label>
+            <input 
+              type="time" 
+              value={horarioFechamento}
+              onChange={e => setHorarioFechamento(e.target.value)}
+              style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-title)', fontSize: 14 }}
+            />
+            <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', marginTop: 4 }}>
+              Envia extrato consolidado de receitas, despesas e saldo do dia.
+            </span>
           </div>
 
           <div style={{ gridColumn: '1 / -1' }}>
