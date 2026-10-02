@@ -11,18 +11,20 @@ const db = getFirestore(app);
 
 async function run() {
   await addDoc(collection(db, 'saas_releases'), {
-    version: '1.6.2',
+    version: '1.6.3',
     date: new Date().toISOString(),
-    title: 'Botão Ler com IA no Modal de Lançamento Inteligente',
-    description: 'Adicionado botão de destaque "✨ Ler com IA (Boleto/NF/Recibo)" diretamente no modal de Lançamento Inteligente que abre ao clicar em Novo Lançamento.',
+    title: 'Disparo de Cobrança PIX Interno via API do WhatsApp',
+    description: 'A cobrança com código PIX Copia e Cola agora é disparada diretamente pelos servidores internos via API do WhatsApp (Evolution API), sem abrir o aplicativo ou nova aba no navegador.',
     features: [
-      'Novo card e botão "✨ Ler com IA (Boleto/NF/Recibo)" dentro do modal Lançamento Inteligente.',
-      'Suporte direto a upload ou drag-and-drop de PDF e imagens de boletos e notas fiscais com OCR completo.',
-      'Abertura direta do leitor com IA em 1 clique.'
+      'Novo endpoint /api/whatsapp/cobranca para envio assíncrono e direto de cobranças PIX.',
+      'Disparo direto no WhatsApp do cliente com 1 clique sem abrir WhatsApp Web ou app externo.',
+      'Pré-preenchimento automático do telefone do cliente a partir do cadastro do cliente.',
+      'Feedback em tempo real no modal (Enviando... / Enviado!).',
+      'Link alternativo opcional para abrir manualmente no WhatsApp Web caso o operador deseje.'
     ],
     type: 'patch'
   });
-  console.log('Release notes 1.6.2 added!');
+  console.log('Release notes 1.6.3 added!');
   process.exit(0);
 }
 

@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { Transacao, ConfiguracaoApp } from '@/lib/types';
-import { getConfiguracoes, salvarConfiguracoes, atualizarTransacao, getContas } from '@/lib/storage';
+import { getConfiguracoes, salvarConfiguracoes, atualizarTransacao, getContas, getClientes, getTenantId } from '@/lib/storage';
 import { gerarPixCopiaECola, gerarUrlQrCodePix, montarMensagemCobrancaPix, normalizarChavePix } from '@/lib/pix';
 import { playSound } from '@/lib/audio';
-import { X, QrCode, Copy, Check, MessageSquare, ArrowDownCircle, AlertCircle, Settings, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { X, QrCode, Copy, Check, MessageSquare, ArrowDownCircle, AlertCircle, Settings, CheckCircle2, ShieldCheck, Loader2, Send } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface ModalCobrancaPixProps {
@@ -28,6 +28,7 @@ export default function ModalCobrancaPix({ transacao, onClose, onBaixaSucesso }:
   const [enviandoWhatsapp, setEnviandoWhatsapp] = useState(false);
   const [processandoBaixa, setProcessandoBaixa] = useState(false);
   const [baixaConcluida, setBaixaConcluida] = useState(false);
+  const [whatsappEnviado, setWhatsappEnviado] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -41,6 +42,17 @@ export default function ModalCobrancaPix({ transacao, onClose, onBaixaSucesso }:
       // Se não tiver chave configurada, abre para edição
       if (!config.pixChave) {
         setEditandoDadosPix(true);
+      }
+
+      // Tentar pré-carregar telefone do cliente
+      if (transacao.clienteId || transacao.clienteNome) {
+        try {
+          const clientes = await getClientes();
+          const cli = clientes.find(c => (transacao.clienteId && c.id === transacao.clienteId) || (c.nome && transacao.clienteNome && c.nome.toLowerCase() === transacao.clienteNome.toLowerCase()));
+          if (cli && (cli.telefone || (cli as any).celular || (cli as any).whatsapp)) {
+            setTelefoneCliente(cli.telefone || (cli as any).celular || (cli as any).whatsapp);
+          }
+        } catch (e) {}
       }
     })();
   }, []);
@@ -93,6 +105,12 @@ export default function ModalCobrancaPix({ transacao, onClose, onBaixaSucesso }:
 
   const handleEnviarWhatsApp = async () => {
     if (!copiaECola) return;
+    const numLimpo = telefoneCliente.replace(/\D/g, '');
+    if (!numLimpo || numLimpo.length < 10) {
+      alert('Por favor, informe o número de WhatsApp do cliente com DDD (ex: 49999999999).');
+      return;
+    }
+
     setEnviandoWhatsapp(true);
     try {
       const msg = montarMensagemCobrancaPix({
@@ -104,17 +122,27 @@ export default function ModalCobrancaPix({ transacao, onClose, onBaixaSucesso }:
         copiaECola
       });
 
-      // Se tiver telefone informado, pode usar wa.me ou enviar direto
-      const numLimpo = telefoneCliente.replace(/\D/g, '');
-      if (numLimpo) {
-        const link = `https://wa.me/55${numLimpo}?text=${encodeURIComponent(msg)}`;
-        window.open(link, '_blank');
+      const tenantId = typeof getTenantId === 'function' ? getTenantId() : 'master';
+      const res = await fetch('/api/whatsapp/cobranca', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          numero: numLimpo,
+          mensagem: msg,
+          tenantId
+        })
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        playSound('sucesso');
+        setWhatsappEnviado(true);
+        alert('✅ Cobrança com código PIX enviada diretamente para o WhatsApp do cliente!');
       } else {
-        const link = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
-        window.open(link, '_blank');
+        alert('Aviso da API: ' + (data.error || 'Não foi possível entregar a mensagem. Verifique se o robô do WhatsApp está conectado em Configurações.'));
       }
     } catch (e: any) {
-      alert('Erro: ' + e.message);
+      alert('Erro ao disparar cobrança: ' + e.message);
     } finally {
       setEnviandoWhatsapp(false);
     }
@@ -317,23 +345,72 @@ export default function ModalCobrancaPix({ transacao, onClose, onBaixaSucesso }:
 
               {/* Ações de Cobrança e Baixa */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
-                {/* Cobrança WhatsApp */}
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <input
-                    type="text"
-                    placeholder="Celular do Cliente (com DDD)"
-                    value={telefoneCliente}
-                    onChange={e => setTelefoneCliente(e.target.value)}
-                    style={{ flex: 1, padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: 12 }}
-                  />
-                  <button
-                    type="button"
-                    onClick={handleEnviarWhatsApp}
-                    disabled={enviandoWhatsapp || !copiaECola}
-                    style={{ background: '#25d366', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}
-                  >
-                    <MessageSquare size={14} /> Enviar no WhatsApp
-                  </button>
+                {/* Cobrança WhatsApp via API */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>
+                    Enviar Cobrança no WhatsApp do Cliente (direto via Robô/API):
+                  </label>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <input
+                      type="text"
+                      placeholder="WhatsApp do Cliente (DDD + Número, ex: 49999999999)"
+                      value={telefoneCliente}
+                      onChange={e => {
+                        setTelefoneCliente(e.target.value);
+                        setWhatsappEnviado(false);
+                      }}
+                      style={{ flex: 1, padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: 13 }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleEnviarWhatsApp}
+                      disabled={enviandoWhatsapp || !copiaECola}
+                      style={{
+                        background: whatsappEnviado ? '#059669' : '#25d366',
+                        color: '#fff', border: 'none', borderRadius: 8, padding: '10px 18px',
+                        fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap',
+                        boxShadow: '0 2px 8px rgba(37, 211, 102, 0.3)',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      {enviandoWhatsapp ? (
+                        <>
+                          <Loader2 size={16} className="spin" />
+                          <span>Enviando...</span>
+                        </>
+                      ) : whatsappEnviado ? (
+                        <>
+                          <CheckCircle2 size={16} />
+                          <span>Enviado!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send size={15} />
+                          <span>Disparar no WhatsApp</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  {telefoneCliente && (
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 2 }}>
+                      <a
+                        href={`https://wa.me/55${telefoneCliente.replace(/\D/g, '')}?text=${encodeURIComponent(montarMensagemCobrancaPix({
+                          clienteNome: transacao.clienteNome || 'Cliente',
+                          descricao: transacao.descricao,
+                          valor,
+                          dataVencimento: transacao.dataVencimento || transacao.data,
+                          nomeSistema: cfg?.nomeSistema || 'Sistema Financeiro',
+                          copiaECola
+                        }))}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{ fontSize: 11, color: 'var(--text-muted)', textDecoration: 'underline', cursor: 'pointer' }}
+                      >
+                        Ou abrir no WhatsApp Web manualmente
+                      </a>
+                    </div>
+                  )}
                 </div>
 
                 {/* Botão de Baixa Instantânea */}
