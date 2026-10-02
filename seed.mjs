@@ -11,18 +11,18 @@ const db = getFirestore(app);
 
 async function run() {
   await addDoc(collection(db, 'saas_releases'), {
-    version: '1.6.1',
+    version: '1.6.2',
     date: new Date().toISOString(),
-    title: 'Integração de OCR IA e Cobrança PIX na Versão 2.0 e Menu Lateral',
-    description: 'Habilitado o botão "Ler Boleto/NF com IA" e o modal de Cobrança PIX oficial também na interface V2 dos Lançamentos e no menu lateral global.',
+    title: 'Botão Ler com IA no Modal de Lançamento Inteligente',
+    description: 'Adicionado botão de destaque "✨ Ler com IA (Boleto/NF/Recibo)" diretamente no modal de Lançamento Inteligente que abre ao clicar em Novo Lançamento.',
     features: [
-      'Disponibilizado o botão "✨ Ler com IA (Boleto/NF/Recibo)" diretamente no cabeçalho de Lançamentos V2.',
-      'Disponibilizado o botão "✨ Ler Boleto/NF com IA" no menu lateral global do sistema, logo abaixo de Novo Lançamento.',
-      'Substituído o antigo alerta placeholder pelo gerador oficial de QR Code PIX com Copia e Cola e baixa instantânea na versão V2.'
+      'Novo card e botão "✨ Ler com IA (Boleto/NF/Recibo)" dentro do modal Lançamento Inteligente.',
+      'Suporte direto a upload ou drag-and-drop de PDF e imagens de boletos e notas fiscais com OCR completo.',
+      'Abertura direta do leitor com IA em 1 clique.'
     ],
     type: 'patch'
   });
-  console.log('Release notes 1.6.1 added!');
+  console.log('Release notes 1.6.2 added!');
   process.exit(0);
 }
 

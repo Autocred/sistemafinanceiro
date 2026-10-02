@@ -5,6 +5,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { PreLancamento, Transacao } from '@/lib/types';
 import { interpretarTexto, aprenderPadrao, calcularDataVencimentoCartao } from '@/lib/ai-engine';
 import { extrairDadosDocumento } from '@/lib/ocr-pipeline';
+import ModalImportarDocIA from '@/components/ModalImportarDocIA';
 import { DynamicIcon } from '@/components/DynamicIcon';
 import { getTenantId, getHistoricoIA, salvarTransacao, atualizarTransacao, salvarTransacoesRecorrentes, salvarTransacoesParceladas, getCategorias, getCentrosCusto, getContas, getCartoes, getFornecedores, getClientes, salvarFornecedor, salvarCliente, formatarMoeda, gerarIdPublico, salvarConta } from '@/lib/storage';
 import { calcularCicloFatura } from '@/lib/cartao-utils';
@@ -54,7 +55,7 @@ const compressImage = (file: File): Promise<string> => {
 
 import {
   Mic, MicOff, Send, X, Check, Edit3, Loader2,
-  Zap, MessageSquare, PenLine, AlertCircle, CheckCircle2, RefreshCw, Plus, ChevronRight, Building2, Camera, Paperclip, Trash2, Eye
+  Zap, MessageSquare, PenLine, AlertCircle, CheckCircle2, RefreshCw, Plus, ChevronRight, Building2, Camera, Sparkles, Paperclip, Trash2, Eye
 } from 'lucide-react';
 
 type Modo = 'chat' | 'manual';
@@ -140,6 +141,7 @@ export default function ModalLancamento({ onClose, onSalvo, transacaoEditar }: P
   const [ensinarIA, setEnsinarIA] = useState(true);
   
   // AI Photo Scanning Global
+  const [modalDocIAAberto, setModalDocIAAberto] = useState(false);
   const [isScanningPhoto, setIsScanningPhoto] = useState(false);
   const [scanMessagePhoto, setScanMessagePhoto] = useState('');
   const [scanData, setScanData] = useState<any>(null);
@@ -539,20 +541,43 @@ export default function ModalLancamento({ onClose, onSalvo, transacaoEditar }: P
                       </div>
                     </div>
                   )}
-                  <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 12 }}>
-                    <div style={{ background: 'linear-gradient(135deg, #10b981, #3b82f6)', color: 'white', padding: 8, borderRadius: 10 }}>
-                      <Camera size={20} />
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 14 }}>
+                    <div style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)', color: 'white', padding: 10, borderRadius: 12, boxShadow: '0 4px 12px rgba(168,85,247,0.35)' }}>
+                      <Sparkles size={22} />
                     </div>
                     <div>
-                      <label style={{ fontSize: 14, color: 'var(--text-primary)', fontWeight: 800, display: 'block' }}>Lançar por Foto ⚡</label>
-                      <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0 }}>Tire foto de uma nota e a IA preenche o formulário.</p>
+                      <label style={{ fontSize: 15, color: 'var(--text-primary)', fontWeight: 800, display: 'block' }}>
+                        ✨ Ler com IA (Boleto, Nota Fiscal ou Recibo)
+                      </label>
+                      <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0, marginTop: 2 }}>
+                        Arraste ou envie PDF ou foto do boleto. A IA preenche fornecedor, valor, vencimento e código de barras.
+                      </p>
                     </div>
                   </div>
-                  <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 16px', background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', borderRadius: 10, fontWeight: 700, fontSize: 12, cursor: 'pointer', border: 'none' }}>
-                    <Camera size={18} />
-                    <span>Tirar Foto / Anexar</span>
-                    <input type="file" accept="image/*,.pdf" capture="environment" style={{ display: 'none' }} onChange={handleScanReceiptGlobal} />
-                  </label>
+                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      onClick={() => setModalDocIAAberto(true)}
+                      style={{
+                        flex: '1 1 200px',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                        padding: '12px 18px',
+                        background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                        color: 'white', borderRadius: 12, fontWeight: 700, fontSize: 13,
+                        cursor: 'pointer', border: 'none',
+                        boxShadow: '0 4px 14px rgba(139, 92, 246, 0.4)',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      <Sparkles size={18} />
+                      <span>✨ Ler com IA (Boleto/NF/Recibo)</span>
+                    </button>
+                    <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '12px 16px', background: 'var(--bg-glass)', border: '1px solid var(--border)', color: 'var(--text-primary)', borderRadius: 12, fontWeight: 600, fontSize: 12, cursor: 'pointer', transition: 'all 0.2s' }}>
+                      <Camera size={16} />
+                      <span>Câmera / Foto Rápida</span>
+                      <input type="file" accept="image/*,.pdf" capture="environment" style={{ display: 'none' }} onChange={handleScanReceiptGlobal} />
+                    </label>
+                  </div>
                 </div>
 
                 <div style={{ textAlign: 'center', marginTop: 16 }}>
@@ -672,6 +697,16 @@ export default function ModalLancamento({ onClose, onSalvo, transacaoEditar }: P
           </div>
         )}
       </div>
+
+      {modalDocIAAberto && (
+        <ModalImportarDocIA
+          onClose={() => setModalDocIAAberto(false)}
+          onSuccess={() => {
+            setModalDocIAAberto(false);
+            onSalvo();
+          }}
+        />
+      )}
     </div>
   );
 }
