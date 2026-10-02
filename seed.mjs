@@ -11,15 +11,15 @@ const db = getFirestore(app);
 
 async function run() {
   await addDoc(collection(db, 'saas_releases'), {
-    version: '1.4.6',
+    version: '1.4.7',
     date: new Date().toISOString(),
-    title: 'Disparo de Resumo de Metas no WhatsApp (12h e 18h)',
-    description: 'Implementado acompanhamento automatizado de metas financeiras com disparo no WhatsApp duas vezes ao dia (12h e 18h), calculando ritmo diário, valor restante e barra de progresso visual.',
+    title: 'Detalhamento de Meta Diária e Performance Acima/Abaixo no WhatsApp',
+    description: 'Adicionada visualização de quanto é a meta diária, quanto foi alcançado hoje e indicador explícito de quanto está acima ou abaixo da meta diária e no acumulado do mês.',
     features: [
-      'Disparo automático de metas às 12h (meio-dia) e 18h (encerramento do expediente).',
-      'Cálculo em tempo real de dias úteis restantes e meta diária necessária.',
-      'Barra de progresso visual em blocos e ritmo das vendas com emojis intuitivos.',
-      'Configuração individual de horários e botão de teste em Configurações e no Painel Master.'
+      'Exibição do valor exato da meta diária base (R$/dia útil).',
+      'Comparativo do dia: valor alcançado hoje e diferença exata (ACIMA ou ABAIXO).',
+      'Comparativo do mês: ritmo acumulado vs meta ideal esperada até a data.',
+      'Cálculo de meta diária ajustada para os dias úteis restantes.'
     ],
     type: 'feature'
   });

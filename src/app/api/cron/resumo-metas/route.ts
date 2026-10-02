@@ -121,6 +121,8 @@ export async function GET(request: Request) {
       const dFim = meta.dataTermino ? parseISO(meta.dataTermino) : new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
 
       let realizado = 0;
+      let realizadoHoje = 0;
+
       transacoes.forEach(t => {
         if (t.status !== 'pago' && t.status !== 'recebido') return;
         if (meta.tipo && t.tipo !== meta.tipo) return;
@@ -132,7 +134,11 @@ export async function GET(request: Request) {
         try {
           const dtT = parseISO(raw.substring(0, 10));
           if (isWithinInterval(dtT, { start: dInicio, end: dFim })) {
-            realizado += Math.abs(Number(t.valor) || 0);
+            const val = Math.abs(Number(t.valor) || 0);
+            realizado += val;
+            if (raw.substring(0, 10) === hojeStr) {
+              realizadoHoje += val;
+            }
           }
         } catch {}
       });
@@ -141,9 +147,26 @@ export async function GET(request: Request) {
       const pct = alvo > 0 ? (realizado / alvo) * 100 : 0;
       const falta = Math.max(0, alvo - realizado);
 
-      const diasUteisRestantes = calcularDiasUteisEntre(hoje, dFim);
-      const metaDiariaNecessaria = diasUteisRestantes > 0 ? falta / diasUteisRestantes : 0;
+      const diasUteisTotal = calcularDiasUteisEntre(dInicio, dFim);
+      const diasUteisDecorridos = calcularDiasUteisEntre(dInicio, hoje);
+      const diasUteisRestantes = Math.max(0, diasUteisTotal - diasUteisDecorridos);
 
+      const metaDiariaBase = diasUteisTotal > 0 ? alvo / diasUteisTotal : 0;
+      const idealAcumulado = metaDiariaBase * diasUteisDecorridos;
+      const avancoVsIdeal = realizado - idealAcumulado;
+
+      // Comparação do Dia de Hoje
+      const diffHoje = realizadoHoje - metaDiariaBase;
+      const statusHoje = diffHoje >= 0
+        ? `🟢 ${fmt(realizadoHoje)} (${fmt(Math.abs(diffHoje))} ACIMA da meta do dia! 🚀)`
+        : `🔴 ${fmt(realizadoHoje)} (${fmt(Math.abs(diffHoje))} ABAIXO da meta do dia)`;
+
+      // Comparação do Mês Acumulado
+      const statusMes = avancoVsIdeal >= 0
+        ? `🟢 ${fmt(Math.abs(avancoVsIdeal))} ACIMA do esperado até hoje`
+        : `🔴 ${fmt(Math.abs(avancoVsIdeal))} ABAIXO do esperado até hoje`;
+
+      const metaDiariaRestante = diasUteisRestantes > 0 ? falta / diasUteisRestantes : 0;
       const barra = gerarBarraProgresso(pct);
 
       let statusRitmo = '🚀 No Ritmo!';
@@ -153,15 +176,20 @@ export async function GET(request: Request) {
 
       const iconeTipo = meta.tipo === 'despesa' ? '📉' : '🏁';
       mensagem += `${iconeTipo} *Meta: ${meta.nome}*\n`;
-      mensagem += `• 🎯 *Alvo:* ${fmt(alvo)}\n`;
-      mensagem += `• 🟢 *Realizado:* ${fmt(realizado)} (${pct.toFixed(1)}%)\n`;
+      mensagem += `• 🎯 *Alvo do Mês:* ${fmt(alvo)}\n`;
+      mensagem += `• 🟢 *Total Realizado:* ${fmt(realizado)} (${pct.toFixed(1)}%)\n`;
       mensagem += `• ⏳ *Restante:* ${fmt(falta)}\n`;
+      mensagem += `• 📅 *Dias Úteis:* ${diasUteisDecorridos} decorridos / ${diasUteisRestantes} restantes\n\n`;
+
+      mensagem += `⚡ *Desempenho da Meta Diária:*\n`;
+      mensagem += `• 🎯 *Meta Diária:* ${fmt(metaDiariaBase)} / dia útil\n`;
+      mensagem += `• 💵 *Alcançado Hoje:* ${statusHoje}\n`;
+      mensagem += `• 📊 *Ritmo no Mês:* ${statusMes}\n`;
       if (diasUteisRestantes > 0 && falta > 0) {
-        mensagem += `• 📅 *Dias Úteis Restantes:* ${diasUteisRestantes} dias\n`;
-        mensagem += `• ⚡ *Necessário:* ${fmt(metaDiariaNecessaria)} / dia útil\n`;
+        mensagem += `• 🚀 *Necessário p/ os Próximos Dias:* ${fmt(metaDiariaRestante)} / dia útil\n`;
       }
       mensagem += `• 📈 *Progresso:* ${barra}\n`;
-      mensagem += `• 🧭 *Status:* ${statusRitmo}\n`;
+      mensagem += `• 🧭 *Status Geral:* ${statusRitmo}\n`;
 
       if (idx < metasAtivas.length - 1) {
         mensagem += `\n─────────────────────\n\n`;
