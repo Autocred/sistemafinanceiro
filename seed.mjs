@@ -11,22 +11,21 @@ const db = getFirestore(app);
 
 async function run() {
   await addDoc(collection(db, 'saas_releases'), {
-    versao: 'v3.6.20',
-    titulo: 'Forma de Pagamento Automática e Ajustes Responsivos',
-    descricao: 'Melhorias de inteligência e layout na tela de Leitura de Notas.',
+    versao: 'v3.6.21',
+    titulo: 'Vínculo de Cartões de Crédito e Ajuste Fino de Valores OCR',
+    descricao: 'Melhorias de inteligência e usabilidade na leitura automática.',
     dataLancamento: new Date().toISOString(),
     status: 'publicado',
     destaque: true,
     notificarTenants: false,
     alvos: 'todos',
     changes: [
-      { tipo: 'novo', texto: 'Inclusão do campo Forma de Pagamento no formulário de leitura de documento.' },
-      { tipo: 'melhoria', texto: 'A IA agora detecta automaticamente pagamentos feitos em Cartão de Crédito, Débito, Boleto, Dinheiro ou PIX e já marca a opção correta.' },
-      { tipo: 'correcao', texto: 'Otimização nas instruções da Inteligência Artificial para não confundir datas de vencimento antigas com a data do pagamento real.' },
-      { tipo: 'correcao', texto: 'Reestruturação visual no formulário para telas de celulares: os campos agora se adaptam e empilham corretamente para evitar cortes.' }
+      { tipo: 'novo', texto: 'Quando a IA identifica o pagamento via Cartão de Crédito, o sistema automaticamente troca o campo de Conta Bancária pelo campo de Seleção de Cartão (mesmo comportamento do lançamento manual).' },
+      { tipo: 'melhoria', texto: 'Regras da IA endurecidas: ela agora foca estritamente no "Valor Total Final", ignorando subtotais, descontos ou taxas perdidas pelo recibo.' },
+      { tipo: 'correcao', texto: 'Inclusão de validação que impede salvar nota de cartão de crédito sem informar de qual cartão foi.' }
     ]
   });
-  console.log('Release notes v3.6.20 added!');
+  console.log('Release notes v3.6.21 added!');
   process.exit(0);
 }
 

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { extrairDadosDocumento, DadosFiscaisExtraidos } from '@/lib/ocr-pipeline';
-import { salvarTransacao, getCategorias, getContas, getCentrosCusto, getClientes, getFornecedores } from '@/lib/storage';
+import { salvarTransacao, getCategorias, getContas, getCentrosCusto, getClientes, getFornecedores, getCartoes } from '@/lib/storage';
 import { playSound } from '@/lib/audio';
 import { X, Upload, Sparkles, Loader2, CheckCircle2, FileText, ArrowRight, DollarSign, Calendar, Tag, Building } from 'lucide-react';
 import { format } from 'date-fns';
@@ -24,6 +24,7 @@ export default function ModalImportarDocIA({ onClose, onSuccess }: ModalImportar
   const [centrosCusto, setCentrosCusto] = useState<any[]>([]);
   const [clientes, setClientes] = useState<any[]>([]);
   const [fornecedores, setFornecedores] = useState<any[]>([]);
+  const [cartoes, setCartoes] = useState<any[]>([]);
 
   // Dados extraídos pela IA
   const [dadosExtraidos, setDadosExtraidos] = useState<DadosFiscaisExtraidos | null>(null);
@@ -39,6 +40,8 @@ export default function ModalImportarDocIA({ onClose, onSuccess }: ModalImportar
   const [categoriaNome, setCategoriaNome] = useState('');
   const [contaId, setContaId] = useState('');
   const [contaNome, setContaNome] = useState('');
+  const [cartaoId, setCartaoId] = useState('');
+  const [cartaoNome, setCartaoNome] = useState('');
   const [centroCustoId, setCentroCustoId] = useState('');
   const [clienteId, setClienteId] = useState('');
   const [fornecedorId, setFornecedorId] = useState('');
@@ -51,12 +54,13 @@ export default function ModalImportarDocIA({ onClose, onSuccess }: ModalImportar
 
   useEffect(() => {
     (async () => {
-      const [cats, conts, ccs, clis, forns] = await Promise.all([getCategorias(), getContas(), getCentrosCusto(), getClientes(), getFornecedores()]);
+      const [cats, conts, ccs, clis, forns, carts] = await Promise.all([getCategorias(), getContas(), getCentrosCusto(), getClientes(), getFornecedores(), getCartoes()]);
       setCategorias(cats);
       setContas(conts);
       setCentrosCusto(ccs);
       setClientes(clis);
       setFornecedores(forns);
+      setCartoes(carts);
 
       if (conts.length > 0) {
         setContaId(conts[0].id);
@@ -249,6 +253,14 @@ export default function ModalImportarDocIA({ onClose, onSuccess }: ModalImportar
       alert('Informe um valor válido maior que zero.');
       return;
     }
+    if (formaPagamento === 'cartao_credito' && !cartaoId) {
+      alert('Selecione o Cartão de Crédito.');
+      return;
+    }
+    if (formaPagamento !== 'cartao_credito' && status === 'pago' && !contaId) {
+      alert('Selecione a Conta Bancária.');
+      return;
+    }
 
     setSalvando(true);
     try {
@@ -265,8 +277,10 @@ export default function ModalImportarDocIA({ onClose, onSuccess }: ModalImportar
         categoriaNome,
         categoriaIcone: 'FileText',
         categoriaCor: '#3b82f6',
-        contaId,
-        contaNome,
+        contaId: formaPagamento === 'cartao_credito' ? undefined : contaId,
+        contaNome: formaPagamento === 'cartao_credito' ? undefined : contaNome,
+        cartaoId: formaPagamento === 'cartao_credito' ? cartaoId : undefined,
+        cartaoNome: formaPagamento === 'cartao_credito' ? cartaoNome : undefined,
         formaPagamento: formaPagamento || 'outro',
         fornecedorId: tipo === 'despesa' ? fornecedorId : undefined,
         clienteId: tipo === 'receita' ? clienteId : undefined,
@@ -504,24 +518,43 @@ export default function ModalImportarDocIA({ onClose, onSuccess }: ModalImportar
                 </div>
                 <div>
                   <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: 4 }}>
-                    Conta Bancária
+                    {formaPagamento === 'cartao_credito' ? 'Cartão de Crédito' : 'Conta Bancária'}
                   </label>
-                  <select
-                    className="input-field"
-                    value={contaId}
-                    onChange={e => {
-                      const id = e.target.value;
-                      setContaId(id);
-                      const c = contas.find(x => x.id === id);
-                      if (c) setContaNome(c.nome);
-                    }}
-                    style={{ width: '100%', padding: '9px 12px', borderRadius: 8 }}
-                  >
-                    <option value="">Selecione...</option>
-                    {contas.map(c => (
-                      <option key={c.id} value={c.id}>{c.nome}</option>
-                    ))}
-                  </select>
+                  {formaPagamento === 'cartao_credito' ? (
+                    <select
+                      className="input-field"
+                      value={cartaoId}
+                      onChange={e => {
+                        const id = e.target.value;
+                        setCartaoId(id);
+                        const c = cartoes.find(x => x.id === id);
+                        if (c) setCartaoNome(c.nome);
+                      }}
+                      style={{ width: '100%', padding: '9px 12px', borderRadius: 8 }}
+                    >
+                      <option value="">Selecione o Cartão...</option>
+                      {cartoes.map(c => (
+                        <option key={c.id} value={c.id}>{c.nome}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <select
+                      className="input-field"
+                      value={contaId}
+                      onChange={e => {
+                        const id = e.target.value;
+                        setContaId(id);
+                        const c = contas.find(x => x.id === id);
+                        if (c) setContaNome(c.nome);
+                      }}
+                      style={{ width: '100%', padding: '9px 12px', borderRadius: 8 }}
+                    >
+                      <option value="">Selecione a Conta...</option>
+                      {contas.map(c => (
+                        <option key={c.id} value={c.id}>{c.nome}</option>
+                      ))}
+                    </select>
+                  )}
                 </div>
                 <div>
                   <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: 4 }}>

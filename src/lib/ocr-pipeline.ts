@@ -42,7 +42,7 @@ Retorne APENAS o JSON não formato:
  "numeroDocumento": "Número da nota/cupom",
  "serie": "Série da nota",
  "data": "Data EXATA da efetivação do pagamento ou emissão (formato YYYY-MM-DD). ATENÇÃO: NÃO confunda com datas de vencimentos passados ou textos aleatórios. Foque na data real do comprovante.",
- "valorTotal": 154.30, // Número Decimal (substitua vírgula por ponto)
+ "valorTotal": 154.30, // VALOR TOTAL FINAL efetivamente pago/cobrado (Número decimal, não pegue subtotal, desconto ou taxa, pegue o total pago)
  "formaPagamento": "Exatamente um destes: 'cartao_credito', 'cartao_debito', 'pix', 'dinheiro', 'boleto', 'transferencia' ou 'outro' (se ler Mastercard/Visa/Crédito, use 'cartao_credito')",
  "categoria": "Categoria sugerida para o gasto (ex: Alimentação, Transporte)",
  "subcategoria": "Subcategoria sugerida",
