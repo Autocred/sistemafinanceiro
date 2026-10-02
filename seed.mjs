@@ -11,17 +11,23 @@ const db = getFirestore(app);
 
 async function run() {
   await addDoc(collection(db, 'saas_releases'), {
-    version: '1.6.7',
-    date: new Date().toISOString(),
-    title: 'Suporte a Novos Modelos do Gemini (2.0 / 2.5)',
-    description: 'Adicionado suporte automático aos modelos mais recentes de inteligência artificial do Google para garantir compatibilidade com as novas chaves de API.',
-    features: [
-      'Fallback inteligente para os modelos gemini-2.0-flash e gemini-2.5-flash.',
-      'Resolução do erro 404 para chaves recentes geradas no Google AI Studio.'
-    ],
-    type: 'patch'
+    versao: 'v3.6.18',
+    titulo: 'Novo Motor IA Inteligente & Correções Visuais',
+    descricao: 'Atualização crítica no sistema de extração de notas (OCR + Inteligência Artificial) e melhorias na listagem de transações.',
+    dataLancamento: new Date().toISOString(),
+    status: 'publicado',
+    destaque: true,
+    notificarTenants: false,
+    alvos: 'todos',
+    changes: [
+      { tipo: 'novo', texto: 'Suporte a chaves de API mais recentes do Google Gemini (Geração 2.0 e superiores).' },
+      { tipo: 'novo', texto: 'Lançamentos via nota já pré-preenchem a data de competência e o status Pago/Recebido.' },
+      { tipo: 'melhoria', texto: 'Aumento na velocidade de extração do OCR e redução de travamentos.' },
+      { tipo: 'correcao', texto: 'Resolução de timeout (carregamento infinito) quando a chave da Inteligência Artificial expira ou é bloqueada.' },
+      { tipo: 'correcao', texto: 'Ajuste visual na pílula do fornecedor na listagem de lançamentos (estava sendo cortada para nomes muito grandes).' }
+    ]
   });
-  console.log('Release notes 1.6.7 added!');
+  console.log('Release notes v3.6.18 added!');
   process.exit(0);
 }
 
