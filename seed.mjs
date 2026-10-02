@@ -11,20 +11,20 @@ const db = getFirestore(app);
 
 async function run() {
   await addDoc(collection(db, 'saas_releases'), {
-    version: '1.6.3',
+    version: '1.6.4',
     date: new Date().toISOString(),
-    title: 'Disparo de Cobrança PIX Interno via API do WhatsApp',
-    description: 'A cobrança com código PIX Copia e Cola agora é disparada diretamente pelos servidores internos via API do WhatsApp (Evolution API), sem abrir o aplicativo ou nova aba no navegador.',
+    title: 'Geração de Fatura / Boleto em PDF com QR Code PIX e Envio no WhatsApp',
+    description: 'Agora o sistema gera uma fatura / cobrança em PDF completa em padrão bancário/boleto contendo QR Code PIX escaneável, dados completos do lançamento, beneficiário e pagador, com download direto e envio do anexo PDF via WhatsApp.',
     features: [
-      'Novo endpoint /api/whatsapp/cobranca para envio assíncrono e direto de cobranças PIX.',
-      'Disparo direto no WhatsApp do cliente com 1 clique sem abrir WhatsApp Web ou app externo.',
-      'Pré-preenchimento automático do telefone do cliente a partir do cadastro do cliente.',
-      'Feedback em tempo real no modal (Enviando... / Enviado!).',
-      'Link alternativo opcional para abrir manualmente no WhatsApp Web caso o operador deseje.'
+      'Geração de Fatura/Boleto em PDF com layout A4 profissional respeitando cores e nome do Tenant (White Label).',
+      'Renderização de QR Code PIX visual em alta resolução no próprio PDF para leitura direta na câmera do celular/banco.',
+      'Blocos estruturados de Beneficiário (Cedente), Pagador (Sacado), Vencimento, Valor em destaque e código Copia e Cola.',
+      'Disparo direto do PDF via API do WhatsApp (Evolution API) em anexo junto com a mensagem de apoio.',
+      'Botão dedicado no modal para Visualizar e Baixar a Fatura PDF instantaneamente.'
     ],
-    type: 'patch'
+    type: 'feature'
   });
-  console.log('Release notes 1.6.3 added!');
+  console.log('Release notes 1.6.4 added!');
   process.exit(0);
 }
 
