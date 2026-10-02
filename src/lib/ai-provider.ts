@@ -89,6 +89,9 @@ export class AIProviderService {
         } catch (error: any) {
           console.warn(`[AI Provider] Falha com provedor ${provider} na tentativa ${attempt + 1}:`, error.message);
           errorMsgs.push(`${provider}: ${error.message}`);
+          if (error.message.includes('inválida ou expirou') || error.message.includes('401') || error.message.includes('403')) {
+            throw error; // Não retentar se for erro de autenticação
+          }
         }
       }
     }
@@ -161,9 +164,12 @@ export class AIProviderService {
         } catch (error: any) {
           console.warn(`Gemini Model ${modelName} falhou:`, error.message);
           errors.push(`[${modelName}]: ${error.message}`);
+          if (error.message.includes('401') || error.message.includes('403') || error.message.includes('API key') || error.message.includes('invalid authentication') || error.message.includes('ACCESS_TOKEN_TYPE_UNSUPPORTED')) {
+             throw new Error(`A Chave de API inserida é inválida ou expirou. Por favor, verifique nas Configurações. Erro do Google: ${error.message}`);
+          }
         }
       }
-      throw new Error(`[SISTEMA ATUALIZADO V2] Gemini esgotou todos os modelos. Detalhes: ${errors.join(' | ')}`);
+      throw new Error(`Gemini esgotou todos os modelos. Detalhes: ${errors.join(' | ')}`);
   }
 
   private async callOpenAIVision(
