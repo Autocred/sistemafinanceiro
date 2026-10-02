@@ -1266,6 +1266,60 @@ document.cookie = 'app_pin_code=' + encodeURIComponent(novoPin) + '; max-age=315
                 )}
               </div>
 
+              {/* Seção de Fechamento Mensal Executivo (PDF no WhatsApp) */}
+              <div style={{ marginTop: 6, paddingTop: 14, borderTop: '1px solid var(--border)' }}>
+                <ToggleConfig
+                  label="📄 Fechamento Mensal Executivo em PDF no WhatsApp (todo dia 1º)"
+                  descricao="Gera e envia automaticamente no 1º dia útil do mês o balanço mensal consolidado com indicadores, metas, maiores custos e documento PDF executivo anexado"
+                  ativo={cfg.whatsappFechamentoMensalAtivo ?? true}
+                  onChange={v => {
+                    const upd = { ...cfg, whatsappFechamentoMensalAtivo: v };
+                    setCfg(upd);
+                    salvar(upd);
+                  }}
+                />
+
+                {(cfg.whatsappFechamentoMensalAtivo ?? true) && (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginTop: 12 }}>
+                    <div>
+                      <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>
+                        📅 Dia do Mês para Fechamento
+                      </label>
+                      <select
+                        className="input-field"
+                        value={cfg.whatsappDiaFechamentoMensal || 1}
+                        onChange={e => setCfg(c => ({ ...c, whatsappDiaFechamentoMensal: Number(e.target.value) }))}
+                        onBlur={() => salvar({ ...cfg, ultimoEnvioFechamentoMensal: '' })}
+                      >
+                        <option value={1}>Todo dia 1º (Padrão Recomendado)</option>
+                        <option value={2}>Todo dia 2</option>
+                        <option value={5}>Todo dia 5</option>
+                        <option value={10}>Todo dia 10</option>
+                      </select>
+                      <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', marginTop: 4 }}>
+                        Dia em que o sistema consolida e envia o mês recém-encerrado.
+                      </span>
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>
+                        🕘 Horário do Fechamento Mensal
+                      </label>
+                      <input
+                        type="time"
+                        className="input-field"
+                        value={cfg.whatsappHorarioFechamentoMensal || '09:00'}
+                        onChange={e => setCfg(c => ({ ...c, whatsappHorarioFechamentoMensal: e.target.value }))}
+                        onBlur={() => salvar({ ...cfg, ultimoEnvioFechamentoMensal: '' })}
+                      />
+                      <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', marginTop: 4 }}>
+                        Horário de entrega do relatório e PDF no WhatsApp.
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.2)', borderRadius: 8, padding: 12 }}>
                 <p style={{ fontSize: 12, color: '#10b981', fontWeight: 700, margin: 0, marginBottom: 4 }}>
                   ⏰ Programação Automática Ativa
@@ -1361,6 +1415,34 @@ document.cookie = 'app_pin_code=' + encodeURIComponent(novoPin) + '; max-age=315
                   style={{ fontSize: 12, padding: '8px 14px', background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', border: '1px solid rgba(59, 130, 246, 0.3)' }}
                 >
                   🎯 Testar Resumo de Metas Agora
+                </button>
+
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!cfg.whatsappNumeros) {
+                      alert('Preencha seu número de WhatsApp primeiro e clique em Salvar Configurações no topo!');
+                      return;
+                    }
+                    try {
+                      alert('Gerando PDF executivo e disparando Fechamento Mensal...');
+                      const currentTenant = typeof getTenantId === 'function' ? getTenantId() : 'master';
+                      const nomeAtual = cfg.nomeSistema || cfg.nomeUsuario || (currentTenant === 'master' ? 'Clovis Master' : 'Autocred Promotora');
+                      const res = await fetch(`/api/cron/fechamento-mensal?tenantId=${encodeURIComponent(currentTenant)}&numero=${encodeURIComponent(cfg.whatsappNumeros || '')}&nome=${encodeURIComponent(nomeAtual)}`);
+                      const json = await res.json();
+                      if (json.success) {
+                        alert('✅ Relatório Executivo e PDF de Fechamento Mensal enviados com sucesso no WhatsApp!');
+                      } else {
+                        alert('Resposta: ' + (json.message || json.error));
+                      }
+                    } catch (err: any) {
+                      alert('Erro ao disparar: ' + err.message);
+                    }
+                  }}
+                  className="btn-secondary"
+                  style={{ fontSize: 12, padding: '8px 14px', background: 'rgba(30, 58, 138, 0.1)', color: '#1e3a8a', border: '1px solid rgba(30, 58, 138, 0.3)', fontWeight: 600 }}
+                >
+                  📄 Testar Fechamento Mensal (PDF no WhatsApp)
                 </button>
               </div>
             </div>

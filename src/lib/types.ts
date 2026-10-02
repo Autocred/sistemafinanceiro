@@ -313,6 +313,10 @@ export interface ConfiguracaoApp {
   ultimoEnvioLembretes?: string;
   ultimoEnvioMetas1?: string;
   ultimoEnvioMetas2?: string;
+  whatsappFechamentoMensalAtivo?: boolean;
+  whatsappDiaFechamentoMensal?: number;
+  whatsappHorarioFechamentoMensal?: string;
+  ultimoEnvioFechamentoMensal?: string;
   webPushSubscription?: string;
   pushDias?: string[];
   pushHorario?: string; // ex: '09:00'

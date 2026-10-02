@@ -14,6 +14,9 @@ export default function MasterWhatsappConfig() {
   const [horarioMetas1, setHorarioMetas1] = useState('12:00');
   const [horarioMetas2, setHorarioMetas2] = useState('18:00');
   const [metasAtivo, setMetasAtivo] = useState(true);
+  const [diaFechamentoMensal, setDiaFechamentoMensal] = useState<number>(1);
+  const [horarioFechamentoMensal, setHorarioFechamentoMensal] = useState('09:00');
+  const [fechamentoMensalAtivo, setFechamentoMensalAtivo] = useState(true);
   const [tenantId, setTenantId] = useState('autocred-promotora-de-credito');
   const [instanceName, setInstanceName] = useState('autocred');
   const [listaTenants, setListaTenants] = useState<{ id: string; nome: string }[]>([
@@ -54,6 +57,15 @@ export default function MasterWhatsappConfig() {
         }
         if (data.whatsappMetasAtivo !== undefined) {
           setMetasAtivo(data.whatsappMetasAtivo);
+        }
+        if (data.whatsappDiaFechamentoMensal !== undefined) {
+          setDiaFechamentoMensal(data.whatsappDiaFechamentoMensal);
+        }
+        if (data.whatsappHorarioFechamentoMensal) {
+          setHorarioFechamentoMensal(data.whatsappHorarioFechamentoMensal);
+        }
+        if (data.whatsappFechamentoMensalAtivo !== undefined) {
+          setFechamentoMensalAtivo(data.whatsappFechamentoMensalAtivo);
         }
       } else {
         setNumeroMaster('');
@@ -123,11 +135,15 @@ export default function MasterWhatsappConfig() {
         whatsappHorarioMetas1: horarioMetas1,
         whatsappHorarioMetas2: horarioMetas2,
         whatsappMetasAtivo: metasAtivo,
+        whatsappDiaFechamentoMensal: diaFechamentoMensal,
+        whatsappHorarioFechamentoMensal: horarioFechamentoMensal,
+        whatsappFechamentoMensalAtivo: fechamentoMensalAtivo,
         whatsappHorario: horarioFechamento,
         ultimoEnvioFechamento: '', // Reseta para liberar disparo no novo horário imediatamente
         ultimoEnvioLembretes: '',
         ultimoEnvioMetas1: '',
-        ultimoEnvioMetas2: ''
+        ultimoEnvioMetas2: '',
+        ultimoEnvioFechamentoMensal: ''
       };
 
       if (tenantId === 'master') {
@@ -298,6 +314,40 @@ export default function MasterWhatsappConfig() {
             </span>
           </div>
 
+          <div>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 6 }}>
+              📅 Dia Fechamento Mensal
+            </label>
+            <select
+              value={diaFechamentoMensal}
+              onChange={e => setDiaFechamentoMensal(Number(e.target.value))}
+              style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-title)', fontSize: 14 }}
+            >
+              <option value={1}>Todo dia 1º (Padrão)</option>
+              <option value={2}>Todo dia 2</option>
+              <option value={5}>Todo dia 5</option>
+              <option value={10}>Todo dia 10</option>
+            </select>
+            <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', marginTop: 4 }}>
+              Dia do mês que fecha e gera o PDF.
+            </span>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 6 }}>
+              📄 Horário Fechamento Mensal (PDF)
+            </label>
+            <input 
+              type="time" 
+              value={horarioFechamentoMensal}
+              onChange={e => setHorarioFechamentoMensal(e.target.value)}
+              style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-title)', fontSize: 14 }}
+            />
+            <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', marginTop: 4 }}>
+              Envio do PDF Executivo no WhatsApp.
+            </span>
+          </div>
+
           <div style={{ gridColumn: '1 / -1' }}>
             <label style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 6 }}>
               🏢 Licença para Configuração & Disparo
@@ -421,6 +471,29 @@ export default function MasterWhatsappConfig() {
                   style={{ background: '#8b5cf6', color: '#fff', border: 'none', padding: '10px 18px', borderRadius: 8, fontWeight: 700, cursor: 'pointer', fontSize: 13 }}
                 >
                   🎯 Disparar Resumo de Metas
+                </button>
+
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const btn = document.getElementById('btn-test-mensal');
+                    if (btn) btn.innerText = 'Enviando...';
+                    try {
+                      const selTenant = tenantId || 'autocred-promotora-de-credito';
+                      const selNome = selTenant === 'master' ? 'Clovis Master' : 'Autocred Promotora';
+                      const res = await fetch(`/api/cron/fechamento-mensal?tenantId=${selTenant}&numero=${encodeURIComponent(numeroMaster)}&nome=${encodeURIComponent(selNome)}`);
+                      const data = await res.json();
+                      alert(data.success ? '✅ Relatório e PDF Executivo de Fechamento Mensal enviados com sucesso no WhatsApp!' : ('Erro: ' + (data.error || data.message)));
+                    } catch (e: any) {
+                      alert('Erro ao disparar: ' + e.message);
+                    } finally {
+                      if (btn) btn.innerText = '📄 Disparar Fechamento Mensal (PDF)';
+                    }
+                  }}
+                  id="btn-test-mensal"
+                  style={{ background: '#0284c7', color: '#fff', border: 'none', padding: '10px 18px', borderRadius: 8, fontWeight: 700, cursor: 'pointer', fontSize: 13 }}
+                >
+                  📄 Disparar Fechamento Mensal (PDF)
                 </button>
               </div>
             </div>

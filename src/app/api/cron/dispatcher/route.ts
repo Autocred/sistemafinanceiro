@@ -23,7 +23,10 @@ export async function GET(request: Request) {
       day: '2-digit'
     }).format(new Date()).split('/').reverse().join('-'); // YYYY-MM-DD
 
-    console.log(`[DISPATCHER MULTI-TENANT] Verificando agendamentos. Hora: ${agoraSp} | Data: ${hojeSp}`);
+    const diaDoMesSp = Number(hojeSp.split('-')[2]);
+    const mesAtualSp = hojeSp.substring(0, 7);
+
+    console.log(`[DISPATCHER MULTI-TENANT] Verificando agendamentos. Hora: ${agoraSp} | Data: ${hojeSp} (Dia: ${diaDoMesSp})`);
 
     const host = request.headers.get('host') || 'sistemafinanceiropessoal.vercel.app';
     const protocol = host.includes('localhost') ? 'http' : 'https';
@@ -93,11 +96,16 @@ export async function GET(request: Request) {
       const metasAtivo = configData?.whatsappMetasAtivo !== false;
       const horarioMetas1 = configData?.whatsappHorarioMetas1 || '12:00';
       const horarioMetas2 = configData?.whatsappHorarioMetas2 || '18:00';
+
+      const fechamentoMensalAtivo = configData?.whatsappFechamentoMensalAtivo !== false;
+      const diaFechamentoMensal = Number(configData?.whatsappDiaFechamentoMensal) || 1;
+      const horarioFechamentoMensal = configData?.whatsappHorarioFechamentoMensal || '09:00';
       
       const ultimoEnvioLembretes = configData?.ultimoEnvioLembretes;
       const ultimoEnvioFechamento = configData?.ultimoEnvioFechamento;
       const ultimoEnvioMetas1 = configData?.ultimoEnvioMetas1;
       const ultimoEnvioMetas2 = configData?.ultimoEnvioMetas2;
+      const ultimoEnvioFechamentoMensal = configData?.ultimoEnvioFechamentoMensal;
 
       licencasProcessadas.push({
         tenant: tenant.id,
@@ -110,10 +118,14 @@ export async function GET(request: Request) {
         horarioMetas1,
         horarioMetas2,
         metasAtivo,
+        fechamentoMensalAtivo,
+        diaFechamentoMensal,
+        horarioFechamentoMensal,
         ultimoEnvioLembretes,
         ultimoEnvioFechamento,
         ultimoEnvioMetas1,
-        ultimoEnvioMetas2
+        ultimoEnvioMetas2,
+        ultimoEnvioFechamentoMensal
       });
 
       // Pula se desativado ou sem número cadastrado
@@ -200,6 +212,26 @@ export async function GET(request: Request) {
         } catch (err: any) {
           console.error(`[DISPATCHER] Erro ao disparar metas 18h para ${tenant.id}:`, err);
           acoesDisparadas.push({ tipo: 'metas_18h', tenant: tenant.id, sucesso: false, erro: err.message });
+        }
+      }
+
+      // Disparo de Fechamento Mensal Executivo (PDF e Balanço Completo no WhatsApp)
+      if (fechamentoMensalAtivo && diaDoMesSp === diaFechamentoMensal && agoraSp === horarioFechamentoMensal && ultimoEnvioFechamentoMensal !== mesAtualSp) {
+        console.log(`[DISPATCHER] Disparando Fechamento Mensal Executivo para ${tenant.nome} (${numero})...`);
+        try {
+          const url = `${protocol}://${host}/api/cron/fechamento-mensal?tenantId=${tenant.id}&numero=${numero}&nome=${encodeURIComponent(tenant.nome)}`;
+          const res = await fetch(url);
+          const json = await res.json();
+          if (tenant.isMaster) {
+            await db.collection('configuracoes').doc('geral').set({ ultimoEnvioFechamentoMensal: mesAtualSp }, { merge: true });
+            await db.collection('config').doc('geral').set({ ultimoEnvioFechamentoMensal: mesAtualSp }, { merge: true });
+          } else {
+            await configRef.set({ ultimoEnvioFechamentoMensal: mesAtualSp }, { merge: true });
+          }
+          acoesDisparadas.push({ tipo: 'fechamento_mensal', tenant: tenant.id, numero, sucesso: true, retorno: json });
+        } catch (err: any) {
+          console.error(`[DISPATCHER] Erro ao disparar fechamento mensal para ${tenant.id}:`, err);
+          acoesDisparadas.push({ tipo: 'fechamento_mensal', tenant: tenant.id, sucesso: false, erro: err.message });
         }
       }
     }

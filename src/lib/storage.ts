@@ -1237,7 +1237,10 @@ export async function salvarConfiguracoes(c: ConfiguracaoApp, uid: string = 'app
         whatsappHorarioLembretes: c.whatsappHorarioLembretes,
         whatsappHorarioMetas1: c.whatsappHorarioMetas1,
         whatsappHorarioMetas2: c.whatsappHorarioMetas2,
-        whatsappMetasAtivo: c.whatsappMetasAtivo
+        whatsappMetasAtivo: c.whatsappMetasAtivo,
+        whatsappFechamentoMensalAtivo: c.whatsappFechamentoMensalAtivo,
+        whatsappDiaFechamentoMensal: c.whatsappDiaFechamentoMensal,
+        whatsappHorarioFechamentoMensal: c.whatsappHorarioFechamentoMensal
       }, { merge: true });
     } catch (e) {
       // ignore
