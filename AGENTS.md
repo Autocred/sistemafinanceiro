@@ -6,4 +6,4 @@ This version has breaking changes — APIs, conventions, and file structure may 
 Regra White Label SaaS: Todas as telas, incluindo Login e PWA, devem OBRIGATORIAMENTE exibir o 'nomeSistema', 'fotoPerfil' e cores da paleta prim�ria cadastrados nas configura��es individuais de cada licen�a (Tenant). NUNCA hardcode cores gen�ricas ou nomes padr�o do sistema quando for poss�vel ler as configura��es do Tenant.
 
 
-- **REGRA DE ATUALIZACOES SAAS**: Toda vez que voce fizer um deploy para a Vercel (npx vercel --prod), voce DEVE OBRIGATORIAMENTE criar uma entrada na colecao saas_releases documentando o que foi feito. Modifique e rode o arquivo seed.mjs no final do deploy.
+- **REGRA DE ATUALIZACOES SAAS BLINDADA**: Você é terminantemente PROIBIDO de usar `npx vercel --prod` diretamente. Para fazer um deploy, você DEVE OBRIGATORIAMENTE modificar o arquivo `seed.mjs` com as novidades e rodar o comando `npm run deploy` (que dispara o seed e a vercel juntos, travando o sistema se você esquecer).
