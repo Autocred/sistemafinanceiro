@@ -11,20 +11,18 @@ const db = getFirestore(app);
 
 async function run() {
   await addDoc(collection(db, 'saas_releases'), {
-    version: '1.6.0',
+    version: '1.6.1',
     date: new Date().toISOString(),
-    title: 'Módulo OCR IA (Leitura de Boletos/NF) e Cobrança com QR Code PIX Oficial',
-    description: 'Implementação de duas funcionalidades de ponta: Leitor inteligente com IA para importar boletos, notas fiscais e recibos, e sistema completo de cobrança via PIX com QR Code Banco Central, Copia e Cola, envio via WhatsApp e baixa bancária instantânea.',
+    title: 'Integração de OCR IA e Cobrança PIX na Versão 2.0 e Menu Lateral',
+    description: 'Habilitado o botão "Ler Boleto/NF com IA" e o modal de Cobrança PIX oficial também na interface V2 dos Lançamentos e no menu lateral global.',
     features: [
-      'Novo Leitor com IA & OCR: arraste ou envie PDFs/fotos de boletos, notas fiscais e recibos para preencher fornecedor, valor, vencimento, código de barras e categoria automaticamente com anexo do documento.',
-      'Cobrança PIX Oficial Banco Central (EMVCo/BR Code): geração instantânea de QR Code com valor exato e código Copia e Cola para qualquer receita.',
-      'Disparo de Cobrança no WhatsApp: envio da cobrança com link de pagamento, código PIX e mensagem profissional com 1 clique.',
-      'Baixa Instantânea no PIX: liquide a conta e credite o saldo na conta bancária padrão do sistema com apenas 1 clique.',
-      'Configuração Personalizada de PIX: nova aba "⚡ Chave PIX & Cobrança" nas Configurações com suporte a CPF, CNPJ, Telefone, E-mail e Chave Aleatória, com prévia do QR Code em tempo real.'
+      'Disponibilizado o botão "✨ Ler com IA (Boleto/NF/Recibo)" diretamente no cabeçalho de Lançamentos V2.',
+      'Disponibilizado o botão "✨ Ler Boleto/NF com IA" no menu lateral global do sistema, logo abaixo de Novo Lançamento.',
+      'Substituído o antigo alerta placeholder pelo gerador oficial de QR Code PIX com Copia e Cola e baixa instantânea na versão V2.'
     ],
-    type: 'minor'
+    type: 'patch'
   });
-  console.log('Release notes 1.6.0 added!');
+  console.log('Release notes 1.6.1 added!');
   process.exit(0);
 }
 

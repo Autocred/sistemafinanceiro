@@ -9,7 +9,7 @@ import { DashboardHeader } from '@/components/NewMobileBankApp';
 import {
   LayoutDashboard, ListOrdered, BarChart3, CreditCard,
   Settings, Server, Bot, PlusCircle, BookOpen, LogOut, ShieldCheck,
-  BrainCircuit, Calendar, RefreshCw, Zap, Users, TrendingUp, Target, ChevronDown, ChevronRight, Menu, Search, Download, AlertTriangle
+  BrainCircuit, Calendar, RefreshCw, Zap, Users, TrendingUp, Target, ChevronDown, ChevronRight, Menu, Search, Download, AlertTriangle, Sparkles
 } from 'lucide-react';
 import { setTenantId } from '@/lib/storage';
 import { MENU_PERMISSION_MAP } from '@/lib/permissions';
@@ -41,6 +41,7 @@ const ChatIA        = dynamic(() => import('@/components/ChatIA'), { ssr: false,
 const ChatIAV2      = dynamic(() => import('@/components/ChatIAV2'), { ssr: false, loading: () => <div style={{display:'flex',justifyContent:'center',alignItems:'center',height:'100vh',flexDirection:'column'}}><div className='spinner'></div><p style={{marginTop:16,color:'var(--text-muted)'}}>Carregando módulo...</p></div> });
 const Configuracoes = dynamic(() => import('@/components/Configuracoes'), { ssr: false, loading: () => <div style={{display:'flex',justifyContent:'center',alignItems:'center',height:'100vh',flexDirection:'column'}}><div className='spinner'></div><p style={{marginTop:16,color:'var(--text-muted)'}}>Carregando módulo...</p></div> });
 const AuditoriaTab  = dynamic(() => import('@/components/AuditoriaTab'), { ssr: false, loading: () => <div style={{display:'flex',justifyContent:'center',alignItems:'center',height:'100vh',flexDirection:'column'}}><div className='spinner'></div><p style={{marginTop:16,color:'var(--text-muted)'}}>Carregando módulo...</p></div> });
+const ModalImportarDocIA = dynamic(() => import('@/components/ModalImportarDocIA'), { ssr: false });
 const ModalLancamento = dynamic(() => import('@/components/ModalLancamento'), { ssr: false, loading: () => <div style={{display:'flex',justifyContent:'center',alignItems:'center',height:'100vh',flexDirection:'column'}}><div className='spinner'></div><p style={{marginTop:16,color:'var(--text-muted)'}}>Carregando módulo...</p></div> });
 const Login = dynamic(() => import('@/components/Login').then(m => ({ default: m.Login })), { ssr: false, loading: () => <div style={{display:'flex',justifyContent:'center',alignItems:'center',height:'100vh',flexDirection:'column'}}><div className='spinner'></div><p style={{marginTop:16,color:'var(--text-muted)'}}>Carregando módulo...</p></div> });
 const AdminPanel = dynamic(() => import('@/components/AdminPanel'), { ssr: false, loading: () => <div style={{display:'flex',justifyContent:'center',alignItems:'center',height:'100vh',flexDirection:'column'}}><div className='spinner'></div><p style={{marginTop:16,color:'var(--text-muted)'}}>Carregando módulo...</p></div> });
@@ -236,6 +237,7 @@ function CommandPalette({ isOpen, onClose, onSelect, tenantId }: { isOpen: boole
 export default function Home() {
   const [paginaAtual, setPaginaAtual] = useState<Pagina>('dashboard');
   const [modalAberto, setModalAberto] = useState(false);
+  const [modalImportarDocAberto, setModalImportarDocAberto] = useState(false);
 
   
   
@@ -1299,6 +1301,23 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
               <PlusCircle size={20} strokeWidth={2.5} />
               <span>Novo Lançamento</span>
             </button>
+            <button
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                padding: '10px 14px', borderRadius: '14px',
+                background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(168, 85, 247, 0.2))',
+                border: '1px solid rgba(168, 85, 247, 0.4)',
+                color: '#e9d5ff',
+                fontWeight: 700, fontSize: '13px', cursor: 'pointer',
+                marginBottom: '14px', transition: 'all 0.2s', width: '100%',
+                boxShadow: '0 4px 12px rgba(168, 85, 247, 0.2)'
+              }}
+              onClick={() => { setMobileMenuAberto(false); setModalImportarDocAberto(true); }}
+              title="Importar Boleto, Nota Fiscal ou Recibo com OCR e IA"
+            >
+              <Sparkles size={16} color="#c084fc" />
+              <span>Ler Boleto/NF com IA</span>
+            </button>
             <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6, overflowY: 'auto', paddingRight: 4 }}>
               {(() => {
                 const grupos = navItemsFiltrados.reduce((acc, item) => {
@@ -1455,6 +1474,13 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
           onClose={() => { setModalAberto(false); setTransacaoEditar(null); }}
           onSalvo={() => { setModalAberto(false); setTransacaoEditar(null); setRefreshKey(k => k + 1); }}
           transacaoEditar={transacaoEditar}
+        />
+      )}
+
+      {modalImportarDocAberto && (
+        <ModalImportarDocIA
+          onClose={() => setModalImportarDocAberto(false)}
+          onSuccess={() => { setModalImportarDocAberto(false); setRefreshKey(k => k + 1); }}
         />
       )}
 
