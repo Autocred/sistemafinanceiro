@@ -68,16 +68,64 @@ export default function ModalImportarDocIA({ onClose, onSuccess }: ModalImportar
     if (!file) return;
     setNomeArquivo(file.name);
     setLoading(true);
-    setProgressoMsg('Lendo arquivo...');
+    setProgressoMsg('Preparando arquivo...');
 
     try {
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const base64 = reader.result as string;
-        setArquivoBase64(base64);
+      const isImage = file.type.startsWith('image/');
+      let processedBase64 = '';
 
-        try {
-          const resultado = await extrairDadosDocumento(base64, (msg) => {
+      if (isImage) {
+        // Comprimir imagem grande para ganhar velocidade
+        const canvas = document.createElement('canvas');
+        const img = new Image();
+        const reader = new FileReader();
+        
+        await new Promise<void>((resolve, reject) => {
+          reader.onload = (e) => {
+            img.src = e.target?.result as string;
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+          img.onload = () => {
+            const MAX_WIDTH = 1500;
+            const MAX_HEIGHT = 1500;
+            let width = img.width;
+            let height = img.height;
+            
+            if (width > height) {
+              if (width > MAX_WIDTH) {
+                height *= MAX_WIDTH / width;
+                width = MAX_WIDTH;
+              }
+            } else {
+              if (height > MAX_HEIGHT) {
+                width *= MAX_HEIGHT / height;
+                height = MAX_HEIGHT;
+              }
+            }
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx?.drawImage(img, 0, 0, width, height);
+            processedBase64 = canvas.toDataURL('image/jpeg', 0.8);
+            resolve();
+          };
+          img.onerror = reject;
+        });
+      } else {
+        // PDF ou outros, apenas ler normalmente
+        const reader = new FileReader();
+        processedBase64 = await new Promise<string>((resolve, reject) => {
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      }
+
+      setArquivoBase64(processedBase64);
+
+      try {
+        const resultado = await extrairDadosDocumento(processedBase64, (msg) => {
             setProgressoMsg(msg);
           });
 
@@ -156,8 +204,6 @@ export default function ModalImportarDocIA({ onClose, onSuccess }: ModalImportar
           setLoading(false);
           setProgressoMsg('');
         }
-      };
-      reader.readAsDataURL(file);
     } catch (err: any) {
       alert('Erro ao carregar arquivo: ' + err.message);
       setLoading(false);
