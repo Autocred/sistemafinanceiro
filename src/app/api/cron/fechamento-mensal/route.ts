@@ -72,9 +72,11 @@ async function handleFechamentoMensal(request: Request) {
       configData = snapTenant.exists ? snapTenant.data() : {};
     }
 
-    const apiUrl = configData?.whatsappApiUrl;
-    const apiToken = configData?.whatsappApiToken;
-    const telefone = paramNumero || configData?.whatsappNumeros || configData?.whatsappNumeroMaster || configData?.telefoneWhatsApp;
+    const snapGlobal = await db.collection('configuracoes').doc('geral').get();
+    const globalConfig = snapGlobal.exists ? snapGlobal.data() : {};
+    const apiUrl = globalConfig?.whatsappApiUrl || configData?.whatsappApiUrl;
+    const apiToken = globalConfig?.whatsappApiToken || configData?.whatsappApiToken;
+    const telefone = paramNumero || configData?.whatsappNumeros || configData?.whatsappNumeroMaster || configData?.telefoneWhatsApp || globalConfig?.whatsappNumeros || globalConfig?.whatsappNumeroMaster;
     const nomeSistema = paramNome || configData?.nomeSistema || (isMaster ? 'Clovis Master' : 'AUTOCRED Promotora de Crédito');
     const corPrimaria = configData?.corPrimaria || '#0f172a';
 

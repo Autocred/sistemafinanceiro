@@ -11,22 +11,19 @@ const db = getFirestore(app);
 
 async function run() {
   await addDoc(collection(db, 'saas_releases'), {
-    version: '1.5.0',
+    version: '1.5.1',
     date: new Date().toISOString(),
-    title: 'Fechamento Mensal Executivo com PDF no WhatsApp (Piloto Automático todo dia 1º)',
-    description: 'Novo módulo automatizado que consolida o mês recém-encerrado, gera um Relatório Executivo em PDF profissional A4 e envia no WhatsApp com métricas detalhadas.',
+    title: 'Aba dedicada WhatsApp & Disparos e Resolução Automática de JID de Celulares',
+    description: 'Criada aba dedicada no menu Configurações para facilitar o acesso aos disparos e implementado resolvedor inteligente de JID no WhatsApp para números brasileiros.',
     features: [
-      'Geração de PDF Executivo A4 personalizado com a marca White Label e paleta de cores do Tenant.',
-      'KPI Scorecards: Receitas do mês, Despesas pagas, Resultado Líquido (Superávit/Déficit) e Margem Líquida %.',
-      'Evolução comparativa sintética contra o mês anterior (+/- % e valores absolutos).',
-      'Desempenho de metas mensais e ranking das Top 5 maiores categorias de custos.',
-      'Parecer gerencial e diagnóstico automatizado sobre a saúde financeira do período.',
-      'Posição consolidada de caixa e saldos bancários no fechamento.',
-      'Disparo automático no 1º dia útil do mês via cron dispatcher ou teste manual imediato nas Configurações e no Painel Master.'
+      'Nova aba "📱 WhatsApp & Disparos" no topo das Configurações, imediatamente visível e acessível.',
+      'Contêiner de configurações e botões de teste sempre visíveis mesmo antes da ativação do robô.',
+      'Resolvedor automático de JID da Evolution API para garantir a entrega em números brasileiros com ou sem 9º dígito (DDD 49 e outros).',
+      'Validação de status real de entrega da API do WhatsApp.'
     ],
-    type: 'major'
+    type: 'patch'
   });
-  console.log('Release notes 1.5.0 added!');
+  console.log('Release notes 1.5.1 added!');
   process.exit(0);
 }
 
