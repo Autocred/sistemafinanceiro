@@ -192,15 +192,16 @@ export class AIProviderService {
     });
 
     const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: 'gpt-4o',
       messages,
       temperature: options?.temperature ?? 0.1,
+      response_format: { type: 'json_object' },
     });
 
     return {
       text: response.choices[0].message.content || '',
       providerUsed: 'openai',
-      modelUsed: 'gpt-4o-mini',
+      modelUsed: 'gpt-4o',
       usage: {
         promptTokens: response.usage?.prompt_tokens || 0,
         completionTokens: response.usage?.completion_tokens || 0,
