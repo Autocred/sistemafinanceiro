@@ -126,7 +126,6 @@ export async function enviarDocumentoWhatsApp(
       console.log(`[WHATSAPP DOC] Disparando documento ${nomeArquivo} para: ${numStr}`);
 
       const cleanBase64 = base64Pdf.includes('base64,') ? base64Pdf.split('base64,')[1] : base64Pdf;
-      const mediaUri = `data:application/pdf;base64,${cleanBase64}`;
 
       const endpoint = `${WHATSAPP_API_URL}/message/sendMedia/${INSTANCE_NAME}`;
       const response = await fetch(endpoint, {
@@ -134,13 +133,11 @@ export async function enviarDocumentoWhatsApp(
         headers: { 'Content-Type': 'application/json', apikey: WHATSAPP_API_TOKEN },
         body: JSON.stringify({
           number: numStr,
-          mediaMessage: {
-            mediatype: 'document',
-            fileName: nomeArquivo,
-            caption: legenda || '',
-            media: mediaUri
-          },
-          options: { delay: 1000, presence: 'composing' }
+          mediatype: 'document',
+          mimetype: 'application/pdf',
+          caption: legenda || '',
+          media: cleanBase64,
+          fileName: nomeArquivo
         }),
         signal: AbortSignal.timeout(30000)
       });
