@@ -11,23 +11,21 @@ const db = getFirestore(app);
 
 async function run() {
   await addDoc(collection(db, 'saas_releases'), {
-    versao: 'v3.6.18',
-    titulo: 'Novo Motor IA Inteligente & Correções Visuais',
-    descricao: 'Atualização crítica no sistema de extração de notas (OCR + Inteligência Artificial) e melhorias na listagem de transações.',
+    versao: 'v3.6.19',
+    titulo: 'Otimização Extrema de Velocidade e Precisão OCR (IA)',
+    descricao: 'Atualização no motor de inteligência artificial da OpenAI e implementação de compressão de imagens.',
     dataLancamento: new Date().toISOString(),
     status: 'publicado',
     destaque: true,
     notificarTenants: false,
     alvos: 'todos',
     changes: [
-      { tipo: 'novo', texto: 'Suporte a chaves de API mais recentes do Google Gemini (Geração 2.0 e superiores).' },
-      { tipo: 'novo', texto: 'Lançamentos via nota já pré-preenchem a data de competência e o status Pago/Recebido.' },
-      { tipo: 'melhoria', texto: 'Aumento na velocidade de extração do OCR e redução de travamentos.' },
-      { tipo: 'correcao', texto: 'Resolução de timeout (carregamento infinito) quando a chave da Inteligência Artificial expira ou é bloqueada.' },
-      { tipo: 'correcao', texto: 'Ajuste visual na pílula do fornecedor na listagem de lançamentos (estava sendo cortada para nomes muito grandes).' }
+      { tipo: 'novo', texto: 'Upgrade do modelo de leitura de notas da OpenAI para o ChatGPT-4o (versão mais avançada).' },
+      { tipo: 'melhoria', texto: 'Implementação de compressão automática local de imagens antes do envio para a nuvem. Reduz o tempo de leitura de 20s para cerca de 3s.' },
+      { tipo: 'correcao', texto: 'Correção de imprecisões na extração de datas e nomes de fornecedores em cupons fiscais complexos.' }
     ]
   });
-  console.log('Release notes v3.6.18 added!');
+  console.log('Release notes v3.6.19 added!');
   process.exit(0);
 }
 
