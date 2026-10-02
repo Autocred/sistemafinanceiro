@@ -1,20 +1,20 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase-admin';
-import { enviarMensagemWhatsApp } from '@/lib/whatsapp';
+import { enviarMensagemWhatsApp, enviarDocumentoWhatsApp } from '@/lib/whatsapp';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { numero, mensagem, tenantId } = body;
+    const { numero, mensagem, pdfBase64, nomeArquivo, tenantId } = body;
 
     if (!numero) {
       return NextResponse.json({ error: 'Número de WhatsApp do cliente não informado.' }, { status: 400 });
     }
 
-    if (!mensagem) {
-      return NextResponse.json({ error: 'Mensagem de cobrança não informada.' }, { status: 400 });
+    if (!mensagem && !pdfBase64) {
+      return NextResponse.json({ error: 'Nenhum conteúdo (mensagem ou PDF) informado para cobrança.' }, { status: 400 });
     }
 
     // Obter configurações da API do WhatsApp
@@ -47,12 +47,42 @@ export async function POST(request: Request) {
     }
 
     console.log(`[API COBRANCA PIX] Enviando cobrança interna via Evolution API para ${numero}...`);
-    const resultado = await enviarMensagemWhatsApp(numero, mensagem, apiUrl, apiToken);
 
-    if (resultado.sucesso) {
-      return NextResponse.json({ success: true, retorno: resultado.retorno });
+    let docResult: any = null;
+    let msgResult: any = null;
+
+    // 1. Enviar PDF da fatura com QR Code se fornecido
+    if (pdfBase64) {
+      console.log(`[API COBRANCA PIX] Enviando fatura PDF (${nomeArquivo || 'Fatura_PIX.pdf'})...`);
+      docResult = await enviarDocumentoWhatsApp(
+        numero,
+        pdfBase64,
+        nomeArquivo || 'Fatura_PIX.pdf',
+        '📄 Segue em anexo a sua Fatura / Cobrança PIX detalhada com QR Code.',
+        apiUrl,
+        apiToken
+      );
+    }
+
+    // 2. Enviar texto complementar com código Copia e Cola
+    if (mensagem) {
+      console.log(`[API COBRANCA PIX] Enviando texto com Copia e Cola...`);
+      msgResult = await enviarMensagemWhatsApp(numero, mensagem, apiUrl, apiToken);
+    }
+
+    // Se algum dos envios teve sucesso
+    const sucesso = (docResult && docResult.sucesso) || (msgResult && msgResult.sucesso);
+
+    if (sucesso) {
+      return NextResponse.json({
+        success: true,
+        docEnviado: docResult?.sucesso || false,
+        msgEnviada: msgResult?.sucesso || false,
+        retorno: docResult?.retorno || msgResult?.retorno
+      });
     } else {
-      return NextResponse.json({ success: false, error: resultado.erro || 'Falha ao entregar mensagem no WhatsApp' }, { status: 400 });
+      const erro = docResult?.erro || msgResult?.erro || 'Falha ao entregar mensagem no WhatsApp';
+      return NextResponse.json({ success: false, error: erro }, { status: 400 });
     }
   } catch (error: any) {
     console.error('[API COBRANCA PIX] Erro:', error);

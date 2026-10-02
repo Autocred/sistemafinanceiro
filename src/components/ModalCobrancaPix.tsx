@@ -4,8 +4,9 @@ import React, { useState, useEffect } from 'react';
 import { Transacao, ConfiguracaoApp } from '@/lib/types';
 import { getConfiguracoes, salvarConfiguracoes, atualizarTransacao, getContas, getClientes, getTenantId } from '@/lib/storage';
 import { gerarPixCopiaECola, gerarUrlQrCodePix, montarMensagemCobrancaPix, normalizarChavePix } from '@/lib/pix';
+import { gerarFaturaPixPDF } from '@/lib/pix-pdf';
 import { playSound } from '@/lib/audio';
-import { X, QrCode, Copy, Check, MessageSquare, ArrowDownCircle, AlertCircle, Settings, CheckCircle2, ShieldCheck, Loader2, Send } from 'lucide-react';
+import { X, QrCode, Copy, Check, MessageSquare, ArrowDownCircle, AlertCircle, Settings, CheckCircle2, ShieldCheck, Loader2, Send, FileText, Download } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface ModalCobrancaPixProps {
@@ -26,6 +27,7 @@ export default function ModalCobrancaPix({ transacao, onClose, onBaixaSucesso }:
   const [salvandoConfig, setSalvandoConfig] = useState(false);
   const [copiado, setCopiado] = useState(false);
   const [enviandoWhatsapp, setEnviandoWhatsapp] = useState(false);
+  const [gerandoPdf, setGerandoPdf] = useState(false);
   const [processandoBaixa, setProcessandoBaixa] = useState(false);
   const [baixaConcluida, setBaixaConcluida] = useState(false);
   const [whatsappEnviado, setWhatsappEnviado] = useState(false);
@@ -103,6 +105,32 @@ export default function ModalCobrancaPix({ transacao, onClose, onBaixaSucesso }:
     }
   };
 
+  const handleBaixarFaturaPdf = async () => {
+    if (!copiaECola) return;
+    setGerandoPdf(true);
+    try {
+      const res = await gerarFaturaPixPDF({
+        transacao,
+        copiaECola,
+        nomeSistema: cfg?.nomeSistema || 'Sistema Financeiro',
+        corPrimaria: cfg?.corPrimaria || '#1e3a8a',
+        fotoPerfil: cfg?.fotoPerfil,
+        nomeTitular,
+        chavePix,
+        tipoChave,
+        cidadeTitular,
+        clienteNome: transacao.clienteNome,
+        clienteTelefone: telefoneCliente
+      });
+      res.download();
+      playSound('sucesso');
+    } catch (err: any) {
+      alert('Erro ao gerar PDF da fatura: ' + err.message);
+    } finally {
+      setGerandoPdf(false);
+    }
+  };
+
   const handleEnviarWhatsApp = async () => {
     if (!copiaECola) return;
     const numLimpo = telefoneCliente.replace(/\D/g, '');
@@ -113,6 +141,31 @@ export default function ModalCobrancaPix({ transacao, onClose, onBaixaSucesso }:
 
     setEnviandoWhatsapp(true);
     try {
+      // 1. Gerar Fatura PDF oficial com visual de Boleto e QR Code integrado
+      let pdfBase64: string | undefined;
+      let nomeArquivo: string | undefined;
+
+      try {
+        const pdfRes = await gerarFaturaPixPDF({
+          transacao,
+          copiaECola,
+          nomeSistema: cfg?.nomeSistema || 'Sistema Financeiro',
+          corPrimaria: cfg?.corPrimaria || '#1e3a8a',
+          fotoPerfil: cfg?.fotoPerfil,
+          nomeTitular,
+          chavePix,
+          tipoChave,
+          cidadeTitular,
+          clienteNome: transacao.clienteNome,
+          clienteTelefone: telefoneCliente
+        });
+        pdfBase64 = pdfRes.base64;
+        nomeArquivo = pdfRes.nomeArquivo;
+      } catch (pdfErr) {
+        console.error('Erro ao gerar PDF para WhatsApp:', pdfErr);
+      }
+
+      // 2. Mensagem de texto com dados resumidos e Copia e Cola
       const msg = montarMensagemCobrancaPix({
         clienteNome: transacao.clienteNome || 'Cliente',
         descricao: transacao.descricao,
@@ -129,6 +182,8 @@ export default function ModalCobrancaPix({ transacao, onClose, onBaixaSucesso }:
         body: JSON.stringify({
           numero: numLimpo,
           mensagem: msg,
+          pdfBase64,
+          nomeArquivo,
           tenantId
         })
       });
@@ -137,7 +192,7 @@ export default function ModalCobrancaPix({ transacao, onClose, onBaixaSucesso }:
       if (res.ok && data.success) {
         playSound('sucesso');
         setWhatsappEnviado(true);
-        alert('✅ Cobrança com código PIX enviada diretamente para o WhatsApp do cliente!');
+        alert('✅ Fatura PIX em PDF (com QR Code) e código Copia e Cola enviados diretamente para o WhatsApp do cliente!');
       } else {
         alert('Aviso da API: ' + (data.error || 'Não foi possível entregar a mensagem. Verifique se o robô do WhatsApp está conectado em Configurações.'));
       }
@@ -343,12 +398,52 @@ export default function ModalCobrancaPix({ transacao, onClose, onBaixaSucesso }:
                 </div>
               )}
 
+              {/* Botão Baixar / Imprimir Fatura Boleto em PDF */}
+              {copiaECola && (
+                <div style={{ marginBottom: 16 }}>
+                  <button
+                    type="button"
+                    onClick={handleBaixarFaturaPdf}
+                    disabled={gerandoPdf}
+                    style={{
+                      width: '100%',
+                      background: 'rgba(59, 130, 246, 0.1)',
+                      color: '#3b82f6',
+                      border: '1px solid rgba(59, 130, 246, 0.3)',
+                      borderRadius: 10,
+                      padding: '11px 16px',
+                      fontSize: 13,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8,
+                      boxShadow: '0 2px 6px rgba(59, 130, 246, 0.1)',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    {gerandoPdf ? (
+                      <>
+                        <Loader2 size={16} className="spin" />
+                        <span>Gerando Fatura / Boleto em PDF...</span>
+                      </>
+                    ) : (
+                      <>
+                        <FileText size={17} />
+                        <span>📄 Baixar / Visualizar Fatura Boleto (PDF com QR Code)</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
+
               {/* Ações de Cobrança e Baixa */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
                 {/* Cobrança WhatsApp via API */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>
-                    Enviar Cobrança no WhatsApp do Cliente (direto via Robô/API):
+                    Enviar Fatura em PDF (com QR Code) + PIX no WhatsApp do Cliente:
                   </label>
                   <div style={{ display: 'flex', gap: 8 }}>
                     <input
@@ -377,17 +472,17 @@ export default function ModalCobrancaPix({ transacao, onClose, onBaixaSucesso }:
                       {enviandoWhatsapp ? (
                         <>
                           <Loader2 size={16} className="spin" />
-                          <span>Enviando...</span>
+                          <span>Gerando e Enviando...</span>
                         </>
                       ) : whatsappEnviado ? (
                         <>
                           <CheckCircle2 size={16} />
-                          <span>Enviado!</span>
+                          <span>Fatura Enviada!</span>
                         </>
                       ) : (
                         <>
                           <Send size={15} />
-                          <span>Disparar no WhatsApp</span>
+                          <span>Disparar Fatura PDF + PIX</span>
                         </>
                       )}
                     </button>
