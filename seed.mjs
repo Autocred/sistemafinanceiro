@@ -11,19 +11,19 @@ const db = getFirestore(app);
 
 async function run() {
   await addDoc(collection(db, 'saas_releases'), {
-    version: '1.6.5',
+    version: '1.6.6',
     date: new Date().toISOString(),
-    title: 'Melhorias de IA, UI e Estabilidade de API',
-    description: 'Atualização crítica para resolver incompatibilidades de Payload no WhatsApp (Evolution v1 e v2) e aprimorar a tela de Leitura de Documentos por IA.',
+    title: 'Aprimoramento do Aprendizado de IA na Importação',
+    description: 'Melhorias profundas no sistema de OCR e aprendizado de notas e recibos para automatizar 100% o seu fluxo de entrada de dados.',
     features: [
-      'Envio de PDFs no WhatsApp ajustado para suportar simultaneamente a arquitetura v1 e v2 da Evolution API, garantindo a entrega do boleto anexo em qualquer versão do robô.',
-      'Alerta explícito no painel caso o robô falhe ao anexar o PDF.',
-      'Tela "Lançamento com IA & OCR" agora exibe os campos de Centro de Custo, Cliente, Fornecedor e Data de Emissão.',
-      'Aprendizado de Máquina (Auto-Complete) inserido na Tela de IA: A plataforma auto-preenche Conta, Centro de Custo, Fornecedor/Cliente e Categoria baseado no seu histórico local quando a IA extrai o CNPJ/Fornecedor do boleto.'
+      'Inclusão do botão "🧠 Aprender" na tela de IA: agora você pode forçar a inteligência a gravar a nota atual como padrão para o fornecedor.',
+      'Inclusão do campo Comportamento (Despesa Fixa / Variável) na tela de IA, gravando e aprendendo automaticamente a sua escolha.',
+      'Algoritmo de reconhecimento textual aprimorado: agora a IA ignora acentos e maiúsculas/minúsculas para encontrar o Fornecedor com muito mais precisão no banco de dados local.',
+      'Lançamentos importados por documentos que já vêm como Recibos/Notas pagas agora entram no sistema com o status "Pago / Recebido" por padrão, já vinculando a data de pagamento à data de competência.'
     ],
-    type: 'patch'
+    type: 'feature'
   });
-  console.log('Release notes 1.6.5 added!');
+  console.log('Release notes 1.6.6 added!');
   process.exit(0);
 }
 
