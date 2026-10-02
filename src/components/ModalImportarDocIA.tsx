@@ -42,7 +42,8 @@ export default function ModalImportarDocIA({ onClose, onSuccess }: ModalImportar
   const [centroCustoId, setCentroCustoId] = useState('');
   const [clienteId, setClienteId] = useState('');
   const [fornecedorId, setFornecedorId] = useState('');
-  const [status, setStatus] = useState<'pendente' | 'pago'>('pendente');
+  const [status, setStatus] = useState<'pendente' | 'pago'>('pago');
+  const [comportamento, setComportamento] = useState<'fixa' | 'variavel'>('variavel');
   const [observacoes, setObservacoes] = useState('');
 
   const [salvando, setSalvando] = useState(false);
@@ -116,10 +117,14 @@ export default function ModalImportarDocIA({ onClose, onSuccess }: ModalImportar
           if (descVal.trim().length > 2) {
             try {
               const dict = JSON.parse(localStorage.getItem('ai_learning_dictionary') || '{}');
-              const lowerVal = descVal.toLowerCase().trim();
-              let learned = dict[lowerVal];
+              const normalizeStr = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+              const lowerVal = normalizeStr(descVal);
+              
+              let learned = dict[descVal.toLowerCase().trim()]; // exata original
+              if (!learned) learned = dict[lowerVal]; // exata sem acento
+              
               if (!learned) {
-                const matchKey = Object.keys(dict).find(k => lowerVal.includes(k));
+                const matchKey = Object.keys(dict).find(k => k.length > 3 && lowerVal.includes(normalizeStr(k)));
                 if (matchKey) learned = dict[matchKey];
               }
               if (learned) {
@@ -132,6 +137,7 @@ export default function ModalImportarDocIA({ onClose, onSuccess }: ModalImportar
                 if (learned.contaId) setContaId(learned.contaId);
                 if (learned.fornecedorId) setFornecedorId(learned.fornecedorId);
                 if (learned.clienteId) setClienteId(learned.clienteId);
+                if (learned.comportamento) setComportamento(learned.comportamento);
               }
             } catch (e) { }
           }
@@ -158,6 +164,27 @@ export default function ModalImportarDocIA({ onClose, onSuccess }: ModalImportar
     }
   };
 
+  const aprenderDescricao = () => {
+    if (!descricao.trim()) {
+      alert('Preencha a descrição primeiro.');
+      return;
+    }
+    try {
+      const dict = JSON.parse(localStorage.getItem('ai_learning_dictionary') || '{}');
+      dict[descricao.toLowerCase().trim()] = {
+        categoriaId,
+        centroCustoId,
+        fornecedorId,
+        clienteId,
+        contaId,
+        comportamento,
+        formaPagamento: 'Boleto'
+      };
+      localStorage.setItem('ai_learning_dictionary', JSON.stringify(dict));
+      alert('🧠 O sistema aprendeu! No próximo lançamento, basta importar o documento que o preenchimento da categoria, conta e fornecedor será automático.');
+    } catch (e) {}
+  };
+
   const handleSalvar = async () => {
     if (!descricao.trim()) {
       alert('Preencha a descrição do lançamento.');
@@ -178,6 +205,7 @@ export default function ModalImportarDocIA({ onClose, onSuccess }: ModalImportar
         dataVencimento,
         dataCompetencia,
         status,
+        dataPagamento: status === 'pago' ? dataCompetencia : undefined,
         categoriaId,
         categoriaNome,
         categoriaIcone: 'FileText',
@@ -190,6 +218,7 @@ export default function ModalImportarDocIA({ onClose, onSuccess }: ModalImportar
         fornecedorNome: tipo === 'despesa' && fornecedorId ? fornecedores.find(x => x.id === fornecedorId)?.nome : fornecedorNome,
         clienteNome: tipo === 'receita' && clienteId ? clientes.find(x => x.id === clienteId)?.nome : fornecedorNome,
         centroCustoId: centroCustoId || undefined,
+        comportamento,
         observacoes,
         comprovanteBase64: arquivoBase64 || undefined
       });
@@ -313,13 +342,18 @@ export default function ModalImportarDocIA({ onClose, onSuccess }: ModalImportar
                 <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: 4 }}>
                   Descrição / Fornecedor
                 </label>
-                <input
-                  type="text"
-                  className="input-field"
-                  value={descricao}
-                  onChange={e => setDescricao(e.target.value)}
-                  style={{ width: '100%', padding: '9px 12px', borderRadius: 8 }}
-                />
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    type="text"
+                    className="input-field"
+                    value={descricao}
+                    onChange={e => setDescricao(e.target.value)}
+                    style={{ flex: 1, padding: '9px 12px', borderRadius: 8 }}
+                  />
+                  <button type="button" onClick={aprenderDescricao} title="Fazer a IA aprender esta descrição" style={{ padding: '0 12px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 600, color: 'var(--text-title)' }}>
+                    🧠 Aprender
+                  </button>
+                </div>
               </div>
 
               {/* Valor e Vencimento */}
@@ -392,8 +426,8 @@ export default function ModalImportarDocIA({ onClose, onSuccess }: ModalImportar
                 </div>
               </div>
 
-              {/* Conta Bancária e Status */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              {/* Conta Bancária, Status e Comportamento */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
                 <div>
                   <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: 4 }}>
                     Conta Bancária
@@ -425,8 +459,22 @@ export default function ModalImportarDocIA({ onClose, onSuccess }: ModalImportar
                     onChange={e => setStatus(e.target.value as 'pago' | 'pendente')}
                     style={{ width: '100%', padding: '9px 12px', borderRadius: 8 }}
                   >
-                    <option value="pendente">Pendente (Não Pago)</option>
                     <option value="pago">Pago / Recebido</option>
+                    <option value="pendente">Pendente (Não Pago)</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: 4 }}>
+                    Tipo (Desp/Rec)
+                  </label>
+                  <select
+                    className="input-field"
+                    value={comportamento}
+                    onChange={e => setComportamento(e.target.value as 'fixa' | 'variavel')}
+                    style={{ width: '100%', padding: '9px 12px', borderRadius: 8 }}
+                  >
+                    <option value="fixa">Fixa</option>
+                    <option value="variavel">Variável</option>
                   </select>
                 </div>
               </div>
