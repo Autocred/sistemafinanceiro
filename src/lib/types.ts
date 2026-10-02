@@ -317,6 +317,12 @@ export interface ConfiguracaoApp {
   whatsappDiaFechamentoMensal?: number;
   whatsappHorarioFechamentoMensal?: string;
   ultimoEnvioFechamentoMensal?: string;
+  // Configurações de Cobrança PIX
+  pixChave?: string;
+  pixTipoChave?: 'cpf' | 'cnpj' | 'email' | 'telefone' | 'aleatoria';
+  pixNomeTitular?: string;
+  pixCidadeTitular?: string;
+  pixContaPadraoId?: string;
   webPushSubscription?: string;
   pushDias?: string[];
   pushHorario?: string; // ex: '09:00'

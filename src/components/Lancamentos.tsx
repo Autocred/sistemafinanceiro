@@ -8,8 +8,10 @@ import { FORMAS_PAGAMENTO_LABELS, STATUS_LABELS } from '@/lib/defaults';
 import { DynamicIcon } from '@/components/DynamicIcon';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subMonths, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { PlusCircle, Search, Filter, ChevronLeft, ChevronRight, Trash2, Edit3, Download, RefreshCw, ArrowUpCircle, ArrowDownCircle, CheckSquare, Square, XCircle, AlertTriangle, DollarSign, ChevronDown, ChevronUp, Clock, Zap, Calendar as CalendarIcon, List, Repeat, Paperclip, CheckCircle2, Mic } from 'lucide-react';
+import { PlusCircle, Search, Filter, ChevronLeft, ChevronRight, Trash2, Edit3, Download, RefreshCw, ArrowUpCircle, ArrowDownCircle, CheckSquare, Square, XCircle, AlertTriangle, DollarSign, ChevronDown, ChevronUp, Clock, Zap, Calendar as CalendarIcon, List, Repeat, Paperclip, CheckCircle2, Mic, Sparkles } from 'lucide-react';
 import { ordenarMovimentacoesDesc, ordenarVencimentosAsc } from '@/lib/sorting';
+import ModalCobrancaPix from '@/components/ModalCobrancaPix';
+import ModalImportarDocIA from '@/components/ModalImportarDocIA';
 
 interface LancamentosProps { onNovoLancamento: () => void; onEditarLancamento?: (t: Transacao) => void; onDuplicarLancamento?: (t: any) => void; filtroRapido?: string; }
 
@@ -50,6 +52,8 @@ const openSafeAttachment = (url: string) => {
   const [busca, setBusca] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [vozStatus, setVozStatus] = useState('');
+  const [transacaoCobrarPix, setTransacaoCobrarPix] = useState<Transacao | null>(null);
+  const [modalImportarDocAberto, setModalImportarDocAberto] = useState(false);
 
   const iniciarReconhecimentoVoz = async () => {
     if (isListening) return;
@@ -597,7 +601,28 @@ const openSafeAttachment = (url: string) => {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <h1 style={{ fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>Lancamentos</h1>
-        <div style={{ display: 'flex', gap: 6 }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <button
+            onClick={() => setModalImportarDocAberto(true)}
+            style={{
+              background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+              color: 'white',
+              border: 'none',
+              borderRadius: 10,
+              padding: '7px 14px',
+              fontSize: 12,
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(139, 92, 246, 0.35)',
+              transition: 'all 0.2s'
+            }}
+            title="Importar Boleto, Nota Fiscal ou Recibo com OCR e IA"
+          >
+            <Sparkles size={14} /> Ler com IA (Boleto/NF/Recibo)
+          </button>
           <button className="btn-secondary" style={{ borderColor: '#ef4444', color: '#ef4444', fontWeight: 600, fontSize: 11 }} onClick={async () => {
              if (confirm('Deseja corrigir a sincronização? Isso forçará o download dos dados reais do servidor. Use isso se os valores estiverem diferentes do Dashboard.')) {
                 try {
@@ -1101,9 +1126,9 @@ const openSafeAttachment = (url: string) => {
                            </button>
                          )}
                          {isReceita && t.status !== 'pago' && (
-                           <button onClick={() => alert('Emissão de QRCode PIX disponível apenas com VAPID configurado na Vercel.')} style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: 10, padding: '4px 8px', fontSize: 11, fontWeight: 600, transition: 'all 0.15s' }}>
-                             <Zap size={13} /> Cobrar
-                           </button>
+                           <button onClick={(e) => { e.stopPropagation(); setTransacaoCobrarPix(t); }} style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.3)', color: '#10b981', borderRadius: 10, padding: '4px 8px', fontSize: 11, fontWeight: 700, transition: 'all 0.15s', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }} title="Gerar QR Code PIX e Cobrar via WhatsApp">
+                            <Zap size={13} /> Cobrar PIX
+                          </button>
                          )}
                          
                            {t.comprovanteBase64 && !t.anexos && (
@@ -1169,6 +1194,23 @@ const openSafeAttachment = (url: string) => {
             </div>
           </div>
         </div>
+      )}
+
+      {modalImportarDocAberto && (
+        <ModalImportarDocIA
+          onClose={() => setModalImportarDocAberto(false)}
+          onSuccess={() => setModalImportarDocAberto(false)}
+        />
+      )}
+
+      {transacaoCobrarPix && (
+        <ModalCobrancaPix
+          transacao={transacaoCobrarPix}
+          onClose={() => setTransacaoCobrarPix(null)}
+          onBaixaSucesso={(id) => {
+            setTransacaoCobrarPix(null);
+          }}
+        />
       )}
     </div>
   );

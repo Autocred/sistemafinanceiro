@@ -1,15 +1,16 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { getConfiguracoes, salvarConfiguracoes, getTenantId } from '@/lib/storage';
+import { getConfiguracoes, salvarConfiguracoes, getTenantId, getContas } from '@/lib/storage';
 import { getFirebaseAuth } from '@/lib/auth';
-import { ConfiguracaoApp } from '@/lib/types';
+import { ConfiguracaoApp, Conta } from '@/lib/types';
 import { getUserProfile, AppUser } from '@/lib/auth';
-import { Settings, User, Building, Palette, Shield, Database, Save, Activity, Upload, Download, RotateCcw, AlertTriangle, Fingerprint, Check, Eye, EyeOff, Key, Bell, MessageCircle, LogOut, Zap, Trash2, Info, History, Undo2 } from 'lucide-react';
+import { Settings, User, Building, Palette, Shield, Database, Save, Activity, Upload, Download, RotateCcw, AlertTriangle, Fingerprint, Check, Eye, EyeOff, Key, Bell, MessageCircle, LogOut, Zap, Trash2, Info, History, Undo2, QrCode, Sparkles, CheckCircle2 } from 'lucide-react';
 import { getDb } from '@/lib/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { updatePassword } from 'firebase/auth';
 import { registrarBiometriaLocal, desabilitarBiometria, isBiometriaHabilitada } from '@/lib/biometria';
+import { gerarPixCopiaECola, gerarUrlQrCodePix } from '@/lib/pix';
 
 import { playSound, isAudioEnabled, getAudioVolume, setAudioConfig } from '@/lib/audio';
 import { fazerBackup, restaurarBackup, desfazerRestauracao, listarBackups, listarLogsBackup, restaurarBackupDeJSON } from '@/lib/backup';
@@ -77,7 +78,8 @@ export default function Configuracoes() {
     backupAutomatico: true,
     tema: 'dark' as 'dark',
   });
-  const [abaAtiva, setAbaAtiva] = useState<'perfil' | 'whatsapp' | 'aparencia' | 'sons' | 'ia' | 'seguranca'>('perfil');
+  const [abaAtiva, setAbaAtiva] = useState<'perfil' | 'pix' | 'whatsapp' | 'aparencia' | 'sons' | 'ia' | 'seguranca'>('perfil');
+  const [contas, setContas] = useState<Conta[]>([]);
   const [mostrarKey, setMostrarKey] = useState(false);
   const [salvo, setSalvo] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -135,7 +137,6 @@ export default function Configuracoes() {
       setAudioAtivo(isAudioEnabled());
       setAudioVolume(getAudioVolume());
       
-      // Load backups
       try {
         const bs = await listarBackups();
         const ls = await listarLogsBackup();
@@ -144,6 +145,10 @@ export default function Configuracoes() {
       } catch (e: any) {
         console.error('Erro ao carregar backups:', e);
       }
+      try {
+        const cs = await getContas();
+        setContas(cs);
+      } catch (e) {}
       setVersaoUi(localStorage.getItem('versao_ui') || 'v2');
       setLoading(false);
     })();
@@ -366,6 +371,7 @@ export default function Configuracoes() {
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', paddingBottom: 12, marginBottom: 20, borderBottom: '1px solid var(--border)', scrollbarWidth: 'none' }}>
           {[
             { id: 'perfil', label: 'Perfil & Conta', icon: <User size={16} /> },
+            { id: 'pix', label: '⚡ Chave PIX & Cobrança', icon: <QrCode size={16} color="#06b6d4" /> },
             { id: 'whatsapp', label: '📱 WhatsApp & Disparos', icon: <MessageCircle size={16} color="#10b981" /> },
             { id: 'aparencia', label: 'Aparência & Design', icon: <Palette size={16} /> },
             { id: 'sons', label: 'Notificações & Sons', icon: <Bell size={16} /> },
@@ -580,6 +586,184 @@ export default function Configuracoes() {
 
         </div>
         </SecaoConfig>
+        )}
+
+        {/* PIX e Cobranças */}
+        {abaAtiva === 'pix' && (
+          <SecaoConfig titulo="CONFIGURAÇÃO DE RECEBIMENTO & COBRANÇA PIX" icone={<QrCode size={18} color="#06b6d4" />}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+              {/* Card Informativo com Badge Banco Central */}
+              <div style={{ background: 'linear-gradient(135deg, rgba(6,182,212,0.1) 0%, rgba(59,130,246,0.06) 100%)', border: '1px solid rgba(6,182,212,0.25)', borderRadius: 14, padding: '16px 20px', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+                <div style={{ width: 38, height: 38, borderRadius: 10, background: 'rgba(6,182,212,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>
+                  <QrCode size={20} color="#06b6d4" />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-primary)' }}>Padrão Oficial Banco Central do Brasil (EMVCo / BR Code)</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, background: 'rgba(16,185,129,0.15)', color: '#10b981', padding: '2px 8px', borderRadius: 99, border: '1px solid rgba(16,185,129,0.3)' }}>Instantâneo & Sem Taxas</span>
+                  </div>
+                  <p style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5, margin: 0 }}>
+                    Configure seus dados para gerar <strong>QR Code e PIX Copia e Cola</strong> com valor exato. As cobranças podem ser enviadas em 1 clique no WhatsApp dos clientes ou liquidadas com baixa instantânea na tela de Lançamentos. O dinheiro cai direto na sua conta bancária sem nenhum intermediário!
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid-responsive-2">
+                <div>
+                  <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>
+                    Tipo de Chave PIX
+                  </label>
+                  <select
+                    className="input-field"
+                    value={cfg.pixTipoChave || 'cnpj'}
+                    onChange={e => setCfg(c => ({ ...c, pixTipoChave: e.target.value as any }))}
+                  >
+                    <option value="cnpj">🏢 CNPJ (Pessoa Jurídica)</option>
+                    <option value="cpf">👤 CPF (Pessoa Física)</option>
+                    <option value="telefone">📱 Telefone Celular (+55...)</option>
+                    <option value="email">✉️ E-mail</option>
+                    <option value="aleatoria">🔑 Chave Aleatória (EVP)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>
+                    Chave PIX
+                  </label>
+                  <input
+                    className="input-field"
+                    value={cfg.pixChave || ''}
+                    onChange={e => setCfg(c => ({ ...c, pixChave: e.target.value }))}
+                    placeholder={
+                      cfg.pixTipoChave === 'cnpj' ? 'Ex: 12.345.678/0001-90' :
+                      cfg.pixTipoChave === 'cpf' ? 'Ex: 123.456.789-00' :
+                      cfg.pixTipoChave === 'telefone' ? 'Ex: +5549999999999' :
+                      cfg.pixTipoChave === 'email' ? 'Ex: financeiro@suaempresa.com' :
+                      'Ex: 123e4567-e89b-12d3-a456-426614174000'
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="grid-responsive-2">
+                <div>
+                  <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>
+                    Nome do Titular da Conta (Recebedor)
+                  </label>
+                  <input
+                    className="input-field"
+                    maxLength={25}
+                    value={cfg.pixNomeTitular || ''}
+                    onChange={e => setCfg(c => ({ ...c, pixNomeTitular: e.target.value.toUpperCase() }))}
+                    placeholder={cfg.nomeSistema || 'Ex: AUTOCRED PROMOTORA'}
+                  />
+                  <span style={{ fontSize: 10, color: 'var(--text-muted)', display: 'block', marginTop: 4 }}>
+                    Máx 25 caracteres sem acentos (Exigência do Banco Central).
+                  </span>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>
+                    Cidade do Titular da Conta
+                  </label>
+                  <input
+                    className="input-field"
+                    maxLength={15}
+                    value={cfg.pixCidadeTitular || ''}
+                    onChange={e => setCfg(c => ({ ...c, pixCidadeTitular: e.target.value.toUpperCase() }))}
+                    placeholder="Ex: CHAPECO"
+                  />
+                  <span style={{ fontSize: 10, color: 'var(--text-muted)', display: 'block', marginTop: 4 }}>
+                    Máx 15 caracteres (Exigência do Banco Central).
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>
+                  Conta Bancária Padrão para Recebimento das Baixas PIX
+                </label>
+                <select
+                  className="input-field"
+                  value={cfg.pixContaPadraoId || ''}
+                  onChange={e => setCfg(c => ({ ...c, pixContaPadraoId: e.target.value }))}
+                >
+                  <option value="">Selecione uma conta bancária padrão (opcional)...</option>
+                  {contas.map(ct => (
+                    <option key={ct.id} value={ct.id}>
+                      {ct.nome} {ct.banco ? `(${ct.banco})` : ''} - Saldo: R$ {(ct.saldo || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </option>
+                  ))}
+                </select>
+                <span style={{ fontSize: 10, color: 'var(--text-muted)', display: 'block', marginTop: 4 }}>
+                  Ao dar "Baixa Instantânea" em um recebimento PIX, o saldo desta conta será creditado automaticamente.
+                </span>
+              </div>
+
+              {/* Prévia em Tempo Real */}
+              {cfg.pixChave && (
+                <div style={{ marginTop: 12, background: 'var(--bg-glass)', border: '1px solid var(--border)', borderRadius: 14, padding: 18 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <Sparkles size={14} color="#06b6d4" /> Demonstração do QR Code em Tempo Real (R$ 1,00)
+                    </span>
+                    <span style={{ fontSize: 11, color: '#10b981', fontWeight: 600 }}>✓ Dados Prontos</span>
+                  </div>
+
+                  {(() => {
+                    const copiaColaTeste = gerarPixCopiaECola({
+                      chave: cfg.pixChave || '',
+                      tipoChave: cfg.pixTipoChave || 'cnpj',
+                      nomeTitular: cfg.pixNomeTitular || cfg.nomeSistema || 'TITULAR',
+                      cidadeTitular: cfg.pixCidadeTitular || 'BRASIL',
+                      valor: 1.00,
+                      txid: 'TESTE01',
+                      descricao: 'Teste FinanceAI'
+                    });
+                    const qrUrl = gerarUrlQrCodePix(copiaColaTeste, 160);
+
+                    return (
+                      <div style={{ display: 'flex', gap: 20, alignItems: 'center', flexWrap: 'wrap' }}>
+                        <div style={{ background: '#ffffff', padding: 8, borderRadius: 12, display: 'inline-flex' }}>
+                          <img src={qrUrl} alt="QR Code Teste PIX" style={{ width: 140, height: 140, display: 'block' }} />
+                        </div>
+                        <div style={{ flex: 1, minWidth: 240, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>PIX Copia e Cola Gerado:</label>
+                          <textarea
+                            readOnly
+                            rows={3}
+                            value={copiaColaTeste}
+                            style={{
+                              width: '100%',
+                              padding: '8px 10px',
+                              fontSize: 11,
+                              fontFamily: 'monospace',
+                              borderRadius: 8,
+                              border: '1px solid var(--border)',
+                              background: 'var(--bg-body)',
+                              color: 'var(--text-secondary)',
+                              resize: 'none'
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText(copiaColaTeste);
+                              alert('Código PIX de teste copiado!');
+                            }}
+                            className="btn-secondary"
+                            style={{ alignSelf: 'flex-start', fontSize: 11, padding: '6px 12px' }}
+                          >
+                            Copiar Código de Teste
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+            </div>
+          </SecaoConfig>
         )}
 
         {/* Aparência */}
