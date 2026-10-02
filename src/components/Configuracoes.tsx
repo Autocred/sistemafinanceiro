@@ -77,7 +77,7 @@ export default function Configuracoes() {
     backupAutomatico: true,
     tema: 'dark' as 'dark',
   });
-  const [abaAtiva, setAbaAtiva] = useState<'perfil' | 'aparencia' | 'sons' | 'ia' | 'seguranca'>('perfil');
+  const [abaAtiva, setAbaAtiva] = useState<'perfil' | 'whatsapp' | 'aparencia' | 'sons' | 'ia' | 'seguranca'>('perfil');
   const [mostrarKey, setMostrarKey] = useState(false);
   const [salvo, setSalvo] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -366,8 +366,9 @@ export default function Configuracoes() {
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', paddingBottom: 12, marginBottom: 20, borderBottom: '1px solid var(--border)', scrollbarWidth: 'none' }}>
           {[
             { id: 'perfil', label: 'Perfil & Conta', icon: <User size={16} /> },
+            { id: 'whatsapp', label: '📱 WhatsApp & Disparos', icon: <MessageCircle size={16} color="#10b981" /> },
             { id: 'aparencia', label: 'Aparência & Design', icon: <Palette size={16} /> },
-            { id: 'sons', label: 'notificações & Sons', icon: <Bell size={16} /> },
+            { id: 'sons', label: 'Notificações & Sons', icon: <Bell size={16} /> },
             { id: 'ia', label: 'Inteligência Artificial', icon: <Zap size={16} /> },
             { id: 'seguranca', label: 'Segurança & Backups', icon: <Shield size={16} /> }
           ].map(aba => (
@@ -1156,17 +1157,42 @@ document.cookie = 'app_pin_code=' + encodeURIComponent(novoPin) + '; max-age=315
         </SecaoConfig>
         )}
         
-        {/* Notificações por WhatsApp da Licença */}
+        {/* Atalho de WhatsApp na aba Sons */}
         {abaAtiva === 'sons' && (
-        <SecaoConfig titulo="Notificações por WhatsApp" icone={<MessageCircle size={18} color="#10b981" />}>
+          <div style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.25)', borderRadius: 10, padding: 16, marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+            <div>
+              <h4 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#10b981', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <MessageCircle size={16} /> Disparos e Fechamento no WhatsApp
+              </h4>
+              <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--text-muted)' }}>
+                Configure seu número, horários de lembretes, metas diárias e o Fechamento Mensal em PDF na nova aba dedicada.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setAbaAtiva('whatsapp')}
+              style={{ background: '#10b981', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+            >
+              Abrir WhatsApp & Disparos →
+            </button>
+          </div>
+        )}
+
+        {/* Notificações por WhatsApp da Licença */}
+        {abaAtiva === 'whatsapp' && (
+        <SecaoConfig titulo="Configuração de Disparos no WhatsApp" icone={<MessageCircle size={18} color="#10b981" />}>
           <ToggleConfig
-            label="Receber Notificações Automáticas no WhatsApp"
-            descricao="Receba lembretes de contas a pagar e receber pela manhã e o fechamento financeiro à tarde"
-            ativo={cfg.whatsappAtivo ?? false}
-            onChange={v => setCfg(c => ({ ...c, whatsappAtivo: v }))}
+            label="Disparos Automáticos no WhatsApp Ativados"
+            descricao="Quando ativado, o robô enviará automaticamente os lembretes matinais, o resumo de metas e os fechamentos diário e mensal nos horários abaixo."
+            ativo={cfg.whatsappAtivo ?? true}
+            onChange={v => {
+              const upd = { ...cfg, whatsappAtivo: v };
+              setCfg(upd);
+              salvar(upd);
+            }}
           />
           
-          {cfg.whatsappAtivo && (
+          {(cfg.whatsappAtivo ?? true) && (
             <div style={{ background: 'var(--bg-glass)', border: '1px solid var(--border)', borderRadius: 10, padding: 16, marginTop: 12, display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div>
                 <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>
