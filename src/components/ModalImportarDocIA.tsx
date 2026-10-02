@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { extrairDadosDocumento, DadosFiscaisExtraidos } from '@/lib/ocr-pipeline';
-import { salvarTransacao, getCategorias, getContas, getCentrosCusto } from '@/lib/storage';
+import { salvarTransacao, getCategorias, getContas, getCentrosCusto, getClientes, getFornecedores } from '@/lib/storage';
 import { playSound } from '@/lib/audio';
 import { X, Upload, Sparkles, Loader2, CheckCircle2, FileText, ArrowRight, DollarSign, Calendar, Tag, Building } from 'lucide-react';
 import { format } from 'date-fns';
@@ -18,10 +18,12 @@ export default function ModalImportarDocIA({ onClose, onSuccess }: ModalImportar
   const [arquivoBase64, setArquivoBase64] = useState<string | null>(null);
   const [nomeArquivo, setNomeArquivo] = useState('');
   
-  // Categorias e Contas do sistema
+  // Listas do sistema
   const [categorias, setCategorias] = useState<any[]>([]);
   const [contas, setContas] = useState<any[]>([]);
   const [centrosCusto, setCentrosCusto] = useState<any[]>([]);
+  const [clientes, setClientes] = useState<any[]>([]);
+  const [fornecedores, setFornecedores] = useState<any[]>([]);
 
   // Dados extraídos pela IA
   const [dadosExtraidos, setDadosExtraidos] = useState<DadosFiscaisExtraidos | null>(null);
@@ -31,22 +33,28 @@ export default function ModalImportarDocIA({ onClose, onSuccess }: ModalImportar
   const [descricao, setDescricao] = useState('');
   const [fornecedorNome, setFornecedorNome] = useState('');
   const [valor, setValor] = useState<number>(0);
+  const [dataCompetencia, setDataCompetencia] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [dataVencimento, setDataVencimento] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [categoriaId, setCategoriaId] = useState('');
   const [categoriaNome, setCategoriaNome] = useState('');
   const [contaId, setContaId] = useState('');
   const [contaNome, setContaNome] = useState('');
   const [centroCustoId, setCentroCustoId] = useState('');
+  const [clienteId, setClienteId] = useState('');
+  const [fornecedorId, setFornecedorId] = useState('');
+  const [status, setStatus] = useState<'pendente' | 'pago'>('pendente');
   const [observacoes, setObservacoes] = useState('');
 
   const [salvando, setSalvando] = useState(false);
 
   useEffect(() => {
     (async () => {
-      const [cats, conts, ccs] = await Promise.all([getCategorias(), getContas(), getCentrosCusto()]);
+      const [cats, conts, ccs, clis, forns] = await Promise.all([getCategorias(), getContas(), getCentrosCusto(), getClientes(), getFornecedores()]);
       setCategorias(cats);
       setContas(conts);
       setCentrosCusto(ccs);
+      setClientes(clis);
+      setFornecedores(forns);
 
       if (conts.length > 0) {
         setContaId(conts[0].id);
@@ -86,18 +94,46 @@ export default function ModalImportarDocIA({ onClose, onSuccess }: ModalImportar
           }
 
           // Vincular categoria compatível se existir
+          let catId = '';
           if (categorias.length > 0) {
             const catEncontrada = categorias.find(c => 
               c.nome.toLowerCase().includes((resultado.categoria || '').toLowerCase()) ||
               (resultado.categoria || '').toLowerCase().includes(c.nome.toLowerCase())
             );
             if (catEncontrada) {
+              catId = catEncontrada.id;
               setCategoriaId(catEncontrada.id);
               setCategoriaNome(catEncontrada.nome);
             } else {
+              catId = categorias[0].id;
               setCategoriaId(categorias[0].id);
               setCategoriaNome(categorias[0].nome);
             }
+          }
+
+          // Consultar Aprendizagem da IA (ai_learning_dictionary)
+          const descVal = resultado.fornecedor || resultado.tipoDocumento || file.name.replace(/\.[^/.]+$/, '');
+          if (descVal.trim().length > 2) {
+            try {
+              const dict = JSON.parse(localStorage.getItem('ai_learning_dictionary') || '{}');
+              const lowerVal = descVal.toLowerCase().trim();
+              let learned = dict[lowerVal];
+              if (!learned) {
+                const matchKey = Object.keys(dict).find(k => lowerVal.includes(k));
+                if (matchKey) learned = dict[matchKey];
+              }
+              if (learned) {
+                if (learned.categoriaId) {
+                  setCategoriaId(learned.categoriaId);
+                  const c = categorias.find(x => x.id === learned.categoriaId);
+                  if (c) setCategoriaNome(c.nome);
+                }
+                if (learned.centroCustoId) setCentroCustoId(learned.centroCustoId);
+                if (learned.contaId) setContaId(learned.contaId);
+                if (learned.fornecedorId) setFornecedorId(learned.fornecedorId);
+                if (learned.clienteId) setClienteId(learned.clienteId);
+              }
+            } catch (e) { }
           }
 
           // Observações com itens
@@ -138,10 +174,10 @@ export default function ModalImportarDocIA({ onClose, onSuccess }: ModalImportar
         tipo,
         descricao,
         valor,
-        data: dataVencimento,
+        data: dataCompetencia,
         dataVencimento,
-        dataCompetencia: dataVencimento,
-        status: 'pendente',
+        dataCompetencia,
+        status,
         categoriaId,
         categoriaNome,
         categoriaIcone: 'FileText',
@@ -149,8 +185,10 @@ export default function ModalImportarDocIA({ onClose, onSuccess }: ModalImportar
         contaId,
         contaNome,
         formaPagamento: 'Boleto',
-        fornecedorNome: tipo === 'despesa' ? fornecedorNome : undefined,
-        clienteNome: tipo === 'receita' ? fornecedorNome : undefined,
+        fornecedorId: tipo === 'despesa' ? fornecedorId : undefined,
+        clienteId: tipo === 'receita' ? clienteId : undefined,
+        fornecedorNome: tipo === 'despesa' && fornecedorId ? fornecedores.find(x => x.id === fornecedorId)?.nome : fornecedorNome,
+        clienteNome: tipo === 'receita' && clienteId ? clientes.find(x => x.id === clienteId)?.nome : fornecedorNome,
         centroCustoId: centroCustoId || undefined,
         observacoes,
         comprovanteBase64: arquivoBase64 || undefined
@@ -313,7 +351,7 @@ export default function ModalImportarDocIA({ onClose, onSuccess }: ModalImportar
                 </div>
               </div>
 
-              {/* Categoria e Conta */}
+              {/* Categoria e Centro de Custo */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <div>
                   <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: 4 }}>
@@ -330,11 +368,32 @@ export default function ModalImportarDocIA({ onClose, onSuccess }: ModalImportar
                     }}
                     style={{ width: '100%', padding: '9px 12px', borderRadius: 8 }}
                   >
+                    <option value="">Selecione...</option>
                     {categorias.map(c => (
                       <option key={c.id} value={c.id}>{c.nome}</option>
                     ))}
                   </select>
                 </div>
+                <div>
+                  <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: 4 }}>
+                    Centro de Custo
+                  </label>
+                  <select
+                    className="input-field"
+                    value={centroCustoId}
+                    onChange={e => setCentroCustoId(e.target.value)}
+                    style={{ width: '100%', padding: '9px 12px', borderRadius: 8 }}
+                  >
+                    <option value="">(Opcional) Selecione...</option>
+                    {centrosCusto.map(c => (
+                      <option key={c.id} value={c.id}>{c.nome}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Conta Bancária e Status */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <div>
                   <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: 4 }}>
                     Conta Bancária
@@ -350,12 +409,60 @@ export default function ModalImportarDocIA({ onClose, onSuccess }: ModalImportar
                     }}
                     style={{ width: '100%', padding: '9px 12px', borderRadius: 8 }}
                   >
+                    <option value="">Selecione...</option>
                     {contas.map(c => (
                       <option key={c.id} value={c.id}>{c.nome}</option>
                     ))}
                   </select>
                 </div>
+                <div>
+                  <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: 4 }}>
+                    Status
+                  </label>
+                  <select
+                    className="input-field"
+                    value={status}
+                    onChange={e => setStatus(e.target.value as 'pago' | 'pendente')}
+                    style={{ width: '100%', padding: '9px 12px', borderRadius: 8 }}
+                  >
+                    <option value="pendente">Pendente (Não Pago)</option>
+                    <option value="pago">Pago / Recebido</option>
+                  </select>
+                </div>
               </div>
+
+              {/* Data Emissão e Cliente/Fornecedor */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div>
+                  <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: 4 }}>
+                    Data de Emissão
+                  </label>
+                  <input
+                    type="date"
+                    className="input-field"
+                    value={dataCompetencia}
+                    onChange={e => setDataCompetencia(e.target.value)}
+                    style={{ width: '100%', padding: '9px 12px', borderRadius: 8 }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: 4 }}>
+                    {tipo === 'despesa' ? 'Fornecedor' : 'Cliente'}
+                  </label>
+                  <select
+                    className="input-field"
+                    value={tipo === 'despesa' ? fornecedorId : clienteId}
+                    onChange={e => tipo === 'despesa' ? setFornecedorId(e.target.value) : setClienteId(e.target.value)}
+                    style={{ width: '100%', padding: '9px 12px', borderRadius: 8 }}
+                  >
+                    <option value="">(Opcional) Selecione...</option>
+                    {(tipo === 'despesa' ? fornecedores : clientes).map(c => (
+                      <option key={c.id} value={c.id}>{c.nome}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
 
               {/* Observações / Itens */}
               {observacoes && (

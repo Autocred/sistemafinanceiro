@@ -192,7 +192,11 @@ export default function ModalCobrancaPix({ transacao, onClose, onBaixaSucesso }:
       if (res.ok && data.success) {
         playSound('sucesso');
         setWhatsappEnviado(true);
-        alert('✅ Fatura PIX em PDF (com QR Code) e código Copia e Cola enviados diretamente para o WhatsApp do cliente!');
+        if (data.warning) {
+          alert('⚠️ ' + data.warning);
+        } else {
+          alert('✅ Fatura PIX em PDF (com QR Code) e código Copia e Cola enviados diretamente para o WhatsApp do cliente!');
+        }
       } else {
         alert('Aviso da API: ' + (data.error || 'Não foi possível entregar a mensagem. Verifique se o robô do WhatsApp está conectado em Configurações.'));
       }

@@ -133,11 +133,20 @@ export async function enviarDocumentoWhatsApp(
         headers: { 'Content-Type': 'application/json', apikey: WHATSAPP_API_TOKEN },
         body: JSON.stringify({
           number: numStr,
+          // Propriedades para Evolution API v1
           mediatype: 'document',
           mimetype: 'application/pdf',
           caption: legenda || '',
           media: cleanBase64,
-          fileName: nomeArquivo
+          fileName: nomeArquivo,
+          // Propriedades para Evolution API v2
+          mediaMessage: {
+            mediatype: 'document',
+            mimetype: 'application/pdf',
+            caption: legenda || '',
+            media: cleanBase64,
+            fileName: nomeArquivo
+          }
         }),
         signal: AbortSignal.timeout(30000)
       });

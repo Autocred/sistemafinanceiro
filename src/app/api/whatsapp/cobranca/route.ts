@@ -74,6 +74,17 @@ export async function POST(request: Request) {
     const sucesso = (docResult && docResult.sucesso) || (msgResult && msgResult.sucesso);
 
     if (sucesso) {
+      if (pdfBase64 && docResult && !docResult.sucesso) {
+         // Se tentou enviar o PDF e falhou, avisa o frontend
+         return NextResponse.json({
+           success: true,
+           docEnviado: false,
+           msgEnviada: msgResult?.sucesso || false,
+           retorno: msgResult?.retorno,
+           warning: 'A mensagem de texto foi entregue, mas ocorreu um erro ao anexar o PDF na API do WhatsApp. Erro: ' + (docResult.erro || 'Desconhecido')
+         });
+      }
+
       return NextResponse.json({
         success: true,
         docEnviado: docResult?.sucesso || false,
