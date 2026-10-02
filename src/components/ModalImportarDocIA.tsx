@@ -44,6 +44,7 @@ export default function ModalImportarDocIA({ onClose, onSuccess }: ModalImportar
   const [fornecedorId, setFornecedorId] = useState('');
   const [status, setStatus] = useState<'pendente' | 'pago'>('pago');
   const [comportamento, setComportamento] = useState<'fixa' | 'variavel'>('variavel');
+  const [formaPagamento, setFormaPagamento] = useState('outro');
   const [observacoes, setObservacoes] = useState('');
 
   const [salvando, setSalvando] = useState(false);
@@ -134,6 +135,13 @@ export default function ModalImportarDocIA({ onClose, onSuccess }: ModalImportar
           setFornecedorNome(resultado.fornecedor || '');
           setValor(resultado.valorTotal || 0);
           setDataVencimento(resultado.data || format(new Date(), 'yyyy-MM-dd'));
+          
+          if (resultado.formaPagamento) {
+             const fpMap: Record<string, string> = { 'pix': 'pix', 'cartao_credito': 'cartao_credito', 'cartao_debito': 'cartao_debito', 'dinheiro': 'dinheiro', 'boleto': 'boleto', 'transferencia': 'transferencia' };
+             const fpNormalizado = resultado.formaPagamento.toLowerCase().trim();
+             if (fpMap[fpNormalizado]) setFormaPagamento(fpMap[fpNormalizado]);
+             else setFormaPagamento('outro');
+          }
 
           // Identificar se parece receita ou despesa
           if (resultado.tipoDocumento?.toLowerCase().includes('recibo') && resultado.categoria?.toLowerCase().includes('receita')) {
@@ -186,6 +194,7 @@ export default function ModalImportarDocIA({ onClose, onSuccess }: ModalImportar
                 if (learned.fornecedorId) setFornecedorId(learned.fornecedorId);
                 if (learned.clienteId) setClienteId(learned.clienteId);
                 if (learned.comportamento) setComportamento(learned.comportamento);
+                if (learned.formaPagamento) setFormaPagamento(learned.formaPagamento);
               }
             } catch (e) { }
           }
@@ -224,7 +233,7 @@ export default function ModalImportarDocIA({ onClose, onSuccess }: ModalImportar
         clienteId,
         contaId,
         comportamento,
-        formaPagamento: 'Boleto'
+        formaPagamento
       };
       localStorage.setItem('ai_learning_dictionary', JSON.stringify(dict));
       alert('🧠 O sistema aprendeu! No próximo lançamento, basta importar o documento que o preenchimento da categoria, conta e fornecedor será automático.');
@@ -258,7 +267,7 @@ export default function ModalImportarDocIA({ onClose, onSuccess }: ModalImportar
         categoriaCor: '#3b82f6',
         contaId,
         contaNome,
-        formaPagamento: 'Boleto',
+        formaPagamento: formaPagamento || 'outro',
         fornecedorId: tipo === 'despesa' ? fornecedorId : undefined,
         clienteId: tipo === 'receita' ? clienteId : undefined,
         fornecedorNome: tipo === 'despesa' && fornecedorId ? fornecedores.find(x => x.id === fornecedorId)?.nome : fornecedorNome,
@@ -403,7 +412,7 @@ export default function ModalImportarDocIA({ onClose, onSuccess }: ModalImportar
               </div>
 
               {/* Valor e Vencimento */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10 }}>
                 <div>
                   <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: 4 }}>
                     Valor (R$)
@@ -432,7 +441,7 @@ export default function ModalImportarDocIA({ onClose, onSuccess }: ModalImportar
               </div>
 
               {/* Categoria e Centro de Custo */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10 }}>
                 <div>
                   <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: 4 }}>
                     Categoria
@@ -472,8 +481,27 @@ export default function ModalImportarDocIA({ onClose, onSuccess }: ModalImportar
                 </div>
               </div>
 
-              {/* Conta Bancária, Status e Comportamento */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+              {/* Conta Bancária, Status, Comportamento e Forma Pagamento */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10 }}>
+                <div>
+                  <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: 4 }}>
+                    Forma de Pag.
+                  </label>
+                  <select
+                    className="input-field"
+                    value={formaPagamento}
+                    onChange={e => setFormaPagamento(e.target.value)}
+                    style={{ width: '100%', padding: '9px 12px', borderRadius: 8 }}
+                  >
+                    <option value="outro">Outros / Não Identificado</option>
+                    <option value="pix">PIX</option>
+                    <option value="cartao_credito">Cartão de Crédito</option>
+                    <option value="cartao_debito">Cartão de Débito</option>
+                    <option value="dinheiro">Dinheiro</option>
+                    <option value="boleto">Boleto</option>
+                    <option value="transferencia">Transferência</option>
+                  </select>
+                </div>
                 <div>
                   <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: 4 }}>
                     Conta Bancária
@@ -506,12 +534,12 @@ export default function ModalImportarDocIA({ onClose, onSuccess }: ModalImportar
                     style={{ width: '100%', padding: '9px 12px', borderRadius: 8 }}
                   >
                     <option value="pago">Pago / Recebido</option>
-                    <option value="pendente">Pendente (Não Pago)</option>
+                    <option value="pendente">Pendente</option>
                   </select>
                 </div>
                 <div>
                   <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: 4 }}>
-                    Tipo (Desp/Rec)
+                    Tipo (Fixa/Var)
                   </label>
                   <select
                     className="input-field"
@@ -526,7 +554,7 @@ export default function ModalImportarDocIA({ onClose, onSuccess }: ModalImportar
               </div>
 
               {/* Data Emissão e Cliente/Fornecedor */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10 }}>
                 <div>
                   <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: 4 }}>
                     Data de Emissão

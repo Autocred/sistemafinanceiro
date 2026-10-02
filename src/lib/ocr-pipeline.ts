@@ -41,9 +41,9 @@ Retorne APENAS o JSON não formato:
  "cpf": "CPF na nota (se houver)",
  "numeroDocumento": "Número da nota/cupom",
  "serie": "Série da nota",
- "data": "Data de emissão (formato YYYY-MM-DD)",
+ "data": "Data EXATA da efetivação do pagamento ou emissão (formato YYYY-MM-DD). ATENÇÃO: NÃO confunda com datas de vencimentos passados ou textos aleatórios. Foque na data real do comprovante.",
  "valorTotal": 154.30, // Número Decimal (substitua vírgula por ponto)
- "formaPagamento": "PIX, Dinheiro, Cartão Crédito, Débito, Boleto, etc",
+ "formaPagamento": "Exatamente um destes: 'cartao_credito', 'cartao_debito', 'pix', 'dinheiro', 'boleto', 'transferencia' ou 'outro' (se ler Mastercard/Visa/Crédito, use 'cartao_credito')",
  "categoria": "Categoria sugerida para o gasto (ex: Alimentação, Transporte)",
  "subcategoria": "Subcategoria sugerida",
  "centroCusto": "Sugerir 'Geral' ou departamento apropriado",

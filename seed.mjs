@@ -11,21 +11,22 @@ const db = getFirestore(app);
 
 async function run() {
   await addDoc(collection(db, 'saas_releases'), {
-    versao: 'v3.6.19',
-    titulo: 'Otimização Extrema de Velocidade e Precisão OCR (IA)',
-    descricao: 'Atualização no motor de inteligência artificial da OpenAI e implementação de compressão de imagens.',
+    versao: 'v3.6.20',
+    titulo: 'Forma de Pagamento Automática e Ajustes Responsivos',
+    descricao: 'Melhorias de inteligência e layout na tela de Leitura de Notas.',
     dataLancamento: new Date().toISOString(),
     status: 'publicado',
     destaque: true,
     notificarTenants: false,
     alvos: 'todos',
     changes: [
-      { tipo: 'novo', texto: 'Upgrade do modelo de leitura de notas da OpenAI para o ChatGPT-4o (versão mais avançada).' },
-      { tipo: 'melhoria', texto: 'Implementação de compressão automática local de imagens antes do envio para a nuvem. Reduz o tempo de leitura de 20s para cerca de 3s.' },
-      { tipo: 'correcao', texto: 'Correção de imprecisões na extração de datas e nomes de fornecedores em cupons fiscais complexos.' }
+      { tipo: 'novo', texto: 'Inclusão do campo Forma de Pagamento no formulário de leitura de documento.' },
+      { tipo: 'melhoria', texto: 'A IA agora detecta automaticamente pagamentos feitos em Cartão de Crédito, Débito, Boleto, Dinheiro ou PIX e já marca a opção correta.' },
+      { tipo: 'correcao', texto: 'Otimização nas instruções da Inteligência Artificial para não confundir datas de vencimento antigas com a data do pagamento real.' },
+      { tipo: 'correcao', texto: 'Reestruturação visual no formulário para telas de celulares: os campos agora se adaptam e empilham corretamente para evitar cortes.' }
     ]
   });
-  console.log('Release notes v3.6.19 added!');
+  console.log('Release notes v3.6.20 added!');
   process.exit(0);
 }
 
