@@ -90,8 +90,14 @@ export async function GET(request: Request) {
       const horarioLembretes = configData?.whatsappHorarioLembretes || '08:00';
       const horarioFechamento = configData?.whatsappHorarioFechamento || configData?.whatsappHorario || '17:00';
       
+      const metasAtivo = configData?.whatsappMetasAtivo !== false;
+      const horarioMetas1 = configData?.whatsappHorarioMetas1 || '12:00';
+      const horarioMetas2 = configData?.whatsappHorarioMetas2 || '18:00';
+      
       const ultimoEnvioLembretes = configData?.ultimoEnvioLembretes;
       const ultimoEnvioFechamento = configData?.ultimoEnvioFechamento;
+      const ultimoEnvioMetas1 = configData?.ultimoEnvioMetas1;
+      const ultimoEnvioMetas2 = configData?.ultimoEnvioMetas2;
 
       licencasProcessadas.push({
         tenant: tenant.id,
@@ -101,8 +107,13 @@ export async function GET(request: Request) {
         numero,
         horarioLembretes,
         horarioFechamento,
+        horarioMetas1,
+        horarioMetas2,
+        metasAtivo,
         ultimoEnvioLembretes,
-        ultimoEnvioFechamento
+        ultimoEnvioFechamento,
+        ultimoEnvioMetas1,
+        ultimoEnvioMetas2
       });
 
       // Pula se desativado ou sem número cadastrado
@@ -129,6 +140,27 @@ export async function GET(request: Request) {
         }
       }
 
+      // Disparo de Metas - Horário 1 (12h - Meio-Dia)
+      const flagMetas1 = `${hojeSp}_${horarioMetas1}`;
+      if (metasAtivo && agoraSp === horarioMetas1 && ultimoEnvioMetas1 !== flagMetas1) {
+        console.log(`[DISPATCHER] Disparando Resumo de Metas (12h) para ${tenant.nome} (${numero})...`);
+        try {
+          const url = `${protocol}://${host}/api/cron/resumo-metas?tenantId=${tenant.id}&numero=${numero}&nome=${encodeURIComponent(tenant.nome)}&slot=12h`;
+          const res = await fetch(url);
+          const json = await res.json();
+          if (tenant.isMaster) {
+            await db.collection('configuracoes').doc('geral').set({ ultimoEnvioMetas1: flagMetas1 }, { merge: true });
+            await db.collection('config').doc('geral').set({ ultimoEnvioMetas1: flagMetas1 }, { merge: true });
+          } else {
+            await configRef.set({ ultimoEnvioMetas1: flagMetas1 }, { merge: true });
+          }
+          acoesDisparadas.push({ tipo: 'metas_12h', tenant: tenant.id, numero, sucesso: true, retorno: json });
+        } catch (err: any) {
+          console.error(`[DISPATCHER] Erro ao disparar metas 12h para ${tenant.id}:`, err);
+          acoesDisparadas.push({ tipo: 'metas_12h', tenant: tenant.id, sucesso: false, erro: err.message });
+        }
+      }
+
       // Disparo de Fechamento Diário
       const flagFechamento = `${hojeSp}_${horarioFechamento}`;
       if (agoraSp === horarioFechamento && ultimoEnvioFechamento !== flagFechamento) {
@@ -147,6 +179,27 @@ export async function GET(request: Request) {
         } catch (err: any) {
           console.error(`[DISPATCHER] Erro ao disparar fechamento para ${tenant.id}:`, err);
           acoesDisparadas.push({ tipo: 'fechamento', tenant: tenant.id, sucesso: false, erro: err.message });
+        }
+      }
+
+      // Disparo de Metas - Horário 2 (18h - Fechamento do Expediente)
+      const flagMetas2 = `${hojeSp}_${horarioMetas2}`;
+      if (metasAtivo && agoraSp === horarioMetas2 && ultimoEnvioMetas2 !== flagMetas2) {
+        console.log(`[DISPATCHER] Disparando Resumo de Metas (18h) para ${tenant.nome} (${numero})...`);
+        try {
+          const url = `${protocol}://${host}/api/cron/resumo-metas?tenantId=${tenant.id}&numero=${numero}&nome=${encodeURIComponent(tenant.nome)}&slot=18h`;
+          const res = await fetch(url);
+          const json = await res.json();
+          if (tenant.isMaster) {
+            await db.collection('configuracoes').doc('geral').set({ ultimoEnvioMetas2: flagMetas2 }, { merge: true });
+            await db.collection('config').doc('geral').set({ ultimoEnvioMetas2: flagMetas2 }, { merge: true });
+          } else {
+            await configRef.set({ ultimoEnvioMetas2: flagMetas2 }, { merge: true });
+          }
+          acoesDisparadas.push({ tipo: 'metas_18h', tenant: tenant.id, numero, sucesso: true, retorno: json });
+        } catch (err: any) {
+          console.error(`[DISPATCHER] Erro ao disparar metas 18h para ${tenant.id}:`, err);
+          acoesDisparadas.push({ tipo: 'metas_18h', tenant: tenant.id, sucesso: false, erro: err.message });
         }
       }
     }

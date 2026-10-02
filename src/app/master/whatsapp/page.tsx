@@ -11,6 +11,9 @@ export default function MasterWhatsappConfig() {
   const [numeroMaster, setNumeroMaster] = useState('');
   const [horarioFechamento, setHorarioFechamento] = useState('17:00');
   const [horarioLembretes, setHorarioLembretes] = useState('08:00');
+  const [horarioMetas1, setHorarioMetas1] = useState('12:00');
+  const [horarioMetas2, setHorarioMetas2] = useState('18:00');
+  const [metasAtivo, setMetasAtivo] = useState(true);
   const [tenantId, setTenantId] = useState('autocred-promotora-de-credito');
   const [instanceName, setInstanceName] = useState('autocred');
   const [listaTenants, setListaTenants] = useState<{ id: string; nome: string }[]>([
@@ -42,6 +45,15 @@ export default function MasterWhatsappConfig() {
         }
         if (data.whatsappHorarioLembretes) {
           setHorarioLembretes(data.whatsappHorarioLembretes);
+        }
+        if (data.whatsappHorarioMetas1) {
+          setHorarioMetas1(data.whatsappHorarioMetas1);
+        }
+        if (data.whatsappHorarioMetas2) {
+          setHorarioMetas2(data.whatsappHorarioMetas2);
+        }
+        if (data.whatsappMetasAtivo !== undefined) {
+          setMetasAtivo(data.whatsappMetasAtivo);
         }
       } else {
         setNumeroMaster('');
@@ -108,9 +120,14 @@ export default function MasterWhatsappConfig() {
         whatsappNumeroMaster: numeroMaster,
         whatsappHorarioFechamento: horarioFechamento,
         whatsappHorarioLembretes: horarioLembretes,
+        whatsappHorarioMetas1: horarioMetas1,
+        whatsappHorarioMetas2: horarioMetas2,
+        whatsappMetasAtivo: metasAtivo,
         whatsappHorario: horarioFechamento,
         ultimoEnvioFechamento: '', // Reseta para liberar disparo no novo horário imediatamente
-        ultimoEnvioLembretes: ''
+        ultimoEnvioLembretes: '',
+        ultimoEnvioMetas1: '',
+        ultimoEnvioMetas2: ''
       };
 
       if (tenantId === 'master') {
@@ -121,7 +138,7 @@ export default function MasterWhatsappConfig() {
       }
 
       const nomeTenant = listaTenants.find(t => t.id === tenantId)?.nome || tenantId;
-      alert(`✅ Configurações salvas com sucesso para:\n${nomeTenant}\n\n📊 Fechamento Diário: ${horarioFechamento}\n🔔 Lembretes: ${horarioLembretes}\n📱 Número: ${numeroMaster || '(vazio)'}\n\nO robô disparará automaticamente no minuto configurado!`);
+      alert(`✅ Configurações salvas com sucesso para:\n${nomeTenant}\n\n🔔 Lembretes: ${horarioLembretes}\n🕛 Metas 1: ${horarioMetas1}\n📊 Fechamento: ${horarioFechamento}\n🕕 Metas 2: ${horarioMetas2}\n📱 Número: ${numeroMaster || '(vazio)'}\n\nO robô disparará automaticamente nestes horários!`);
     } catch (err) {
       console.error(err);
       alert('Erro ao salvar as configurações.');
@@ -251,6 +268,36 @@ export default function MasterWhatsappConfig() {
             </span>
           </div>
 
+          <div>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 6 }}>
+              🕛 1º Envio de Metas (Meio-dia)
+            </label>
+            <input 
+              type="time" 
+              value={horarioMetas1}
+              onChange={e => setHorarioMetas1(e.target.value)}
+              style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-title)', fontSize: 14 }}
+            />
+            <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', marginTop: 4 }}>
+              Progresso das metas na metade do expediente.
+            </span>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 6 }}>
+              🕕 2º Envio de Metas (Fechamento)
+            </label>
+            <input 
+              type="time" 
+              value={horarioMetas2}
+              onChange={e => setHorarioMetas2(e.target.value)}
+              style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-title)', fontSize: 14 }}
+            />
+            <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', marginTop: 4 }}>
+              Balanço final do dia e meta para amanhã.
+            </span>
+          </div>
+
           <div style={{ gridColumn: '1 / -1' }}>
             <label style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 6 }}>
               🏢 Licença para Configuração & Disparo
@@ -321,13 +368,13 @@ export default function MasterWhatsappConfig() {
                     } catch (e: any) {
                       alert('Erro ao disparar: ' + e.message);
                     } finally {
-                      if (btn) btn.innerText = '📊 Disparar Resumo Diário (17h)';
+                      if (btn) btn.innerText = '📊 Disparar Resumo Diário';
                     }
                   }}
                   id="btn-test-fechamento"
                   style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '10px 18px', borderRadius: 8, fontWeight: 700, cursor: 'pointer', fontSize: 13 }}
                 >
-                  📊 Disparar Resumo Diário (17h)
+                  📊 Disparar Resumo Diário
                 </button>
 
                 <button
@@ -344,13 +391,36 @@ export default function MasterWhatsappConfig() {
                     } catch (e: any) {
                       alert('Erro ao disparar: ' + e.message);
                     } finally {
-                      if (btn) btn.innerText = '🔔 Disparar Contas a Pagar/Receber (08h)';
+                      if (btn) btn.innerText = '🔔 Disparar Contas a Pagar/Receber';
                     }
                   }}
                   id="btn-test-lembrete"
                   style={{ background: '#10b981', color: '#fff', border: 'none', padding: '10px 18px', borderRadius: 8, fontWeight: 700, cursor: 'pointer', fontSize: 13 }}
                 >
-                  🔔 Disparar Contas a Pagar/Receber (08h)
+                  🔔 Disparar Contas a Pagar/Receber
+                </button>
+
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const btn = document.getElementById('btn-test-metas');
+                    if (btn) btn.innerText = 'Enviando...';
+                    try {
+                      const selTenant = tenantId || 'autocred-promotora-de-credito';
+                      const selNome = selTenant === 'master' ? 'Clovis Master' : 'Autocred Promotora';
+                      const res = await fetch(`/api/cron/resumo-metas?tenantId=${selTenant}&numero=${encodeURIComponent(numeroMaster)}&nome=${encodeURIComponent(selNome)}&slot=12h`);
+                      const data = await res.json();
+                      alert(data.success ? '✅ Resumo de Metas enviado com sucesso no WhatsApp!' : ('Erro: ' + (data.error || data.message)));
+                    } catch (e: any) {
+                      alert('Erro ao disparar: ' + e.message);
+                    } finally {
+                      if (btn) btn.innerText = '🎯 Disparar Resumo de Metas';
+                    }
+                  }}
+                  id="btn-test-metas"
+                  style={{ background: '#8b5cf6', color: '#fff', border: 'none', padding: '10px 18px', borderRadius: 8, fontWeight: 700, cursor: 'pointer', fontSize: 13 }}
+                >
+                  🎯 Disparar Resumo de Metas
                 </button>
               </div>
             </div>

@@ -1208,12 +1208,62 @@ document.cookie = 'app_pin_code=' + encodeURIComponent(novoPin) + '; max-age=315
                     className="input-field"
                     value={cfg.whatsappHorarioFechamento || cfg.whatsappHorario || '17:00'}
                     onChange={e => setCfg(c => ({ ...c, whatsappHorarioFechamento: e.target.value, whatsappHorario: e.target.value }))}
-                    onBlur={() => salvar({ ...cfg, ultimoEnvioFechamento: '', ultimoEnvioLembretes: '' })}
+                    onBlur={() => salvar({ ...cfg, ultimoEnvioFechamento: '', ultimoEnvioLembretes: '', ultimoEnvioMetas1: '', ultimoEnvioMetas2: '' })}
                   />
                   <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', marginTop: 4 }}>
                     Extrato consolidado de receitas, despesas e saldo do dia.
                   </span>
                 </div>
+              </div>
+
+              {/* Seção de Resumo de Metas (12h e 18h) */}
+              <div style={{ marginTop: 6, paddingTop: 14, borderTop: '1px solid var(--border)' }}>
+                <ToggleConfig
+                  label="🎯 Resumo de Metas no WhatsApp (2x ao dia: 12h e 18h)"
+                  descricao="Receba o acompanhamento de progresso das suas metas ativas, ritmo de vendas e valor diário necessário"
+                  ativo={cfg.whatsappMetasAtivo ?? true}
+                  onChange={v => {
+                    const upd = { ...cfg, whatsappMetasAtivo: v };
+                    setCfg(upd);
+                    salvar(upd);
+                  }}
+                />
+
+                {(cfg.whatsappMetasAtivo ?? true) && (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginTop: 12 }}>
+                    <div>
+                      <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>
+                        🕛 1º Envio de Metas (Meio-dia)
+                      </label>
+                      <input
+                        type="time"
+                        className="input-field"
+                        value={cfg.whatsappHorarioMetas1 || '12:00'}
+                        onChange={e => setCfg(c => ({ ...c, whatsappHorarioMetas1: e.target.value }))}
+                        onBlur={() => salvar({ ...cfg, ultimoEnvioMetas1: '', ultimoEnvioMetas2: '' })}
+                      />
+                      <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', marginTop: 4 }}>
+                        Acompanhamento de vendas na metade do expediente.
+                      </span>
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>
+                        🕕 2º Envio de Metas (Fechamento)
+                      </label>
+                      <input
+                        type="time"
+                        className="input-field"
+                        value={cfg.whatsappHorarioMetas2 || '18:00'}
+                        onChange={e => setCfg(c => ({ ...c, whatsappHorarioMetas2: e.target.value }))}
+                        onBlur={() => salvar({ ...cfg, ultimoEnvioMetas1: '', ultimoEnvioMetas2: '' })}
+                      />
+                      <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', marginTop: 4 }}>
+                        Balanço final do dia e meta para amanhã.
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.2)', borderRadius: 8, padding: 12 }}>
@@ -1229,8 +1279,8 @@ document.cookie = 'app_pin_code=' + encodeURIComponent(novoPin) + '; max-age=315
                 <button
                   type="button"
                   onClick={async () => {
-                    await salvar({ ...cfg, ultimoEnvioFechamento: '', ultimoEnvioLembretes: '' });
-                    alert(`✅ Horários e telefone salvos com sucesso!\n\nLembrete Matinal: ${cfg.whatsappHorarioLembretes || '08:00'}\nFechamento Diário: ${cfg.whatsappHorarioFechamento || cfg.whatsappHorario || '17:00'}\nTelefone: ${cfg.whatsappNumeros || '(não preenchido)'}`);
+                    await salvar({ ...cfg, ultimoEnvioFechamento: '', ultimoEnvioLembretes: '', ultimoEnvioMetas1: '', ultimoEnvioMetas2: '' });
+                    alert(`✅ Horários e telefone salvos com sucesso!\n\nLembrete Matinal: ${cfg.whatsappHorarioLembretes || '08:00'}\nResumo Metas 1: ${cfg.whatsappHorarioMetas1 || '12:00'}\nFechamento Diário: ${cfg.whatsappHorarioFechamento || cfg.whatsappHorario || '17:00'}\nResumo Metas 2: ${cfg.whatsappHorarioMetas2 || '18:00'}\nTelefone: ${cfg.whatsappNumeros || '(não preenchido)'}`);
                   }}
                   className="btn-primary"
                   style={{ fontSize: 12, padding: '8px 16px', background: '#10b981', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
@@ -1286,6 +1336,31 @@ document.cookie = 'app_pin_code=' + encodeURIComponent(novoPin) + '; max-age=315
                   style={{ fontSize: 12, padding: '8px 14px' }}
                 >
                   🔔 Testar Lembrete de Contas Agora
+                </button>
+
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!cfg.whatsappNumeros) {
+                      alert('Preencha seu número de WhatsApp primeiro e clique em Salvar Configurações no topo!');
+                      return;
+                    }
+                    try {
+                      alert('Disparando teste de Resumo de Metas...');
+                      const currentTenant = typeof getTenantId === 'function' ? getTenantId() : 'master';
+                      const nomeAtual = cfg.nomeSistema || cfg.nomeUsuario || (currentTenant === 'master' ? 'Clovis Master' : 'Autocred Promotora');
+                      const res = await fetch(`/api/cron/resumo-metas?tenantId=${encodeURIComponent(currentTenant)}&numero=${encodeURIComponent(cfg.whatsappNumeros || '')}&nome=${encodeURIComponent(nomeAtual)}&slot=12h`);
+                      const json = await res.json();
+                      if (json.success) alert('✅ Mensagem de Metas entregue no seu WhatsApp!');
+                      else alert('Resposta: ' + (json.message || json.error));
+                    } catch (err: any) {
+                      alert('Erro ao disparar: ' + err.message);
+                    }
+                  }}
+                  className="btn-secondary"
+                  style={{ fontSize: 12, padding: '8px 14px', background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', border: '1px solid rgba(59, 130, 246, 0.3)' }}
+                >
+                  🎯 Testar Resumo de Metas Agora
                 </button>
               </div>
             </div>

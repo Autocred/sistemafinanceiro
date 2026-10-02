@@ -1234,7 +1234,10 @@ export async function salvarConfiguracoes(c: ConfiguracaoApp, uid: string = 'app
         ...c,
         whatsappNumeroMaster: c.whatsappNumeros || c.whatsappNumeroMaster,
         whatsappHorarioFechamento: c.whatsappHorarioFechamento || c.whatsappHorario,
-        whatsappHorarioLembretes: c.whatsappHorarioLembretes
+        whatsappHorarioLembretes: c.whatsappHorarioLembretes,
+        whatsappHorarioMetas1: c.whatsappHorarioMetas1,
+        whatsappHorarioMetas2: c.whatsappHorarioMetas2,
+        whatsappMetasAtivo: c.whatsappMetasAtivo
       }, { merge: true });
     } catch (e) {
       // ignore

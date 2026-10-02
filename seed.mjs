@@ -11,15 +11,15 @@ const db = getFirestore(app);
 
 async function run() {
   await addDoc(collection(db, 'saas_releases'), {
-    version: '1.4.5',
+    version: '1.4.6',
     date: new Date().toISOString(),
-    title: 'Sincronização e Salvamento Imediato de Horários WhatsApp',
-    description: 'Garantido que qualquer alteração de horário ou número feita na tela salva imediatamente e é respeitada com precisão minuto a minuto pelo robô.',
+    title: 'Disparo de Resumo de Metas no WhatsApp (12h e 18h)',
+    description: 'Implementado acompanhamento automatizado de metas financeiras com disparo no WhatsApp duas vezes ao dia (12h e 18h), calculando ritmo diário, valor restante e barra de progresso visual.',
     features: [
-      'Salvamento automático imediato ao sair do campo e botão dedicado na tela de configurações.',
-      'Suporte a troca de licença dinâmica no painel Master carregando e salvando dados isolados por tenant.',
-      'Sincronização bidirecional entre coleções Master para evitar qualquer discrepância de agendamento.',
-      'Reagendamento automático sem bloqueio de disparo mesmo alterando o horário várias vezes no mesmo dia.'
+      'Disparo automático de metas às 12h (meio-dia) e 18h (encerramento do expediente).',
+      'Cálculo em tempo real de dias úteis restantes e meta diária necessária.',
+      'Barra de progresso visual em blocos e ritmo das vendas com emojis intuitivos.',
+      'Configuração individual de horários e botão de teste em Configurações e no Painel Master.'
     ],
     type: 'feature'
   });
