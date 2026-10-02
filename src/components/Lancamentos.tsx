@@ -1069,7 +1069,7 @@ const openSafeAttachment = (url: string) => {
                   </div>
 
                   <div className="lancamento-card-middle">
-                    <div className="lancamento-tags" style={{ display: 'flex', flexWrap: 'nowrap', overflowX: 'auto', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch', gap: 6 }}>
+                    <div className="lancamento-tags" style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
 {t.tipo === 'transferencia' ? (
                          <span style={{ background: 'var(--bg-active)', padding: '4px 8px', fontSize: 11, borderRadius: 8, fontWeight: 500, whiteSpace: 'nowrap', flexShrink: 0, color: 'var(--primary)' }}>
                            {t.contaNome || '-'} ➔ {((t as any)['contaDestinãoNome']) || ((t as any)['contaDestinoNome']) || (contas.find(c => c.id === ((t as any)['contaDestinãoId'] || (t as any)['contaDestinoId']))?.nome) || '-'}
@@ -1086,7 +1086,7 @@ const openSafeAttachment = (url: string) => {
                          </span>
                        )}
                        {(t.fornecedorNome || t.clienteNome) && (
-                          <span style={{ background: 'var(--bg-active)', padding: '4px 8px', fontSize: 11, borderRadius: 8, fontWeight: 500, whiteSpace: 'nowrap', flexShrink: 0 }}>👤 {t.fornecedorNome || t.clienteNome}</span>
+                          <span style={{ background: 'var(--bg-active)', padding: '4px 8px', fontSize: 11, borderRadius: 8, fontWeight: 500, whiteSpace: 'nowrap', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', display: 'inline-block', verticalAlign: 'bottom' }}>👤 {t.fornecedorNome || t.clienteNome}</span>
                        )}
                        
                          

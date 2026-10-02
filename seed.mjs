@@ -11,19 +11,17 @@ const db = getFirestore(app);
 
 async function run() {
   await addDoc(collection(db, 'saas_releases'), {
-    version: '1.6.6',
+    version: '1.6.7',
     date: new Date().toISOString(),
-    title: 'Aprimoramento do Aprendizado de IA na Importação',
-    description: 'Melhorias profundas no sistema de OCR e aprendizado de notas e recibos para automatizar 100% o seu fluxo de entrada de dados.',
+    title: 'Suporte a Novos Modelos do Gemini (2.0 / 2.5)',
+    description: 'Adicionado suporte automático aos modelos mais recentes de inteligência artificial do Google para garantir compatibilidade com as novas chaves de API.',
     features: [
-      'Inclusão do botão "🧠 Aprender" na tela de IA: agora você pode forçar a inteligência a gravar a nota atual como padrão para o fornecedor.',
-      'Inclusão do campo Comportamento (Despesa Fixa / Variável) na tela de IA, gravando e aprendendo automaticamente a sua escolha.',
-      'Algoritmo de reconhecimento textual aprimorado: agora a IA ignora acentos e maiúsculas/minúsculas para encontrar o Fornecedor com muito mais precisão no banco de dados local.',
-      'Lançamentos importados por documentos que já vêm como Recibos/Notas pagas agora entram no sistema com o status "Pago / Recebido" por padrão, já vinculando a data de pagamento à data de competência.'
+      'Fallback inteligente para os modelos gemini-2.0-flash e gemini-2.5-flash.',
+      'Resolução do erro 404 para chaves recentes geradas no Google AI Studio.'
     ],
-    type: 'feature'
+    type: 'patch'
   });
-  console.log('Release notes 1.6.6 added!');
+  console.log('Release notes 1.6.7 added!');
   process.exit(0);
 }
 
