@@ -7,8 +7,6 @@ import { adminDb } from '@/lib/firebase-admin';
 export async function GET(request: Request) {
   try {
     const db = adminDb!;
-    const urlParams = new URL(request.url);
-    const rotina = urlParams.searchParams.get('rotina');
     
     // Obter data e hora atual no fuso de Brasília (America/Sao_Paulo)
     const agoraSp = new Intl.DateTimeFormat('pt-BR', {
@@ -28,7 +26,12 @@ export async function GET(request: Request) {
     const diaDoMesSp = Number(hojeSp.split('-')[2]);
     const mesAtualSp = hojeSp.substring(0, 7);
 
-    console.log(`[DISPATCHER MULTI-TENANT] Verificando agendamentos. Hora: ${agoraSp} | Data: ${hojeSp} (Dia: ${diaDoMesSp})`);
+    // Suporte a ?force=true para testes manuais (ignora check de horário)
+    const urlParams = new URL(request.url);
+    const forceAll = urlParams.searchParams.get('force') === 'true';
+    const forceTipo = urlParams.searchParams.get('tipo'); // lembretes, fechamento, metas1, metas2
+
+    console.log(`[DISPATCHER MULTI-TENANT] Hora: ${agoraSp} | Data: ${hojeSp} | Dia: ${diaDoMesSp} | Force: ${forceAll} | Tipo: ${forceTipo || 'auto'}`);
 
     const host = request.headers.get('host') || 'sistemafinanceiropessoal.vercel.app';
     const protocol = host.includes('localhost') ? 'http' : 'https';
@@ -133,117 +136,95 @@ export async function GET(request: Request) {
       // Pula se desativado ou sem número cadastrado
       if (!ativo || !numero) continue;
 
-      // Disparo de Lembrete Matinal (Contas a Pagar/Receber)
-      const flagLembrete = `${hojeSp}_${horarioLembretes}`;
-      if (rotina === 'manha' || (agoraSp === horarioLembretes && ultimoEnvioLembretes !== flagLembrete)) {
-        if (rotina || ultimoEnvioLembretes !== hojeSp) {
-          console.log(`[DISPATCHER] Disparando Lembrete para ${tenant.nome} (${numero})...`);
-          try {
-            const url = `${protocol}://${host}/api/cron/lembretes?tenantId=${tenant.id}&numero=${numero}&nome=${encodeURIComponent(tenant.nome)}`;
-            const res = await fetch(url);
-            const json = await res.json();
-            if (tenant.isMaster) {
-              await db.collection('configuracoes').doc('geral').set({ ultimoEnvioLembretes: hojeSp }, { merge: true });
-              await db.collection('config').doc('geral').set({ ultimoEnvioLembretes: hojeSp }, { merge: true });
-            } else {
-              await configRef.set({ ultimoEnvioLembretes: hojeSp }, { merge: true });
-            }
-            acoesDisparadas.push({ tipo: 'lembretes', tenant: tenant.id, numero, sucesso: true, retorno: json });
-          } catch (err: any) {
-            console.error(`[DISPATCHER] Erro ao disparar lembrete para ${tenant.id}:`, err);
-            acoesDisparadas.push({ tipo: 'lembretes', tenant: tenant.id, sucesso: false, erro: err.message });
-          }
+      // Helper: salvar flag de último envio
+      const salvarFlag = async (campo: string, valor: string) => {
+        if (tenant.isMaster) {
+          await db.collection('configuracoes').doc('geral').set({ [campo]: valor }, { merge: true });
+          await db.collection('config').doc('geral').set({ [campo]: valor }, { merge: true });
+        } else {
+          await configRef.set({ [campo]: valor }, { merge: true });
+        }
+      };
+
+      // ─── LEMBRETE MATINAL (Contas a Pagar/Receber) ───
+      // Dispara quando a hora atual === horário configurado E ainda não enviou hoje
+      const deveEnviarLembrete = (forceAll || forceTipo === 'lembretes' || agoraSp === horarioLembretes) && ultimoEnvioLembretes !== hojeSp;
+      if (deveEnviarLembrete) {
+        console.log(`[DISPATCHER] ✅ Disparando Lembrete para ${tenant.nome} (${numero}) | Horário config: ${horarioLembretes} | Hora atual: ${agoraSp}`);
+        try {
+          const url = `${protocol}://${host}/api/cron/lembretes?tenantId=${tenant.id}&numero=${numero}&nome=${encodeURIComponent(tenant.nome)}`;
+          const res = await fetch(url);
+          const json = await res.json();
+          await salvarFlag('ultimoEnvioLembretes', hojeSp);
+          acoesDisparadas.push({ tipo: 'lembretes', tenant: tenant.id, numero, horarioConfig: horarioLembretes, sucesso: true, retorno: json });
+        } catch (err: any) {
+          console.error(`[DISPATCHER] ❌ Erro lembrete ${tenant.id}:`, err);
+          acoesDisparadas.push({ tipo: 'lembretes', tenant: tenant.id, sucesso: false, erro: err.message });
         }
       }
 
-      // Disparo de Metas - Horário 1 (Manhã/Meio-Dia)
-      const flagMetas1 = `${hojeSp}_${horarioMetas1}`;
-      if (metasAtivo && (rotina === 'manha' || (agoraSp === horarioMetas1 && ultimoEnvioMetas1 !== flagMetas1))) {
-        if (rotina || ultimoEnvioMetas1 !== hojeSp) {
-          console.log(`[DISPATCHER] Disparando Resumo de Metas 1 para ${tenant.nome} (${numero})...`);
-          try {
-            const url = `${protocol}://${host}/api/cron/resumo-metas?tenantId=${tenant.id}&numero=${numero}&nome=${encodeURIComponent(tenant.nome)}&slot=12h`;
-            const res = await fetch(url);
-            const json = await res.json();
-            if (tenant.isMaster) {
-              await db.collection('configuracoes').doc('geral').set({ ultimoEnvioMetas1: hojeSp }, { merge: true });
-              await db.collection('config').doc('geral').set({ ultimoEnvioMetas1: hojeSp }, { merge: true });
-            } else {
-              await configRef.set({ ultimoEnvioMetas1: hojeSp }, { merge: true });
-            }
-            acoesDisparadas.push({ tipo: 'metas_1', tenant: tenant.id, numero, sucesso: true, retorno: json });
-          } catch (err: any) {
-            console.error(`[DISPATCHER] Erro ao disparar metas 1 para ${tenant.id}:`, err);
-            acoesDisparadas.push({ tipo: 'metas_1', tenant: tenant.id, sucesso: false, erro: err.message });
-          }
+      // ─── METAS - HORÁRIO 1 (Meio-Dia) ───
+      const deveEnviarMetas1 = metasAtivo && (forceAll || forceTipo === 'metas1' || agoraSp === horarioMetas1) && ultimoEnvioMetas1 !== hojeSp;
+      if (deveEnviarMetas1) {
+        console.log(`[DISPATCHER] ✅ Disparando Metas 1 para ${tenant.nome} (${numero}) | Horário config: ${horarioMetas1} | Hora atual: ${agoraSp}`);
+        try {
+          const url = `${protocol}://${host}/api/cron/resumo-metas?tenantId=${tenant.id}&numero=${numero}&nome=${encodeURIComponent(tenant.nome)}&slot=12h`;
+          const res = await fetch(url);
+          const json = await res.json();
+          await salvarFlag('ultimoEnvioMetas1', hojeSp);
+          acoesDisparadas.push({ tipo: 'metas_1', tenant: tenant.id, numero, horarioConfig: horarioMetas1, sucesso: true, retorno: json });
+        } catch (err: any) {
+          console.error(`[DISPATCHER] ❌ Erro metas 1 ${tenant.id}:`, err);
+          acoesDisparadas.push({ tipo: 'metas_1', tenant: tenant.id, sucesso: false, erro: err.message });
         }
       }
 
-      // Disparo de Fechamento Diário (Noite)
-      const flagFechamento = `${hojeSp}_${horarioFechamento}`;
-      if (rotina === 'noite' || (agoraSp === horarioFechamento && ultimoEnvioFechamento !== flagFechamento)) {
-        if (rotina || ultimoEnvioFechamento !== hojeSp) {
-          console.log(`[DISPATCHER] Disparando Fechamento Diário para ${tenant.nome} (${numero})...`);
-          try {
-            const url = `${protocol}://${host}/api/cron/fechamento-diario?tenantId=${tenant.id}&numero=${numero}&nome=${encodeURIComponent(tenant.nome)}`;
-            const res = await fetch(url);
-            const json = await res.json();
-            if (tenant.isMaster) {
-              await db.collection('configuracoes').doc('geral').set({ ultimoEnvioFechamento: hojeSp }, { merge: true });
-              await db.collection('config').doc('geral').set({ ultimoEnvioFechamento: hojeSp }, { merge: true });
-            } else {
-              await configRef.set({ ultimoEnvioFechamento: hojeSp }, { merge: true });
-            }
-            acoesDisparadas.push({ tipo: 'fechamento', tenant: tenant.id, numero, sucesso: true, retorno: json });
-          } catch (err: any) {
-            console.error(`[DISPATCHER] Erro ao disparar fechamento para ${tenant.id}:`, err);
-            acoesDisparadas.push({ tipo: 'fechamento', tenant: tenant.id, sucesso: false, erro: err.message });
-          }
+      // ─── FECHAMENTO DIÁRIO ───
+      const deveEnviarFechamento = (forceAll || forceTipo === 'fechamento' || agoraSp === horarioFechamento) && ultimoEnvioFechamento !== hojeSp;
+      if (deveEnviarFechamento) {
+        console.log(`[DISPATCHER] ✅ Disparando Fechamento para ${tenant.nome} (${numero}) | Horário config: ${horarioFechamento} | Hora atual: ${agoraSp}`);
+        try {
+          const url = `${protocol}://${host}/api/cron/fechamento-diario?tenantId=${tenant.id}&numero=${numero}&nome=${encodeURIComponent(tenant.nome)}`;
+          const res = await fetch(url);
+          const json = await res.json();
+          await salvarFlag('ultimoEnvioFechamento', hojeSp);
+          acoesDisparadas.push({ tipo: 'fechamento', tenant: tenant.id, numero, horarioConfig: horarioFechamento, sucesso: true, retorno: json });
+        } catch (err: any) {
+          console.error(`[DISPATCHER] ❌ Erro fechamento ${tenant.id}:`, err);
+          acoesDisparadas.push({ tipo: 'fechamento', tenant: tenant.id, sucesso: false, erro: err.message });
         }
       }
 
-      // Disparo de Metas - Horário 2 (Noite)
-      const flagMetas2 = `${hojeSp}_${horarioMetas2}`;
-      if (metasAtivo && (rotina === 'noite' || (agoraSp === horarioMetas2 && ultimoEnvioMetas2 !== flagMetas2))) {
-        if (rotina || ultimoEnvioMetas2 !== hojeSp) {
-          console.log(`[DISPATCHER] Disparando Resumo de Metas 2 para ${tenant.nome} (${numero})...`);
-          try {
-            const url = `${protocol}://${host}/api/cron/resumo-metas?tenantId=${tenant.id}&numero=${numero}&nome=${encodeURIComponent(tenant.nome)}&slot=18h`;
-            const res = await fetch(url);
-            const json = await res.json();
-            if (tenant.isMaster) {
-              await db.collection('configuracoes').doc('geral').set({ ultimoEnvioMetas2: hojeSp }, { merge: true });
-              await db.collection('config').doc('geral').set({ ultimoEnvioMetas2: hojeSp }, { merge: true });
-            } else {
-              await configRef.set({ ultimoEnvioMetas2: hojeSp }, { merge: true });
-            }
-            acoesDisparadas.push({ tipo: 'metas_2', tenant: tenant.id, numero, sucesso: true, retorno: json });
-          } catch (err: any) {
-            console.error(`[DISPATCHER] Erro ao disparar metas 2 para ${tenant.id}:`, err);
-            acoesDisparadas.push({ tipo: 'metas_2', tenant: tenant.id, sucesso: false, erro: err.message });
-          }
+      // ─── METAS - HORÁRIO 2 (Fechamento do Expediente) ───
+      const deveEnviarMetas2 = metasAtivo && (forceAll || forceTipo === 'metas2' || agoraSp === horarioMetas2) && ultimoEnvioMetas2 !== hojeSp;
+      if (deveEnviarMetas2) {
+        console.log(`[DISPATCHER] ✅ Disparando Metas 2 para ${tenant.nome} (${numero}) | Horário config: ${horarioMetas2} | Hora atual: ${agoraSp}`);
+        try {
+          const url = `${protocol}://${host}/api/cron/resumo-metas?tenantId=${tenant.id}&numero=${numero}&nome=${encodeURIComponent(tenant.nome)}&slot=18h`;
+          const res = await fetch(url);
+          const json = await res.json();
+          await salvarFlag('ultimoEnvioMetas2', hojeSp);
+          acoesDisparadas.push({ tipo: 'metas_2', tenant: tenant.id, numero, horarioConfig: horarioMetas2, sucesso: true, retorno: json });
+        } catch (err: any) {
+          console.error(`[DISPATCHER] ❌ Erro metas 2 ${tenant.id}:`, err);
+          acoesDisparadas.push({ tipo: 'metas_2', tenant: tenant.id, sucesso: false, erro: err.message });
         }
       }
 
-      // Disparo de Fechamento Mensal Executivo
-      if (fechamentoMensalAtivo && diaDoMesSp === diaFechamentoMensal && ultimoEnvioFechamentoMensal !== mesAtualSp) {
-        if (rotina === 'noite' || (agoraSp === horarioFechamentoMensal)) {
-          console.log(`[DISPATCHER] Disparando Fechamento Mensal Executivo para ${tenant.nome} (${numero})...`);
-          try {
-            const url = `${protocol}://${host}/api/cron/fechamento-mensal?tenantId=${tenant.id}&numero=${numero}&nome=${encodeURIComponent(tenant.nome)}`;
-            const res = await fetch(url);
-            const json = await res.json();
-            if (tenant.isMaster) {
-              await db.collection('configuracoes').doc('geral').set({ ultimoEnvioFechamentoMensal: mesAtualSp }, { merge: true });
-              await db.collection('config').doc('geral').set({ ultimoEnvioFechamentoMensal: mesAtualSp }, { merge: true });
-            } else {
-              await configRef.set({ ultimoEnvioFechamentoMensal: mesAtualSp }, { merge: true });
-            }
-            acoesDisparadas.push({ tipo: 'fechamento_mensal', tenant: tenant.id, numero, sucesso: true, retorno: json });
-          } catch (err: any) {
-            console.error(`[DISPATCHER] Erro ao disparar fechamento mensal para ${tenant.id}:`, err);
-            acoesDisparadas.push({ tipo: 'fechamento_mensal', tenant: tenant.id, sucesso: false, erro: err.message });
-          }
+      // ─── FECHAMENTO MENSAL EXECUTIVO ───
+      const deveEnviarMensal = fechamentoMensalAtivo && diaDoMesSp === diaFechamentoMensal && ultimoEnvioFechamentoMensal !== mesAtualSp &&
+        (forceAll || forceTipo === 'mensal' || agoraSp === horarioFechamentoMensal);
+      if (deveEnviarMensal) {
+        console.log(`[DISPATCHER] ✅ Disparando Fechamento Mensal para ${tenant.nome} (${numero}) | Horário config: ${horarioFechamentoMensal} | Hora atual: ${agoraSp}`);
+        try {
+          const url = `${protocol}://${host}/api/cron/fechamento-mensal?tenantId=${tenant.id}&numero=${numero}&nome=${encodeURIComponent(tenant.nome)}`;
+          const res = await fetch(url);
+          const json = await res.json();
+          await salvarFlag('ultimoEnvioFechamentoMensal', mesAtualSp);
+          acoesDisparadas.push({ tipo: 'fechamento_mensal', tenant: tenant.id, numero, horarioConfig: horarioFechamentoMensal, sucesso: true, retorno: json });
+        } catch (err: any) {
+          console.error(`[DISPATCHER] ❌ Erro fechamento mensal ${tenant.id}:`, err);
+          acoesDisparadas.push({ tipo: 'fechamento_mensal', tenant: tenant.id, sucesso: false, erro: err.message });
         }
       }
     }
@@ -253,6 +234,8 @@ export async function GET(request: Request) {
       mensagem: acoesDisparadas.length > 0 ? `${acoesDisparadas.length} mensagens enviadas` : 'Nenhuma ação necessária no minuto atual',
       horaAtual: agoraSp,
       dataAtual: hojeSp,
+      forceAll,
+      forceTipo: forceTipo || null,
       totalLicencasVerificadas: listaTenants.length,
       licencas: licencasProcessadas,
       acoesDisparadas
