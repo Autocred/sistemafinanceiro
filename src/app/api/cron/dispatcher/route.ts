@@ -136,7 +136,7 @@ export async function GET(request: Request) {
       // Disparo de Lembrete Matinal (Contas a Pagar/Receber)
       const flagLembrete = `${hojeSp}_${horarioLembretes}`;
       if (rotina === 'manha' || (agoraSp === horarioLembretes && ultimoEnvioLembretes !== flagLembrete)) {
-        if (ultimoEnvioLembretes !== hojeSp) {
+        if (rotina || ultimoEnvioLembretes !== hojeSp) {
           console.log(`[DISPATCHER] Disparando Lembrete para ${tenant.nome} (${numero})...`);
           try {
             const url = `${protocol}://${host}/api/cron/lembretes?tenantId=${tenant.id}&numero=${numero}&nome=${encodeURIComponent(tenant.nome)}`;
@@ -159,7 +159,7 @@ export async function GET(request: Request) {
       // Disparo de Metas - Horário 1 (Manhã/Meio-Dia)
       const flagMetas1 = `${hojeSp}_${horarioMetas1}`;
       if (metasAtivo && (rotina === 'manha' || (agoraSp === horarioMetas1 && ultimoEnvioMetas1 !== flagMetas1))) {
-        if (ultimoEnvioMetas1 !== hojeSp) {
+        if (rotina || ultimoEnvioMetas1 !== hojeSp) {
           console.log(`[DISPATCHER] Disparando Resumo de Metas 1 para ${tenant.nome} (${numero})...`);
           try {
             const url = `${protocol}://${host}/api/cron/resumo-metas?tenantId=${tenant.id}&numero=${numero}&nome=${encodeURIComponent(tenant.nome)}&slot=12h`;
@@ -182,7 +182,7 @@ export async function GET(request: Request) {
       // Disparo de Fechamento Diário (Noite)
       const flagFechamento = `${hojeSp}_${horarioFechamento}`;
       if (rotina === 'noite' || (agoraSp === horarioFechamento && ultimoEnvioFechamento !== flagFechamento)) {
-        if (ultimoEnvioFechamento !== hojeSp) {
+        if (rotina || ultimoEnvioFechamento !== hojeSp) {
           console.log(`[DISPATCHER] Disparando Fechamento Diário para ${tenant.nome} (${numero})...`);
           try {
             const url = `${protocol}://${host}/api/cron/fechamento-diario?tenantId=${tenant.id}&numero=${numero}&nome=${encodeURIComponent(tenant.nome)}`;
@@ -205,7 +205,7 @@ export async function GET(request: Request) {
       // Disparo de Metas - Horário 2 (Noite)
       const flagMetas2 = `${hojeSp}_${horarioMetas2}`;
       if (metasAtivo && (rotina === 'noite' || (agoraSp === horarioMetas2 && ultimoEnvioMetas2 !== flagMetas2))) {
-        if (ultimoEnvioMetas2 !== hojeSp) {
+        if (rotina || ultimoEnvioMetas2 !== hojeSp) {
           console.log(`[DISPATCHER] Disparando Resumo de Metas 2 para ${tenant.nome} (${numero})...`);
           try {
             const url = `${protocol}://${host}/api/cron/resumo-metas?tenantId=${tenant.id}&numero=${numero}&nome=${encodeURIComponent(tenant.nome)}&slot=18h`;
