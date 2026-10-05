@@ -7,6 +7,8 @@ import { adminDb } from '@/lib/firebase-admin';
 export async function GET(request: Request) {
   try {
     const db = adminDb!;
+    const urlParams = new URL(request.url);
+    const rotina = urlParams.searchParams.get('rotina');
     
     // Obter data e hora atual no fuso de Brasília (America/Sao_Paulo)
     const agoraSp = new Intl.DateTimeFormat('pt-BR', {
@@ -132,106 +134,112 @@ export async function GET(request: Request) {
       if (!ativo || !numero) continue;
 
       // Disparo de Lembrete Matinal (Contas a Pagar/Receber)
-      const flagLembrete = `${hojeSp}_${horarioLembretes}`;
-      if (agoraSp === horarioLembretes && ultimoEnvioLembretes !== flagLembrete) {
-        console.log(`[DISPATCHER] Disparando Lembrete para ${tenant.nome} (${numero})...`);
-        try {
-          const url = `${protocol}://${host}/api/cron/lembretes?tenantId=${tenant.id}&numero=${numero}&nome=${encodeURIComponent(tenant.nome)}`;
-          const res = await fetch(url);
-          const json = await res.json();
-          if (tenant.isMaster) {
-            await db.collection('configuracoes').doc('geral').set({ ultimoEnvioLembretes: flagLembrete }, { merge: true });
-            await db.collection('config').doc('geral').set({ ultimoEnvioLembretes: flagLembrete }, { merge: true });
-          } else {
-            await configRef.set({ ultimoEnvioLembretes: flagLembrete }, { merge: true });
+      if (rotina === 'manha' || (agoraSp === horarioLembretes && ultimoEnvioLembretes !== flagLembrete)) {
+        if (ultimoEnvioLembretes !== hojeSp) {
+          console.log(`[DISPATCHER] Disparando Lembrete para ${tenant.nome} (${numero})...`);
+          try {
+            const url = `${protocol}://${host}/api/cron/lembretes?tenantId=${tenant.id}&numero=${numero}&nome=${encodeURIComponent(tenant.nome)}`;
+            const res = await fetch(url);
+            const json = await res.json();
+            if (tenant.isMaster) {
+              await db.collection('configuracoes').doc('geral').set({ ultimoEnvioLembretes: hojeSp }, { merge: true });
+              await db.collection('config').doc('geral').set({ ultimoEnvioLembretes: hojeSp }, { merge: true });
+            } else {
+              await configRef.set({ ultimoEnvioLembretes: hojeSp }, { merge: true });
+            }
+            acoesDisparadas.push({ tipo: 'lembretes', tenant: tenant.id, numero, sucesso: true, retorno: json });
+          } catch (err: any) {
+            console.error(`[DISPATCHER] Erro ao disparar lembrete para ${tenant.id}:`, err);
+            acoesDisparadas.push({ tipo: 'lembretes', tenant: tenant.id, sucesso: false, erro: err.message });
           }
-          acoesDisparadas.push({ tipo: 'lembretes', tenant: tenant.id, numero, sucesso: true, retorno: json });
-        } catch (err: any) {
-          console.error(`[DISPATCHER] Erro ao disparar lembrete para ${tenant.id}:`, err);
-          acoesDisparadas.push({ tipo: 'lembretes', tenant: tenant.id, sucesso: false, erro: err.message });
         }
       }
 
-      // Disparo de Metas - Horário 1 (12h - Meio-Dia)
-      const flagMetas1 = `${hojeSp}_${horarioMetas1}`;
-      if (metasAtivo && agoraSp === horarioMetas1 && ultimoEnvioMetas1 !== flagMetas1) {
-        console.log(`[DISPATCHER] Disparando Resumo de Metas (12h) para ${tenant.nome} (${numero})...`);
-        try {
-          const url = `${protocol}://${host}/api/cron/resumo-metas?tenantId=${tenant.id}&numero=${numero}&nome=${encodeURIComponent(tenant.nome)}&slot=12h`;
-          const res = await fetch(url);
-          const json = await res.json();
-          if (tenant.isMaster) {
-            await db.collection('configuracoes').doc('geral').set({ ultimoEnvioMetas1: flagMetas1 }, { merge: true });
-            await db.collection('config').doc('geral').set({ ultimoEnvioMetas1: flagMetas1 }, { merge: true });
-          } else {
-            await configRef.set({ ultimoEnvioMetas1: flagMetas1 }, { merge: true });
+      // Disparo de Metas - Horário 1 (Manhã/Meio-Dia)
+      if (metasAtivo && (rotina === 'manha' || (agoraSp === horarioMetas1 && ultimoEnvioMetas1 !== flagMetas1))) {
+        if (ultimoEnvioMetas1 !== hojeSp) {
+          console.log(`[DISPATCHER] Disparando Resumo de Metas 1 para ${tenant.nome} (${numero})...`);
+          try {
+            const url = `${protocol}://${host}/api/cron/resumo-metas?tenantId=${tenant.id}&numero=${numero}&nome=${encodeURIComponent(tenant.nome)}&slot=12h`;
+            const res = await fetch(url);
+            const json = await res.json();
+            if (tenant.isMaster) {
+              await db.collection('configuracoes').doc('geral').set({ ultimoEnvioMetas1: hojeSp }, { merge: true });
+              await db.collection('config').doc('geral').set({ ultimoEnvioMetas1: hojeSp }, { merge: true });
+            } else {
+              await configRef.set({ ultimoEnvioMetas1: hojeSp }, { merge: true });
+            }
+            acoesDisparadas.push({ tipo: 'metas_1', tenant: tenant.id, numero, sucesso: true, retorno: json });
+          } catch (err: any) {
+            console.error(`[DISPATCHER] Erro ao disparar metas 1 para ${tenant.id}:`, err);
+            acoesDisparadas.push({ tipo: 'metas_1', tenant: tenant.id, sucesso: false, erro: err.message });
           }
-          acoesDisparadas.push({ tipo: 'metas_12h', tenant: tenant.id, numero, sucesso: true, retorno: json });
-        } catch (err: any) {
-          console.error(`[DISPATCHER] Erro ao disparar metas 12h para ${tenant.id}:`, err);
-          acoesDisparadas.push({ tipo: 'metas_12h', tenant: tenant.id, sucesso: false, erro: err.message });
         }
       }
 
-      // Disparo de Fechamento Diário
-      const flagFechamento = `${hojeSp}_${horarioFechamento}`;
-      if (agoraSp === horarioFechamento && ultimoEnvioFechamento !== flagFechamento) {
-        console.log(`[DISPATCHER] Disparando Fechamento Diário para ${tenant.nome} (${numero})...`);
-        try {
-          const url = `${protocol}://${host}/api/cron/fechamento-diario?tenantId=${tenant.id}&numero=${numero}&nome=${encodeURIComponent(tenant.nome)}`;
-          const res = await fetch(url);
-          const json = await res.json();
-          if (tenant.isMaster) {
-            await db.collection('configuracoes').doc('geral').set({ ultimoEnvioFechamento: flagFechamento }, { merge: true });
-            await db.collection('config').doc('geral').set({ ultimoEnvioFechamento: flagFechamento }, { merge: true });
-          } else {
-            await configRef.set({ ultimoEnvioFechamento: flagFechamento }, { merge: true });
+      // Disparo de Fechamento Diário (Noite)
+      if (rotina === 'noite' || (agoraSp === horarioFechamento && ultimoEnvioFechamento !== flagFechamento)) {
+        if (ultimoEnvioFechamento !== hojeSp) {
+          console.log(`[DISPATCHER] Disparando Fechamento Diário para ${tenant.nome} (${numero})...`);
+          try {
+            const url = `${protocol}://${host}/api/cron/fechamento-diario?tenantId=${tenant.id}&numero=${numero}&nome=${encodeURIComponent(tenant.nome)}`;
+            const res = await fetch(url);
+            const json = await res.json();
+            if (tenant.isMaster) {
+              await db.collection('configuracoes').doc('geral').set({ ultimoEnvioFechamento: hojeSp }, { merge: true });
+              await db.collection('config').doc('geral').set({ ultimoEnvioFechamento: hojeSp }, { merge: true });
+            } else {
+              await configRef.set({ ultimoEnvioFechamento: hojeSp }, { merge: true });
+            }
+            acoesDisparadas.push({ tipo: 'fechamento', tenant: tenant.id, numero, sucesso: true, retorno: json });
+          } catch (err: any) {
+            console.error(`[DISPATCHER] Erro ao disparar fechamento para ${tenant.id}:`, err);
+            acoesDisparadas.push({ tipo: 'fechamento', tenant: tenant.id, sucesso: false, erro: err.message });
           }
-          acoesDisparadas.push({ tipo: 'fechamento', tenant: tenant.id, numero, sucesso: true, retorno: json });
-        } catch (err: any) {
-          console.error(`[DISPATCHER] Erro ao disparar fechamento para ${tenant.id}:`, err);
-          acoesDisparadas.push({ tipo: 'fechamento', tenant: tenant.id, sucesso: false, erro: err.message });
         }
       }
 
-      // Disparo de Metas - Horário 2 (18h - Fechamento do Expediente)
-      const flagMetas2 = `${hojeSp}_${horarioMetas2}`;
-      if (metasAtivo && agoraSp === horarioMetas2 && ultimoEnvioMetas2 !== flagMetas2) {
-        console.log(`[DISPATCHER] Disparando Resumo de Metas (18h) para ${tenant.nome} (${numero})...`);
-        try {
-          const url = `${protocol}://${host}/api/cron/resumo-metas?tenantId=${tenant.id}&numero=${numero}&nome=${encodeURIComponent(tenant.nome)}&slot=18h`;
-          const res = await fetch(url);
-          const json = await res.json();
-          if (tenant.isMaster) {
-            await db.collection('configuracoes').doc('geral').set({ ultimoEnvioMetas2: flagMetas2 }, { merge: true });
-            await db.collection('config').doc('geral').set({ ultimoEnvioMetas2: flagMetas2 }, { merge: true });
-          } else {
-            await configRef.set({ ultimoEnvioMetas2: flagMetas2 }, { merge: true });
+      // Disparo de Metas - Horário 2 (Noite)
+      if (metasAtivo && (rotina === 'noite' || (agoraSp === horarioMetas2 && ultimoEnvioMetas2 !== flagMetas2))) {
+        if (ultimoEnvioMetas2 !== hojeSp) {
+          console.log(`[DISPATCHER] Disparando Resumo de Metas 2 para ${tenant.nome} (${numero})...`);
+          try {
+            const url = `${protocol}://${host}/api/cron/resumo-metas?tenantId=${tenant.id}&numero=${numero}&nome=${encodeURIComponent(tenant.nome)}&slot=18h`;
+            const res = await fetch(url);
+            const json = await res.json();
+            if (tenant.isMaster) {
+              await db.collection('configuracoes').doc('geral').set({ ultimoEnvioMetas2: hojeSp }, { merge: true });
+              await db.collection('config').doc('geral').set({ ultimoEnvioMetas2: hojeSp }, { merge: true });
+            } else {
+              await configRef.set({ ultimoEnvioMetas2: hojeSp }, { merge: true });
+            }
+            acoesDisparadas.push({ tipo: 'metas_2', tenant: tenant.id, numero, sucesso: true, retorno: json });
+          } catch (err: any) {
+            console.error(`[DISPATCHER] Erro ao disparar metas 2 para ${tenant.id}:`, err);
+            acoesDisparadas.push({ tipo: 'metas_2', tenant: tenant.id, sucesso: false, erro: err.message });
           }
-          acoesDisparadas.push({ tipo: 'metas_18h', tenant: tenant.id, numero, sucesso: true, retorno: json });
-        } catch (err: any) {
-          console.error(`[DISPATCHER] Erro ao disparar metas 18h para ${tenant.id}:`, err);
-          acoesDisparadas.push({ tipo: 'metas_18h', tenant: tenant.id, sucesso: false, erro: err.message });
         }
       }
 
-      // Disparo de Fechamento Mensal Executivo (PDF e Balanço Completo no WhatsApp)
-      if (fechamentoMensalAtivo && diaDoMesSp === diaFechamentoMensal && agoraSp === horarioFechamentoMensal && ultimoEnvioFechamentoMensal !== mesAtualSp) {
-        console.log(`[DISPATCHER] Disparando Fechamento Mensal Executivo para ${tenant.nome} (${numero})...`);
-        try {
-          const url = `${protocol}://${host}/api/cron/fechamento-mensal?tenantId=${tenant.id}&numero=${numero}&nome=${encodeURIComponent(tenant.nome)}`;
-          const res = await fetch(url);
-          const json = await res.json();
-          if (tenant.isMaster) {
-            await db.collection('configuracoes').doc('geral').set({ ultimoEnvioFechamentoMensal: mesAtualSp }, { merge: true });
-            await db.collection('config').doc('geral').set({ ultimoEnvioFechamentoMensal: mesAtualSp }, { merge: true });
-          } else {
-            await configRef.set({ ultimoEnvioFechamentoMensal: mesAtualSp }, { merge: true });
+      // Disparo de Fechamento Mensal Executivo
+      if (fechamentoMensalAtivo && diaDoMesSp === diaFechamentoMensal && ultimoEnvioFechamentoMensal !== mesAtualSp) {
+        if (rotina === 'noite' || (agoraSp === horarioFechamentoMensal)) {
+          console.log(`[DISPATCHER] Disparando Fechamento Mensal Executivo para ${tenant.nome} (${numero})...`);
+          try {
+            const url = `${protocol}://${host}/api/cron/fechamento-mensal?tenantId=${tenant.id}&numero=${numero}&nome=${encodeURIComponent(tenant.nome)}`;
+            const res = await fetch(url);
+            const json = await res.json();
+            if (tenant.isMaster) {
+              await db.collection('configuracoes').doc('geral').set({ ultimoEnvioFechamentoMensal: mesAtualSp }, { merge: true });
+              await db.collection('config').doc('geral').set({ ultimoEnvioFechamentoMensal: mesAtualSp }, { merge: true });
+            } else {
+              await configRef.set({ ultimoEnvioFechamentoMensal: mesAtualSp }, { merge: true });
+            }
+            acoesDisparadas.push({ tipo: 'fechamento_mensal', tenant: tenant.id, numero, sucesso: true, retorno: json });
+          } catch (err: any) {
+            console.error(`[DISPATCHER] Erro ao disparar fechamento mensal para ${tenant.id}:`, err);
+            acoesDisparadas.push({ tipo: 'fechamento_mensal', tenant: tenant.id, sucesso: false, erro: err.message });
           }
-          acoesDisparadas.push({ tipo: 'fechamento_mensal', tenant: tenant.id, numero, sucesso: true, retorno: json });
-        } catch (err: any) {
-          console.error(`[DISPATCHER] Erro ao disparar fechamento mensal para ${tenant.id}:`, err);
-          acoesDisparadas.push({ tipo: 'fechamento_mensal', tenant: tenant.id, sucesso: false, erro: err.message });
         }
       }
     }

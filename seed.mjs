@@ -11,21 +11,20 @@ const db = getFirestore(app);
 
 async function run() {
   await addDoc(collection(db, 'saas_releases'), {
-    versao: 'v3.6.21',
-    titulo: 'Vínculo de Cartões de Crédito e Ajuste Fino de Valores OCR',
-    descricao: 'Melhorias de inteligência e usabilidade na leitura automática.',
+    versao: 'v3.6.22',
+    titulo: 'Correção no Envio Multi-Tenant do WhatsApp (Dispatcher)',
+    descricao: 'Ajuste na infraestrutura de agendamento de mensagens (CRON) para garantir envio a todas as licenças ativas.',
     dataLancamento: new Date().toISOString(),
     status: 'publicado',
     destaque: true,
     notificarTenants: false,
     alvos: 'todos',
     changes: [
-      { tipo: 'novo', texto: 'Quando a IA identifica o pagamento via Cartão de Crédito, o sistema automaticamente troca o campo de Conta Bancária pelo campo de Seleção de Cartão (mesmo comportamento do lançamento manual).' },
-      { tipo: 'melhoria', texto: 'Regras da IA endurecidas: ela agora foca estritamente no "Valor Total Final", ignorando subtotais, descontos ou taxas perdidas pelo recibo.' },
-      { tipo: 'correcao', texto: 'Inclusão de validação que impede salvar nota de cartão de crédito sem informar de qual cartão foi.' }
+      { tipo: 'correcao', texto: 'A partir de agora, o sistema aciona um "Dispatcher" global que percorre TODAS as suas licenças de forma independente e envia as mensagens de lembretes e fechamento para cada uma delas corretamente.' },
+      { tipo: 'melhoria', texto: 'O Vercel agora checa os horários programados de cada licença a cada hora (ex: 08:00, 09:00), respeitando a customização feita dentro do painel de cada cliente.' }
     ]
   });
-  console.log('Release notes v3.6.21 added!');
+  console.log('Release notes v3.6.22 added!');
   process.exit(0);
 }
 

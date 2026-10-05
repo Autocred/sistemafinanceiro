@@ -1,16 +1,16 @@
 {
   "crons": [
     {
-      "path": "/api/cron/lembretes",
+      "path": "/api/cron/dispatcher?rotina=manha",
       "schedule": "0 11 * * *"
+    },
+    {
+      "path": "/api/cron/dispatcher?rotina=noite",
+      "schedule": "0 21 * * *"
     },
     {
       "path": "/api/cron/backups",
       "schedule": "0 8 * * *"
-    },
-    {
-      "path": "/api/cron/fechamento-diario",
-      "schedule": "0 20 * * *"
     }
   ]
 }
