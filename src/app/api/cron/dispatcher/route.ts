@@ -134,6 +134,7 @@ export async function GET(request: Request) {
       if (!ativo || !numero) continue;
 
       // Disparo de Lembrete Matinal (Contas a Pagar/Receber)
+      const flagLembrete = `${hojeSp}_${horarioLembretes}`;
       if (rotina === 'manha' || (agoraSp === horarioLembretes && ultimoEnvioLembretes !== flagLembrete)) {
         if (ultimoEnvioLembretes !== hojeSp) {
           console.log(`[DISPATCHER] Disparando Lembrete para ${tenant.nome} (${numero})...`);
@@ -156,6 +157,7 @@ export async function GET(request: Request) {
       }
 
       // Disparo de Metas - Horário 1 (Manhã/Meio-Dia)
+      const flagMetas1 = `${hojeSp}_${horarioMetas1}`;
       if (metasAtivo && (rotina === 'manha' || (agoraSp === horarioMetas1 && ultimoEnvioMetas1 !== flagMetas1))) {
         if (ultimoEnvioMetas1 !== hojeSp) {
           console.log(`[DISPATCHER] Disparando Resumo de Metas 1 para ${tenant.nome} (${numero})...`);
@@ -178,6 +180,7 @@ export async function GET(request: Request) {
       }
 
       // Disparo de Fechamento Diário (Noite)
+      const flagFechamento = `${hojeSp}_${horarioFechamento}`;
       if (rotina === 'noite' || (agoraSp === horarioFechamento && ultimoEnvioFechamento !== flagFechamento)) {
         if (ultimoEnvioFechamento !== hojeSp) {
           console.log(`[DISPATCHER] Disparando Fechamento Diário para ${tenant.nome} (${numero})...`);
@@ -200,6 +203,7 @@ export async function GET(request: Request) {
       }
 
       // Disparo de Metas - Horário 2 (Noite)
+      const flagMetas2 = `${hojeSp}_${horarioMetas2}`;
       if (metasAtivo && (rotina === 'noite' || (agoraSp === horarioMetas2 && ultimoEnvioMetas2 !== flagMetas2))) {
         if (ultimoEnvioMetas2 !== hojeSp) {
           console.log(`[DISPATCHER] Disparando Resumo de Metas 2 para ${tenant.nome} (${numero})...`);
