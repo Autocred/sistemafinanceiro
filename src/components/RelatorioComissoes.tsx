@@ -206,19 +206,25 @@ export function RelatorioComissoes({
     const meses = [];
     // Média dos últimos recebimentos de comissões diferidas
     const mediaDiferidaMensal = kpis.totalDiferida > 0 ? kpis.totalDiferida : 0;
+    let acum = 0;
 
     for (let i = 1; i <= 6; i++) {
       const d = new Date(hoje.getFullYear(), hoje.getMonth() + i, 1);
       const mesNome = d.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' });
-      // Estimativa baseada no volume recorrente ativo
       const estimativa = mediaDiferidaMensal;
+      acum += estimativa;
       meses.push({
         mes: mesNome.toUpperCase(),
-        estimativa
+        estimativa,
+        acumulado: acum
       });
     }
     return meses;
   }, [kpis.totalDiferida]);
+
+  const totalProjecao6Meses = useMemo(() => {
+    return projecaoMeses.reduce((acc, curr) => acc + curr.estimativa, 0);
+  }, [projecaoMeses]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -720,7 +726,7 @@ export function RelatorioComissoes({
 
       {/* QUADRO DE PROJEÇÃO DE RECORRÊNCIA FUTURA */}
       <div className="glass" style={{ padding: 22, borderRadius: 20, border: '1px solid rgba(139,92,246,0.2)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
           <div>
             <h3 style={{ fontSize: 15, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
               🔮 Projeção de Carteira Recorrente (Comissões Diferidas)
@@ -729,9 +735,63 @@ export function RelatorioComissoes({
               Estimativa de fluxo de caixa garantido por comissões fixas/diferidas para os próximos 6 meses
             </p>
           </div>
-          <span style={{ fontSize: 12, fontWeight: 700, color: '#7c3aed', background: 'rgba(139,92,246,0.1)', padding: '6px 12px', borderRadius: 8 }}>
-            Base Ativa: {fmt(kpis.totalDiferida)} / mês
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: '#7c3aed', background: 'rgba(139,92,246,0.1)', padding: '6px 12px', borderRadius: 8 }}>
+              Base Ativa: {fmt(kpis.totalDiferida)} / mês
+            </span>
+            <span style={{ fontSize: 12, fontWeight: 800, color: 'white', background: '#7c3aed', padding: '6px 14px', borderRadius: 8, boxShadow: '0 2px 8px rgba(124,58,237,0.3)' }}>
+              Total 6 Meses: {fmt(totalProjecao6Meses)}
+            </span>
+          </div>
+        </div>
+
+        {/* BANNER CONSOLIDADOR DOS 6 MESES */}
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(139,92,246,0.14), rgba(139,92,246,0.04))',
+          border: '1px solid rgba(139,92,246,0.35)',
+          borderRadius: 14,
+          padding: '16px 20px',
+          marginBottom: 16,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 14
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{
+              width: 44,
+              height: 44,
+              borderRadius: 12,
+              background: '#7c3aed',
+              color: 'white',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 4px 12px rgba(124,58,237,0.35)'
+            }}>
+              <DollarSign size={22} />
+            </div>
+            <div>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#7c3aed', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Totalização da Carteira nos Próximos 6 Meses
+              </span>
+              <p style={{ fontSize: 24, fontWeight: 900, color: 'var(--text-primary)', margin: '2px 0 0', letterSpacing: '-0.5px' }}>
+                {fmt(totalProjecao6Meses)}
+              </p>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+            <div style={{ textAlign: 'right' }}>
+              <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block' }}>Base Mensal</span>
+              <strong style={{ fontSize: 14, color: '#7c3aed' }}>{fmt(kpis.totalDiferida)} / mês</strong>
+            </div>
+            <div style={{ width: 1, height: 32, background: 'rgba(139,92,246,0.2)' }}></div>
+            <div style={{ textAlign: 'right' }}>
+              <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block' }}>Período Projetado</span>
+              <strong style={{ fontSize: 14, color: 'var(--text-primary)' }}>6 Meses (1 Semestre)</strong>
+            </div>
+          </div>
         </div>
 
         <div className="grid-responsive-3" style={{ gap: 12 }}>
@@ -752,12 +812,41 @@ export function RelatorioComissoes({
                 <p style={{ fontSize: 16, fontWeight: 800, color: '#7c3aed', margin: '4px 0 0' }}>
                   {fmt(p.estimativa)}
                 </p>
+                <span style={{ fontSize: 10, color: 'var(--text-muted)', display: 'block', marginTop: 2 }}>
+                  Acumulado: {fmt(p.acumulado)}
+                </span>
               </div>
               <span style={{ fontSize: 11, fontWeight: 700, color: '#059669', background: 'rgba(16,185,129,0.12)', padding: '3px 8px', borderRadius: 6 }}>
                 Recorrente
               </span>
             </div>
           ))}
+
+          {/* CARD RESUMO FINAL 6 MESES */}
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(139,92,246,0.18), rgba(139,92,246,0.08))',
+            border: '2px dashed #7c3aed',
+            borderRadius: 12,
+            padding: '14px 16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between'
+          }}>
+            <div>
+              <span style={{ fontSize: 10, fontWeight: 800, color: '#7c3aed', textTransform: 'uppercase' }}>
+                TOTAL 6 MESES
+              </span>
+              <p style={{ fontSize: 18, fontWeight: 900, color: '#7c3aed', margin: '4px 0 0' }}>
+                {fmt(totalProjecao6Meses)}
+              </p>
+              <span style={{ fontSize: 10, color: 'var(--text-muted)', display: 'block', marginTop: 2 }}>
+                Soma dos 6 meses
+              </span>
+            </div>
+            <span style={{ fontSize: 11, fontWeight: 800, color: 'white', background: '#7c3aed', padding: '4px 10px', borderRadius: 8 }}>
+              Semestre
+            </span>
+          </div>
         </div>
       </div>
     </div>
