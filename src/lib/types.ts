@@ -126,6 +126,7 @@ export interface Transacao {
   anexos?: {nome: string; url: string}[]; // Anexo do comprovante ou NF em base64
   comprovanteUrl?: string; // Phase 4 Cloud Storage
   rateio?: { id: string; categoriaId: string; categoriaNome: string; categoriaIcone: string; categoriaCor: string; centroCustoId?: string; centroCustoNome?: string; valor: number }[]; // Phase 3 Split
+  subcategoria?: string; // Campo legado do Firestore (ex: "Diferida", "COMISSÃO DIFERIDA", "A VISTA")
   criadoEm: string;
   atualizadoEm: string;
 }
@@ -325,7 +326,8 @@ export interface ConfiguracaoApp {
   pixContaPadraoId?: string;
   webPushSubscription?: string;
   pushDias?: string[];
-  pushHorario?: string; // ex: '09:00'
+  pushHorario?: string;
+  pushIntervaloMinutos?: number; // ex: '09:00'
   diasAntecedencia?: number[]; // ex: [1, 2, 3]
   
   // WhatsApp Bot de Lançamentos

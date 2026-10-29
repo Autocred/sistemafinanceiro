@@ -11,20 +11,21 @@ const db = getFirestore(app);
 
 async function run() {
   await addDoc(collection(db, 'saas_releases'), {
-    versao: 'v3.6.22',
-    titulo: 'Correção no Envio Multi-Tenant do WhatsApp (Dispatcher)',
-    descricao: 'Ajuste na infraestrutura de agendamento de mensagens (CRON) para garantir envio a todas as licenças ativas.',
+    versao: 'v3.6.33',
+    titulo: 'Classificação Inteligente de Comportamento (Fixa/Variável) e Subcategorias no Extrato',
+    descricao: 'Detecção aprimorada de receitas e despesas fixas (incluindo Comissões Diferidas do Banco Digio e receitas recorrentes), novo filtro de Subcategoria e edição de comportamento liberada.',
     dataLancamento: new Date().toISOString(),
     status: 'publicado',
     destaque: true,
     notificarTenants: false,
     alvos: 'todos',
     changes: [
-      { tipo: 'correcao', texto: 'A partir de agora, o sistema aciona um "Dispatcher" global que percorre TODAS as suas licenças de forma independente e envia as mensagens de lembretes e fechamento para cada uma delas corretamente.' },
-      { tipo: 'melhoria', texto: 'O Vercel agora checa os horários programados de cada licença a cada hora (ex: 08:00, 09:00), respeitando a customização feita dentro do painel de cada cliente.' }
+      { tipo: 'correcao', texto: 'Detecção de Receitas Fixas: Transações de comissões diferidas (como Banco Digio) e recorrentes agora são pontualmente identificadas como Fixa no filtro do Extrato.' },
+      { tipo: 'novo', texto: 'Filtro e Badge de Subcategoria: Exibição visual de subcategorias na listagem e filtro dedicado em Mais Filtros para relatórios avançados.' },
+      { tipo: 'melhoria', texto: 'Edição de Comportamento: Campo de comportamento (Fixa / Variável) liberado em todos os formulários e para todos os tenants.' }
     ]
   });
-  console.log('Release notes v3.6.22 added!');
+  console.log('Release notes v3.6.33 added!');
   process.exit(0);
 }
 

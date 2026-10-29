@@ -334,6 +334,15 @@ export default function ModalLancamento({ onClose, onSalvo, transacaoEditar }: P
       const transacaoData = {
         id: prelancamento.id,
         tipo: prelancamento.tipo,
+        comportamento: (() => {
+          const comp = (prelancamento as any).comportamento;
+          if (comp === 'fixa' || comp === 'variavel') return comp;
+          const desc = (prelancamento.descricao || '').toLowerCase();
+          const sub = ((prelancamento as any).subcategoria || '').toLowerCase();
+          if (prelancamento.recorrente || desc.includes('diferida') || sub.includes('diferida') || desc.includes('fixa') || desc.includes('mensal')) return 'fixa';
+          return 'variavel';
+        })(),
+        subcategoria: (prelancamento as any).subcategoria || undefined,
         descricao: prelancamento.descricao,
         valor: prelancamento.valor,
         multa: prelancamento.multa,
@@ -859,6 +868,15 @@ function EditarPreLancamento({ prelancamento, categorias, centrosCusto, contas, 
             <option value="transferencia">Transferência</option>
           </select>
         </div>
+        {p.tipo !== 'transferencia' && (
+          <div>
+            <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>Comportamento</label>
+            <select className="input-field" value={(p as any).comportamento || (p.recorrente ? 'fixa' : 'variavel')} onChange={e => set({ ...p, comportamento: e.target.value as 'fixa' | 'variavel' } as any)}>
+              <option value="fixa">Fixa</option>
+              <option value="variavel">Variável</option>
+            </select>
+          </div>
+        )}
         <div>
           <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>Valor (R$)</label>
           <input className="input-field" type="text" value={formatarMoedaInput(p.valor || '')} onChange={e => set({ valor: parseMoedaInput(e.target.value) })} />
@@ -1332,7 +1350,15 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
 
   // AI Learning function
   const handleDescricaoChange = (val: string, fromScanner = false) => {
-    if (!fromScanner) setForm(f => ({ ...f, descricao: val }));
+    if (!fromScanner) {
+      const lower = val.toLowerCase();
+      const isFixaKeyword = lower.includes('diferida') || lower.includes('mensal') || lower.includes('fixa');
+      setForm(f => ({
+        ...f,
+        descricao: val,
+        comportamento: isFixaKeyword ? 'fixa' : f.comportamento
+      }));
+    }
     
     // Check if we have learned this description
     if (val.trim().length > 2) {
@@ -1784,7 +1810,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
       )}
 </div>
                   <div style={{ flex: 1, minWidth: 150 }}>
-{['master', '9yxuafoC0AV9BrIKem05ponbmgn2', 'autocred-promotora-de-credito'].includes(getTenantId()) && (form.tipo as string) !== 'transferencia' && (
+{(form.tipo as string) !== 'transferencia' && (
             <div style={{ width: "100%" }}>
               <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 5 }}>Comportamento</label>
               <select className="input-field" value={form.comportamento} onChange={e => setForm(f => ({ ...f, comportamento: e.target.value }))}>

@@ -140,11 +140,11 @@ export function calcularTotais(transacoes: Transacao[], faturas: Fatura[] = []) 
   };
 }
 
-export function gerarExtrato(transacoesFiltradas: Transacao[], contaFiltro: string) {
+export function gerarExtrato(transacoesFiltradas: Transacao[], contaFiltro: string, considerarTodosStatus: boolean = false) {
   let saldoAcumulado = 0;
   const extratoComSaldo = transacoesFiltradas.map(t => {
     let impacto = 0;
-    if (t.status === 'pago') {
+    if (considerarTodosStatus || t.status === 'pago') {
       if (t.tipo === 'despesa') impacto = -Math.abs(getValorFinal(t));
       else if (t.tipo === 'receita') impacto = Math.abs(getValorFinal(t));
       else if (t.tipo === 'transferencia') {
@@ -161,8 +161,8 @@ export function gerarExtrato(transacoesFiltradas: Transacao[], contaFiltro: stri
     };
   }).reverse();
 
-  const totalEntradas = transacoesFiltradas.filter(t => t.status === 'pago' && t.tipo === 'receita').reduce((s, t) => s + getValorFinal(t), 0);
-  const totalSaidas = transacoesFiltradas.filter(t => t.status === 'pago' && t.tipo === 'despesa').reduce((s, t) => s + getValorFinal(t), 0);
+  const totalEntradas = transacoesFiltradas.filter(t => (considerarTodosStatus || t.status === 'pago') && t.tipo === 'receita').reduce((s, t) => s + getValorFinal(t), 0);
+  const totalSaidas = transacoesFiltradas.filter(t => (considerarTodosStatus || t.status === 'pago') && t.tipo === 'despesa').reduce((s, t) => s + getValorFinal(t), 0);
   const saldoFinal = totalEntradas - totalSaidas;
 
   return { extratoComSaldo, totalEntradas, totalSaidas, saldoFinal };
