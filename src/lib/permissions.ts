@@ -1,4 +1,4 @@
-﻿// ─── PERMISSÕES DO SISTEMA ─────────────────────────────────
+// ─── PERMISSÕES DO SISTEMA ─────────────────────────────────
 // Cada menu tem uma flag master (menu_*) que controla a visibilidade.
 // Se desmarcado, o menu e seu ícone desaparecem completamente.
 // Sub-permissões só são relevantes se o menu estiver habilitado.
@@ -89,6 +89,7 @@ export const MENU_PERMISSION_MAP: Record<string, string> = {
   'aprovacoes':     'menu_aprovacoes',
   'regras':         'menu_regras',
   'relatorios':     'menu_relatorios',
+  'comissoes':      'menu_relatorios',
   'contas':         'menu_contas',
   'cadastros':      'menu_cadastros',
   'equipe':         'menu_equipe',
@@ -96,6 +97,7 @@ export const MENU_PERMISSION_MAP: Record<string, string> = {
   'configuracoes':  'menu_configuracoes',
   'auditoria':      'menu_auditoria',
   'inadimplencia':  'menu_relatorios',
+  'previsao_ia':    'menu_cfo',
 };
 
 export function getDefaultPermissionsForRole(role: string): Record<string, boolean> {

@@ -18,14 +18,15 @@ import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { DREGerencial } from './DREGerencial';
+import { RelatorioComissoes } from './RelatorioComissoes';
 
-type TipoRelatorio = 'mensal' | 'categorias' | 'fornecedores' | 'formas-pgto' | 'fluxo' | 'comparativo' | 'diario' | 'centros-custo' | 'dre';
+export type TipoRelatorio = 'mensal' | 'comissoes' | 'dre' | 'categorias' | 'fornecedores' | 'formas-pgto' | 'fluxo' | 'comparativo' | 'diario' | 'centros-custo';
 
-export default function Relatorios() {
+export default function Relatorios({ defaultTab }: { defaultTab?: TipoRelatorio } = {}) {
   const [transacoes, setTransacoes] = useState<Transacao[]>([]);
   const [formasPgto, setFormasPgto] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tipoRelatorio, setTipoRelatorio] = useState<TipoRelatorio>('mensal');
+  const [tipoRelatorio, setTipoRelatorio] = useState<TipoRelatorio>(defaultTab || 'mensal');
   
   // Listas para filtros
   const [categorias, setCategorias] = useState<Categoria[]>([]);
@@ -230,6 +231,7 @@ export default function Relatorios() {
 
   const TIPOS_RELATORIO = [
     { id: 'mensal' as TipoRelatorio, label: '📅 Resumo', desc: 'Visão geral' },
+    { id: 'comissoes' as TipoRelatorio, label: '🏦 Bancos & Comissões', desc: 'Parceiros & Diferidas' },
     { id: 'dre' as TipoRelatorio, label: '📊 DRE Gerencial', desc: 'DRE Avançado' },
     { id: 'categorias' as TipoRelatorio, label: '🏷️ Categorias', desc: 'Por categoria' },
     { id: 'fornecedores' as TipoRelatorio, label: '💼 Contatos', desc: 'Top gastos' },
@@ -380,6 +382,16 @@ export default function Relatorios() {
       </div>
 
       <div className="glass" style={{ padding: 24, borderRadius: 24, minHeight: 400, overflow: 'hidden' }}>
+        {tipoRelatorio === 'comissoes' && (
+          <div style={{ marginTop: 12 }}>
+            <RelatorioComissoes
+              transacoes={transacoes}
+              transacoesFiltradas={transacoesFiltradas}
+              dataInicio={filtros.dataInicio}
+              dataFim={filtros.dataFim}
+            />
+          </div>
+        )}
         {tipoRelatorio === 'dre' && (() => {
           // ── Calcula o período anterior equivalente (mesma duração) ──────────
           const msInicio = new Date(filtros.dataInicio).getTime();

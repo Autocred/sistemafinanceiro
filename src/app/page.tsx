@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
@@ -9,15 +9,16 @@ import { DashboardHeader } from '@/components/NewMobileBankApp';
 import {
   LayoutDashboard, ListOrdered, BarChart3, CreditCard,
   Settings, Server, Bot, PlusCircle, BookOpen, LogOut, ShieldCheck,
-  BrainCircuit, Calendar, RefreshCw, Zap, Users, TrendingUp, Target, ChevronDown, ChevronRight, Menu, Search, Download, AlertTriangle, Sparkles
+  BrainCircuit, Calendar, RefreshCw, Zap, Users, TrendingUp, Target, ChevronDown, ChevronRight, Menu, Search, AlertTriangle, Sparkles, Building2
 } from 'lucide-react';
 import { setTenantId } from '@/lib/storage';
 import { MENU_PERMISSION_MAP } from '@/lib/permissions';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
-type Pagina = 'atualizacoes' | 'dashboard' | 'dashboard_mensal' | 'dashboard_v2' | 'cfo' | 'cfo_legacy' | 'extrato' | 'lancamentos' | 'calendario' | 'conciliacao' | 'aprovacoes' | 'regras' | 'relatorios' | 'relatorio_avancado' | 'contas' | 'cadastros' | 'equipe' | 'chat' | 'configuracoes' | 'admin' | 'auditoria' | 'licencas' | 'metas' | 'investimentos' | 'cartoes' | 'inadimplencia';
+type Pagina = 'previsao_ia' | 'atualizacoes' | 'dashboard' | 'dashboard_mensal' | 'dashboard_v2' | 'cfo' | 'cfo_legacy' | 'extrato' | 'comissoes' | 'lancamentos' | 'calendario' | 'conciliacao' | 'aprovacoes' | 'regras' | 'relatorios' | 'relatorio_avancado' | 'contas' | 'cadastros' | 'equipe' | 'chat' | 'configuracoes' | 'admin' | 'auditoria' | 'licencas' | 'metas' | 'investimentos' | 'cartoes' | 'inadimplencia';
 
 // ─── Todos os componentes que usam Firebase carregam APENAS no browser ────────
+const PrevisaoFluxoIA = dynamic(() => import('@/components/PrevisaoFluxoIA'), { ssr: false, loading: () => <div style={{display:'flex',justifyContent:'center',alignItems:'center',height:'100vh',flexDirection:'column'}}><div className='spinner'></div><p style={{marginTop:16,color:'var(--text-muted)'}}>Carregando módulo...</p></div> });
 const PlanejamentoOrcamentario = dynamic(() => import('@/components/PlanejamentoOrcamentario'), { ssr: false, loading: () => <div style={{display:'flex',justifyContent:'center',alignItems:'center',height:'100vh',flexDirection:'column'}}><div className='spinner'></div><p style={{marginTop:16,color:'var(--text-muted)'}}>Carregando módulo...</p></div> });
 const Dashboard     = dynamic(() => import('@/components/Dashboard'), { ssr: false, loading: () => <div style={{display:'flex',justifyContent:'center',alignItems:'center',height:'100vh',flexDirection:'column'}}><div className='spinner'></div><p style={{marginTop:16,color:'var(--text-muted)'}}>Carregando módulo...</p></div> });
 const DashboardMensal = dynamic(() => import('@/components/DashboardMensal'), { ssr: false, loading: () => <div style={{display:'flex',justifyContent:'center',alignItems:'center',height:'100vh',flexDirection:'column'}}><div className='spinner'></div><p style={{marginTop:16,color:'var(--text-muted)'}}>Carregando módulo...</p></div> });
@@ -64,6 +65,7 @@ const NAV_ITEMS = [
   
 
   { id: 'cfo'          as Pagina, label: 'Cockpit CFO',      icon: BrainCircuit,    grupo: 'Inteligência' },
+  { id: 'previsao_ia'  as Pagina, label: 'Previsão Fluxo IA', icon: TrendingUp,    grupo: 'Inteligência' },
   { id: 'relatorio_avancado' as Pagina, label: 'Relatório Premium', icon: Target,   grupo: 'Inteligência' },
   { id: 'relatorios'   as Pagina, label: 'Relatórios',       icon: BarChart3,       grupo: 'Inteligência' },
   { id: 'investimentos'as Pagina, label: 'Hub Patrimônio',   icon: TrendingUp,      grupo: 'Inteligência' },
@@ -73,6 +75,7 @@ const NAV_ITEMS = [
   
   { id: 'contas'       as Pagina, label: 'Contas & Cartões', icon: CreditCard,      grupo: 'Gestão' },
   { id: 'extrato'      as Pagina, label: 'Extrato Bancário', icon: BookOpen,        grupo: 'Gestão' },
+  { id: 'comissoes'    as Pagina, label: 'Bancos & Comissões', icon: Building2,     grupo: 'Gestão' },
   { id: 'conciliacao'  as Pagina, label: 'Conciliação OFX',  icon: RefreshCw,       grupo: 'Gestão' },
   { id: 'calendario'   as Pagina, label: 'Calendário ERP',   icon: Calendar,        grupo: 'Gestão' },
 
@@ -965,7 +968,9 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
       case 'dashboard':     return <Dashboard     key={refreshKey} onNovoLancamento={() => { setTransacaoEditar(null); setModalAberto(true); }} onEditarLancamento={(t) => { setTransacaoEditar(t); setModalAberto(true); }} onDuplicarLancamento={(t: any) => { setTransacaoEditar({...t, id: undefined, dataVencimento: new Date().toISOString().split('T')[0], dataPagamento: null, status: 'pendente'}); setModalAberto(true); }} onNavigateToLancamentos={(filtro?: string) => { setFiltroRapidoLancamentos(filtro || ''); setPaginaAtual('lancamentos'); }} onNavigateToCartoes={(id?: string) => { setFaturaDestinoId(id || null); setPaginaAtual('contas'); }} />;
       case 'dashboard_mensal': return <DashboardMensal key={refreshKey} />;
       case 'cfo':           return <PlanejamentoOrcamentario key={refreshKey} />;
+      case 'previsao_ia':   return <PrevisaoFluxoIA key={refreshKey} />;
       case 'extrato':       return <ExtratoBancario key={refreshKey} />;
+      case 'comissoes':     return <Relatorios defaultTab="comissoes" key={refreshKey} />;
       case 'lancamentos':   return versaoUi === 'v1' ? <Lancamentos key={refreshKey} onNovoLancamento={() => { setTransacaoEditar(null); setModalAberto(true); }} onEditarLancamento={(t) => { setTransacaoEditar(t); setModalAberto(true); }} onDuplicarLancamento={(t: any) => { setTransacaoEditar({...t, id: undefined, dataVencimento: new Date().toISOString().split('T')[0], dataPagamento: null, status: 'pendente'}); setModalAberto(true); }} filtroRapido={filtroRapidoLancamentos} /> : <LancamentosV2 key={refreshKey} onNovoLancamento={() => { setTransacaoEditar(null); setModalAberto(true); }} onEditarLancamento={(t) => { setTransacaoEditar(t); setModalAberto(true); }} onDuplicarLancamento={(t: any) => { setTransacaoEditar({...t, id: undefined, dataVencimento: new Date().toISOString().split('T')[0], dataPagamento: null, status: 'pendente'}); setModalAberto(true); }} filtroRapido={filtroRapidoLancamentos} />;
       case 'calendario':    return <CalendarioFinanceiro key={refreshKey} />;
       case 'conciliacao':   return <CentralConciliacao key={refreshKey} />;
@@ -1389,22 +1394,6 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
               })()}
             </nav>
 
-            {/* INSTALL APP BUTTON MANUAL NO SIDEBAR */}
-            <div className="px-2 pb-2 mt-4">
-              <button 
-                onClick={() => {
-                  alert("Para instalar:\n\nNo Android:\nToque nos 3 pontinhos do navegador (canto superior direito) e escolha 'Instalar Aplicativo'.\n\nNo iPhone:\nToque no ícone de Compartilhar (no rodapé, quadrado com seta) e escolha 'Adicionar à Tela de Início'.");
-                }}
-                className="w-full py-3 px-4 rounded-xl flex items-center justify-center gap-2 font-bold text-[13px] text-white transition-all shadow-[0_4px_0_rgba(0,0,0,0.2)] hover:-translate-y-0.5 active:translate-y-1 active:shadow-none"
-                style={{
-                  background: 'linear-gradient(135deg, var(--primary), #4f46e5)',
-                  border: '1px solid rgba(255,255,255,0.1)'
-                }}
-              >
-                <Download size={16} strokeWidth={2.5} />
-                <span>Baixar o App</span>
-              </button>
-            </div>
 
             <div style={{ marginTop: 'auto', paddingTop: 12, borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
               <button

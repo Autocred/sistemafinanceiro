@@ -11,21 +11,22 @@ const db = getFirestore(app);
 
 async function run() {
   await addDoc(collection(db, 'saas_releases'), {
-    versao: 'v3.6.33',
-    titulo: 'Classificação Inteligente de Comportamento (Fixa/Variável) e Subcategorias no Extrato',
-    descricao: 'Detecção aprimorada de receitas e despesas fixas (incluindo Comissões Diferidas do Banco Digio e receitas recorrentes), novo filtro de Subcategoria e edição de comportamento liberada.',
+    versao: 'v3.6.34',
+    titulo: 'Novo Módulo: Painel Analítico de Comissões & Bancos Parceiros',
+    descricao: 'Visão executiva dedicada à gestão de comissões por instituição financeira, ranking de parceiros, separação de comissões à vista vs. diferidas e projeção de carteira.',
     dataLancamento: new Date().toISOString(),
     status: 'publicado',
     destaque: true,
     notificarTenants: false,
     alvos: 'todos',
     changes: [
-      { tipo: 'correcao', texto: 'Detecção de Receitas Fixas: Transações de comissões diferidas (como Banco Digio) e recorrentes agora são pontualmente identificadas como Fixa no filtro do Extrato.' },
-      { tipo: 'novo', texto: 'Filtro e Badge de Subcategoria: Exibição visual de subcategorias na listagem e filtro dedicado em Mais Filtros para relatórios avançados.' },
-      { tipo: 'melhoria', texto: 'Edição de Comportamento: Campo de comportamento (Fixa / Variável) liberado em todos os formulários e para todos os tenants.' }
+      { tipo: 'novo', texto: 'Painel de Bancos & Comissões: Módulo analítico com ranking das instituições financeiras que geram mais receita para a promotora.' },
+      { tipo: 'novo', texto: 'Comissões À Vista vs. Diferidas: Gráficos e indicadores comparativos entre comissão imediata (spot) e comissão diferida recorrente.' },
+      { tipo: 'novo', texto: 'Projeção de Carteira Futura: Estimativa de fluxo de caixa garantido por comissões fixas/diferidas para os próximos 6 meses.' },
+      { tipo: 'melhoria', texto: 'Navegação Integrada: Acesso direto pelo menu lateral em Gestão ("Bancos & Comissões") e pela aba dedicada em Relatórios.' }
     ]
   });
-  console.log('Release notes v3.6.33 added!');
+  console.log('Release notes v3.6.34 added!');
   process.exit(0);
 }
 
