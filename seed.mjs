@@ -11,21 +11,20 @@ const db = getFirestore(app);
 
 async function run() {
   await addDoc(collection(db, 'saas_releases'), {
-    versao: 'v3.6.46',
-    titulo: 'Sidebar Retrátil Destacada + Alternador Cards/Tabela em Lançamentos',
-    descricao: 'Botão de recolher/expandir sidebar destacado no Cabeçalho Superior e na Barra Lateral (topo e rodapé), e alternador de visualização Cards/Tabela nos lançamentos.',
+    versao: 'v3.6.47',
+    titulo: 'Ativação do Modo Tabela Compacta em Lançamentos',
+    descricao: 'Correção e ativação da visualização em Tabela Compacta de alta densidade nos Lançamentos (V1 e V2), permitindo alternar instantaneamente entre Cards e Tabela.',
     dataLancamento: new Date().toISOString(),
     status: 'publicado',
     destaque: true,
     notificarTenants: false,
     alvos: 'todos',
     changes: [
-      { tipo: 'nova_funcionalidade', texto: 'Botão Recolher Menu no Topo: Disponível no cabeçalho superior e no topo e rodapé da barra lateral, permitindo encolher para 64px com 1 clique.' },
-      { tipo: 'nova_funcionalidade', texto: 'Alternador de Visualização Cards / Tabela: Visível no topo da tela de Lançamentos para alternar entre os cards normais e tabela compacta.' },
-      { tipo: 'melhoria', texto: 'Acesso instantâneo e visibilidade garantida em todas as resoluções.' }
+      { tipo: 'correcao', texto: 'Alternador de Visualização Cards/Tabela: Agora alterna imediatamente na tela ao clicar em [Tabela], renderizando o grid compacto com 25+ lançamentos por tela.' },
+      { tipo: 'nova_funcionalidade', texto: 'Ações rápidas na tabela: Botões diretos para baixar, cobrar via PIX, emitir recibo PDF, duplicar, editar e excluir em cada linha.' }
     ]
   });
-  console.log('Release notes v3.6.46 added!');
+  console.log('Release notes v3.6.47 added!');
   process.exit(0);
 }
 

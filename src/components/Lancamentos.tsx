@@ -1041,7 +1041,116 @@ const openSafeAttachment = (url: string) => {
               Novo Lancamento
             </button>
           </div>
+        ) : modoVisualizacao === 'tabela' ? (
+          /* ── MODO TABELA COMPACTA (ALTA DENSIDADE) ──────────────── */
+          <div className="lancamentos-table-container" style={{ overflowX: 'auto', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 12, boxShadow: '0 2px 10px rgba(0,0,0,0.02)' }}>
+            <table className="lancamentos-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+              <thead>
+                <tr style={{ background: 'var(--bg-body)', borderBottom: '2px solid var(--border)' }}>
+                  {modoSelecao && <th style={{ width: 34, padding: '10px 8px' }}></th>}
+                  <th style={{ width: 85, padding: '10px 12px', textAlign: 'left', fontSize: '10.5px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Data</th>
+                  <th style={{ padding: '10px 12px', textAlign: 'left', fontSize: '10.5px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Descrição & Categoria</th>
+                  <th style={{ padding: '10px 12px', textAlign: 'left', fontSize: '10.5px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Contato</th>
+                  <th style={{ padding: '10px 12px', textAlign: 'left', fontSize: '10.5px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Conta</th>
+                  <th style={{ padding: '10px 12px', textAlign: 'left', fontSize: '10.5px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Forma</th>
+                  <th style={{ width: 110, padding: '10px 12px', textAlign: 'center', fontSize: '10.5px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Status</th>
+                  <th style={{ width: 120, padding: '10px 12px', textAlign: 'right', fontSize: '10.5px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Valor</th>
+                  <th style={{ width: 130, padding: '10px 12px', textAlign: 'center', fontSize: '10.5px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtradas.map((t, idx) => {
+                  const hoje = new Date();
+                  const dateToDisplay = filtroData === 'vencimento' ? (t.dataVencimento || t.data) : (t.dataPagamento || t.dataLancamento || t.data);
+                  const isReceita = t.tipo === 'receita';
+                  const isTransf = t.tipo === 'transferencia';
+                  const dataVenc = t.dataVencimento || t.data;
+                  const diff = Math.ceil((new Date(dataVenc).getTime() - hoje.getTime()) / (1000 * 3600 * 24));
+                  const atrasado = t.tipo === 'despesa' && t.status !== 'pago' && diff < 0;
+                  const valorFinal = Math.max(0, (Number(t.valor) || 0) + (Number(t.juros) || 0) + (Number(t.multa) || 0) - (Number(t.desconto) || 0));
+                  const rowBg = selecionados.has(t.id) ? 'rgba(239,68,68,0.08)' : (idx % 2 === 1 ? 'rgba(255,255,255,0.02)' : 'transparent');
+
+                  return (
+                    <tr key={t.id} style={{ background: rowBg, borderBottom: '1px solid var(--border)', borderLeft: atrasado ? '3px solid #ef4444' : isReceita ? '3px solid #10b981' : '3px solid transparent' }} className="hover:bg-white/5 transition-colors">
+                      {modoSelecao && (
+                        <td style={{ padding: '8px', textAlign: 'center' }}>
+                          <button onClick={() => toggleSelecionado(t.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, display: 'inline-flex' }}>
+                            {selecionados.has(t.id) ? <CheckSquare size={16} color="#10b981" /> : <Square size={16} color="var(--text-muted)" />}
+                          </button>
+                        </td>
+                      )}
+                      <td style={{ padding: '8px 12px', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                        {String(dateToDisplay || '').split('-').reverse().join('/')}
+                        {atrasado && <span style={{ display: 'block', color: '#ef4444', fontSize: '9.5px', fontWeight: 800 }}>Atrasado</span>}
+                      </td>
+                      <td style={{ padding: '8px 12px' }}>
+                        <div style={{ fontWeight: 700, fontSize: '12.5px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 5 }}>
+                          {t.descricao}
+                          {t.conciliado && <span title="Conciliado"><CheckCircle2 size={12} color="#10b981" /></span>}
+                        </div>
+                        <div style={{ fontSize: '10.5px', color: t.categoriaCor || 'var(--text-muted)', fontWeight: 500, marginTop: 1 }}>
+                          {isTransf ? 'Transferência' : t.categoriaNome || '-'}
+                        </div>
+                      </td>
+                      <td style={{ padding: '8px 12px', fontSize: '11px', color: 'var(--text-secondary)' }}>
+                        {t.fornecedorNome || t.clienteNome || '—'}
+                      </td>
+                      <td style={{ padding: '8px 12px', fontSize: '11px', color: 'var(--text-secondary)' }}>
+                        {isTransf ? (
+                          <span>{t.contaNome || '-'} ➔ {((t as any)['contaDestinãoNome']) || ((t as any)['contaDestinoNome']) || '-'}</span>
+                        ) : (
+                          t.contaNome || '-'
+                        )}
+                      </td>
+                      <td style={{ padding: '8px 12px', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                        {isTransf ? '—' : (FORMAS_PAGAMENTO_LABELS[t.formaPagamento] || t.formaPagamento)}
+                      </td>
+                      <td style={{ padding: '8px 12px', textAlign: 'center' }}>
+                        {checkCartaoPendente(t) ? (
+                          <span className="badge badge-yellow" style={{ fontSize: '9.5px', padding: '2px 6px' }}>Fatura Aberta</span>
+                        ) : (
+                          <span className={`badge ${t.status === 'pago' ? 'badge-green' : t.status === 'atrasado' || atrasado ? 'badge-red' : 'badge-yellow'}`} style={{ fontSize: '9.5px', padding: '2px 6px' }}>
+                            {STATUS_LABELS[t.tipo]?.[t.status] || t.status}
+                          </span>
+                        )}
+                      </td>
+                      <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 800, fontSize: '13px', color: isReceita ? '#15803d' : isTransf ? 'var(--text-primary)' : '#dc2626', whiteSpace: 'nowrap' }}>
+                        {isTransf ? '' : isReceita ? '+' : '-'} <span className="valor-sensivel">{fmt(valorFinal)}</span>
+                      </td>
+                      <td style={{ padding: '8px 12px', textAlign: 'center' }}>
+                        <div style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
+                          {!checkCartaoPendente(t) && t.status !== 'pago' && t.formaPagamento !== 'cartao_credito' && (
+                            <button onClick={() => handleMarcarPago(t)} title="Baixar Lançamento" style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.3)', color: '#10b981', borderRadius: 6, padding: '3px 6px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}>
+                              <CheckCircle2 size={13} />
+                            </button>
+                          )}
+                          {isReceita && t.status !== 'pago' && (
+                            <button onClick={(e) => { e.stopPropagation(); setTransacaoCobrarPix(t); }} title="Cobrar PIX" style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.3)', color: '#10b981', borderRadius: 6, padding: '3px 6px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}>
+                              <Zap size={13} />
+                            </button>
+                          )}
+                          <button onClick={() => import('@/lib/pdf-generator').then(m => m.gerarReciboPDF(t))} title="Gerar Recibo" style={{ background: 'var(--bg-active)', border: '1px solid var(--border)', color: 'var(--text-primary)', borderRadius: 6, padding: '3px 6px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}>
+                            <Download size={13} />
+                          </button>
+                          <button onClick={() => onDuplicarLancamento && onDuplicarLancamento(t)} title="Duplicar" style={{ background: 'var(--bg-active)', border: '1px solid var(--border)', color: 'var(--text-primary)', borderRadius: 6, padding: '3px 6px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}>
+                            <Repeat size={13} />
+                          </button>
+                          <button onClick={() => handleEditar(t)} title="Editar" style={{ background: 'var(--bg-active)', border: '1px solid var(--border)', color: 'var(--text-primary)', borderRadius: 6, padding: '3px 6px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}>
+                            <Edit3 size={13} />
+                          </button>
+                          <button onClick={() => handleDeletar(t.id)} title="Excluir" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444', borderRadius: 6, padding: '3px 6px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}>
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         ) : (
+          /* ── MODO CARDS VISUAIS ── */
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {filtradas.map(t => {
               const hoje = new Date();
