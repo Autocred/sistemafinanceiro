@@ -871,7 +871,8 @@ function EditarPreLancamento({ prelancamento, categorias, centrosCusto, contas, 
         {p.tipo !== 'transferencia' && (
           <div>
             <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>Comportamento</label>
-            <select className="input-field" value={(p as any).comportamento || (p.recorrente ? 'fixa' : 'variavel')} onChange={e => set({ ...p, comportamento: e.target.value as 'fixa' | 'variavel' } as any)}>
+            <select className="input-field" value={(p as any).comportamento || ''} onChange={e => set({ ...p, comportamento: e.target.value as 'fixa' | 'variavel' } as any)}>
+              <option value="">— Selecione —</option>
               <option value="fixa">Fixa</option>
               <option value="variavel">Variável</option>
             </select>
@@ -985,14 +986,6 @@ function EditarPreLancamento({ prelancamento, categorias, centrosCusto, contas, 
           )}
         </div>
         )}
-
-      
-      {(p.multa || p.juros || p.desconto) && (
-        <div style={{ marginTop: 2, marginBottom: 12, padding: 8, backgroundColor: 'rgba(239, 68, 68, 0.1)', borderRadius: 6, border: '1px solid rgba(239, 68, 68, 0.3)', display: 'flex', justifyContent: 'space-between' }}>
-           <span style={{ fontSize: 12, fontWeight: 600, color: '#ef4444' }}>Valor Final a ser pago:</span>
-           <span style={{ fontSize: 12, fontWeight: 700, color: '#ef4444' }}>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Math.max(0, ((Number(p.valor) || 0) + (Number(p.multa) || 0) + (Number(p.juros) || 0) - (Number(p.desconto) || 0))))}</span>
-        </div>
-      )}
 
       <div className="grid-responsive-3">
         <div>
@@ -1278,7 +1271,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
     cartaoId: '',
     formaPagamento: 'pix' as 'pix' | 'dinheiro' | 'cartao_credito' | 'cartao_debito' | 'transferencia' | 'boleto',
     observacoes: initialData?.observacoes || '',
-      comportamento: initialData?.comportamento || 'variavel',
+      comportamento: initialData?.comportamento || '',
     parcelado: false,
     totalParcelas: 1,
     recorrente: false,
@@ -1348,17 +1341,27 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
     }
   };
 
-  // AI Learning function
+  // AI Learning function — lógica de comportamento automático pelo campo descrição
   const handleDescricaoChange = (val: string, fromScanner = false) => {
-    if (!fromScanner) {
-      const lower = val.toLowerCase();
-      const isFixaKeyword = lower.includes('diferida') || lower.includes('mensal') || lower.includes('fixa');
-      setForm(f => ({
-        ...f,
-        descricao: val,
-        comportamento: isFixaKeyword ? 'fixa' : f.comportamento
-      }));
-    }
+    const lower = val.toLowerCase();
+    // Palavras-chave que indicam FIXA (comissão diferida/recorrente)
+    const isFixa = lower.includes('diferida') || lower.includes('mensal') || lower.includes('fixa') || lower.includes('recorrente') || lower.includes('parcel');
+    // Palavras-chave que indicam VARIÁVEL (comissão à vista/spot)
+    const isVariavel = lower.includes('à vista') || lower.includes('a vista') || lower.includes('spot') || lower.includes('pontual');
+
+    setForm(f => ({
+      ...f,
+      descricao: val,
+      // Só preenche automaticamente se digitou algo relevante;
+      // mantém seleção manual do usuário se ele já escolheu e não bateu em nenhuma keyword
+      comportamento: (() => {
+        if (val.trim().length === 0) return ''; // limpa se apagou tudo
+        if (isFixa) return 'fixa';
+        if (isVariavel) return 'variavel';
+        // Se nenhuma keyword, mantém o que o usuário escolheu manualmente (não sobrescreve)
+        return f.comportamento;
+      })()
+    }));
     
     // Check if we have learned this description
     if (val.trim().length > 2) {
@@ -1814,6 +1817,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
             <div style={{ width: "100%" }}>
               <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 5 }}>Comportamento</label>
               <select className="input-field" value={form.comportamento} onChange={e => setForm(f => ({ ...f, comportamento: e.target.value }))}>
+                <option value="">— Selecione —</option>
                 <option value="fixa">Fixa</option>
                 <option value="variavel">Variável</option>
               </select>

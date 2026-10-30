@@ -11,20 +11,19 @@ const db = getFirestore(app);
 
 async function run() {
   await addDoc(collection(db, 'saas_releases'), {
-    versao: 'v3.6.49',
-    titulo: 'Edição Rápida Inline na Tabela (Clique Duplo)',
-    descricao: 'Nova funcionalidade de Edição Inline estilo Excel/Notion: dê um clique duplo na Data, Descrição, Categoria, Contato ou Valor para alterar instantaneamente sem abrir modais.',
+    versao: 'v3.6.50',
+    titulo: 'Remoção de Duplicidade do Valor Final a ser Pago',
+    descricao: 'Removida a linha duplicada de exibição do Valor Final a ser Pago no formulário de edição de lançamentos com juros/multa.',
     dataLancamento: new Date().toISOString(),
     status: 'publicado',
     destaque: true,
     notificarTenants: false,
     alvos: 'todos',
     changes: [
-      { tipo: 'nova_funcionalidade', texto: 'Edição Inline com Duplo Clique: Altere Data, Descrição, Categoria, Contato e Valor direto na célula da tabela compacta. Pressione Enter para salvar ou Esc para cancelar.' },
-      { tipo: 'melhoria', texto: 'Alta produtividade: Economize tempo ao ajustar múltiplos lançamentos rapidamente sem precisar abrir a janela completa de edição.' }
+      { tipo: 'correcao', texto: 'Formulário de Lançamento: Eliminada a faixa duplicada do "Valor Final a ser pago", mantendo apenas uma linha explicativa clara logo abaixo dos campos de multa, juros e desconto.' }
     ]
   });
-  console.log('Release notes v3.6.49 added!');
+  console.log('Release notes v3.6.50 added!');
   process.exit(0);
 }
 
