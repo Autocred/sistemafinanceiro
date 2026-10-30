@@ -8,7 +8,7 @@ import { FORMAS_PAGAMENTO_LABELS, STATUS_LABELS } from '@/lib/defaults';
 import { DynamicIcon } from '@/components/DynamicIcon';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subMonths, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { PlusCircle, Search, Filter, ChevronLeft, ChevronRight, Trash2, Edit3, Download, RefreshCw, ArrowUpCircle, ArrowDownCircle, CheckSquare, Square, XCircle, AlertTriangle, DollarSign, ChevronDown, ChevronUp, Clock, Zap, Calendar as CalendarIcon, List, Repeat, Paperclip, CheckCircle2, Mic, Sparkles } from 'lucide-react';
+import { LayoutGrid, LayoutList, PlusCircle, Search, Filter, ChevronLeft, ChevronRight, Trash2, Edit3, Download, RefreshCw, ArrowUpCircle, ArrowDownCircle, CheckSquare, Square, XCircle, AlertTriangle, DollarSign, ChevronDown, ChevronUp, Clock, Zap, Calendar as CalendarIcon, List, Repeat, Paperclip, CheckCircle2, Mic, Sparkles } from 'lucide-react';
 import { ordenarMovimentacoesDesc, ordenarVencimentosAsc } from '@/lib/sorting';
 import ModalCobrancaPix from '@/components/ModalCobrancaPix';
 import ModalImportarDocIA from '@/components/ModalImportarDocIA';
@@ -147,6 +147,17 @@ const openSafeAttachment = (url: string) => {
   };
 
   const [filtroData, setFiltroData] = useState<'lancamento' | 'vencimento'>('lancamento');
+  const [modoVisualizacao, setModoVisualizacao] = useState<'cards' | 'tabela'>('cards');
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('modo_visualizacao_lanc');
+      if (saved === 'cards' || saved === 'tabela') setModoVisualizacao(saved);
+    } catch(e) {}
+  }, []);
+  const alterarModoVisualizacao = (modo: 'cards' | 'tabela') => {
+    setModoVisualizacao(modo);
+    try { localStorage.setItem('modo_visualizacao_lanc', modo); } catch(e) {}
+  };
   const [filtroCategoria, setFiltroCategoria] = useState('');
   const [filtroCC, setFiltroCC] = useState('');
   const [filtroContato, setFiltroContato] = useState('');
@@ -601,7 +612,40 @@ const openSafeAttachment = (url: string) => {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <h1 style={{ fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>Lancamentos</h1>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          {/* Alternador de Visualização Cards / Tabela Compacta */}
+          <div style={{ display: 'flex', background: 'var(--bg-body)', border: '1px solid var(--border)', borderRadius: 10, padding: 3, gap: 2 }}>
+            <button
+              onClick={() => alterarModoVisualizacao('cards')}
+              title="Visualização em Cards"
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '6px 12px', borderRadius: 8, border: 'none',
+                cursor: 'pointer', fontSize: 11.5, fontWeight: 700,
+                background: modoVisualizacao === 'cards' ? 'var(--primary)' : 'transparent',
+                color: modoVisualizacao === 'cards' ? '#ffffff' : 'var(--text-muted)',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <LayoutGrid size={14} />
+              <span>Cards</span>
+            </button>
+            <button
+              onClick={() => alterarModoVisualizacao('tabela')}
+              title="Visualização em Linhas Compactas (~25 por tela)"
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '6px 12px', borderRadius: 8, border: 'none',
+                cursor: 'pointer', fontSize: 11.5, fontWeight: 700,
+                background: modoVisualizacao === 'tabela' ? 'var(--primary)' : 'transparent',
+                color: modoVisualizacao === 'tabela' ? '#ffffff' : 'var(--text-muted)',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <LayoutList size={14} />
+              <span>Tabela</span>
+            </button>
+          </div>
           <button
             onClick={() => setModalImportarDocAberto(true)}
             style={{

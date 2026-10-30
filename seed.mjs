@@ -11,21 +11,21 @@ const db = getFirestore(app);
 
 async function run() {
   await addDoc(collection(db, 'saas_releases'), {
-    versao: 'v3.6.45',
-    titulo: 'Sidebar Retrátil e Modo Tabela Compacta nos Lançamentos',
-    descricao: 'Atualização oficial com a nova Sidebar Retrátil (modo ícones 64px com tooltips flutuantes) e o Alternador de Visualização nos Lançamentos (modo Cards ou Tabela Compacta de alta densidade).',
+    versao: 'v3.6.46',
+    titulo: 'Sidebar Retrátil Destacada + Alternador Cards/Tabela em Lançamentos',
+    descricao: 'Botão de recolher/expandir sidebar destacado no Cabeçalho Superior e na Barra Lateral (topo e rodapé), e alternador de visualização Cards/Tabela nos lançamentos.',
     dataLancamento: new Date().toISOString(),
     status: 'publicado',
     destaque: true,
     notificarTenants: false,
     alvos: 'todos',
     changes: [
-      { tipo: 'nova_funcionalidade', texto: 'Sidebar Retrátil: Alternador para encolher a barra lateral para 64px, liberando área útil de visualização para relatórios e tabelas.' },
-      { tipo: 'nova_funcionalidade', texto: 'Modo Tabela Compacta: Novo alternador [Cards / Tabela] para listar 25+ lançamentos por tela com ações de pagamento e emissão de recibo integradas.' },
-      { tipo: 'melhoria', texto: 'Layout sem cortes: Ajustes de responsividade em todas as telas para garantir exibição completa de clientes, fornecedores e botões de ação.' }
+      { tipo: 'nova_funcionalidade', texto: 'Botão Recolher Menu no Topo: Disponível no cabeçalho superior e no topo e rodapé da barra lateral, permitindo encolher para 64px com 1 clique.' },
+      { tipo: 'nova_funcionalidade', texto: 'Alternador de Visualização Cards / Tabela: Visível no topo da tela de Lançamentos para alternar entre os cards normais e tabela compacta.' },
+      { tipo: 'melhoria', texto: 'Acesso instantâneo e visibilidade garantida em todas as resoluções.' }
     ]
   });
-  console.log('Release notes v3.6.45 added!');
+  console.log('Release notes v3.6.46 added!');
   process.exit(0);
 }
 

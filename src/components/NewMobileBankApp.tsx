@@ -22,7 +22,7 @@ const fmt = formatarMoeda;
  * Canto Esquerdo: Logo + Nome ("FinPessoal")
  * Canto Direito: Sinão + Nome ("Olá, Clovis") + Botão Sair / Logoff
  */
-export function DashboardHeader({ cfg, userProfile, dataAcesso, onLogout }: { cfg: any; userProfile: any; dataAcesso: string; onLogout?: () => void }) {
+export function DashboardHeader({ cfg, userProfile, dataAcesso, onLogout, sidebarCompacta, onToggleSidebar }: { cfg: any; userProfile: any; dataAcesso: string; onLogout?: () => void; sidebarCompacta?: boolean; onToggleSidebar?: () => void }) {
   const [isPrivacy, setIsPrivacy] = React.useState(false);
   React.useEffect(() => {
     // sync state if re-rendered

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
@@ -10,7 +10,7 @@ import {
   LayoutDashboard, ListOrdered, BarChart3, CreditCard,
   Settings, Server, Bot, PlusCircle, BookOpen, LogOut, ShieldCheck,
   BrainCircuit, Calendar, RefreshCw, Zap, Users, TrendingUp, Target,
-  ChevronDown, ChevronRight, Menu, Search, AlertTriangle, Sparkles,
+  ChevronDown, ChevronRight, ChevronsLeft, ChevronsRight, Menu, Search, AlertTriangle, Sparkles,
   Building2, Landmark, FileText, PieChart, Wallet, Receipt,
   ClipboardList, Bell, GitMerge, UserCheck, Activity, Lock, Cpu
 } from 'lucide-react';
@@ -1272,7 +1272,7 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
         )}
 
         {/* HEADER BANCÁRIO NUBANK/INTER (RED #cc0000) */}
-        <DashboardHeader cfg={cfg} userProfile={userProfile} dataAcesso={dataAcesso} onLogout={handleLogout} />
+        <DashboardHeader cfg={cfg} userProfile={userProfile} dataAcesso={dataAcesso} onLogout={handleLogout} sidebarCompacta={sidebarCompacta} onToggleSidebar={toggleSidebar} />
 
         {/* BODY CONTAINER (SIDEBAR + MAIN) */}
         <div className="app-body-container" style={{ display: 'flex', flex: 1, width: '100%', maxWidth: '100vw', overflow: 'hidden', position: 'relative' }}>
@@ -1288,6 +1288,42 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
 
           {/* SIDEBAR */}
           <aside className={`sidebar ${mobileMenuAberto ? 'mobile-open' : ''} ${sidebarCompacta ? 'compacta' : ''}`}>
+            {/* TOPO DA SIDEBAR: BOTÃO RECOLHER/EXPANDIR */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: sidebarCompacta ? 'center' : 'space-between',
+              marginBottom: 10,
+              padding: sidebarCompacta ? '4px 0' : '6px 8px',
+              background: 'rgba(255,255,255,0.08)',
+              borderRadius: 10,
+              border: '1px solid rgba(255,255,255,0.15)'
+            }}>
+              {!sidebarCompacta && (
+                <span style={{ fontSize: '11px', fontWeight: 600, color: '#ffffff', letterSpacing: '0.3px', fontFamily: "'Open Sans', sans-serif" }}>
+                  MENU PRINCIPAL
+                </span>
+              )}
+              <button
+                onClick={toggleSidebar}
+                title={sidebarCompacta ? "Expandir menu lateral" : "Recolher menu lateral"}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  background: 'rgba(255,255,255,0.2)',
+                  border: '1px solid rgba(255,255,255,0.3)',
+                  color: '#ffffff',
+                  borderRadius: 8,
+                  padding: sidebarCompacta ? '6px' : '4px 8px',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                {sidebarCompacta ? <ChevronsRight size={15} /> : <><ChevronsLeft size={14} /> <span>Recolher</span></>}
+              </button>
+            </div>
             <button 
               className="flex items-center justify-center gap-2 w-full mb-6 py-3.5 px-4 transition-all"
               style={{
