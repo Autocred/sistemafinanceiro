@@ -1055,7 +1055,7 @@ const openSafeAttachment = (url: string) => {
                   <th style={{ padding: '10px 12px', textAlign: 'left', fontSize: '10.5px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Forma</th>
                   <th style={{ width: 110, padding: '10px 12px', textAlign: 'center', fontSize: '10.5px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Status</th>
                   <th style={{ width: 120, padding: '10px 12px', textAlign: 'right', fontSize: '10.5px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Valor</th>
-                  <th style={{ width: 130, padding: '10px 12px', textAlign: 'center', fontSize: '10.5px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Ações</th>
+                  <th style={{ minWidth: 195, width: 195, padding: '10px 8px', textAlign: 'center', fontSize: '10.5px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -1117,29 +1117,59 @@ const openSafeAttachment = (url: string) => {
                       <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 800, fontSize: '13px', color: isReceita ? '#15803d' : isTransf ? 'var(--text-primary)' : '#dc2626', whiteSpace: 'nowrap' }}>
                         {isTransf ? '' : isReceita ? '+' : '-'} <span className="valor-sensivel">{fmt(valorFinal)}</span>
                       </td>
-                      <td style={{ padding: '8px 12px', textAlign: 'center' }}>
-                        <div style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
+                      <td style={{ padding: '6px 8px', textAlign: 'center', whiteSpace: 'nowrap', width: 195, minWidth: 195 }}>
+                        <div className="tbl-actions-wrapper">
                           {!checkCartaoPendente(t) && t.status !== 'pago' && t.formaPagamento !== 'cartao_credito' && (
-                            <button onClick={() => handleMarcarPago(t)} title="Baixar Lançamento" style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.3)', color: '#10b981', borderRadius: 6, padding: '3px 6px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}>
-                              <CheckCircle2 size={13} />
+                            <button
+                              onClick={() => handleMarcarPago(t)}
+                              title="Baixar Lançamento"
+                              className="tbl-action-btn"
+                              style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.35)', color: '#10b981' }}
+                            >
+                              <CheckCircle2 size={14} color="#10b981" />
                             </button>
                           )}
                           {isReceita && t.status !== 'pago' && (
-                            <button onClick={(e) => { e.stopPropagation(); setTransacaoCobrarPix(t); }} title="Cobrar PIX" style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.3)', color: '#10b981', borderRadius: 6, padding: '3px 6px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}>
-                              <Zap size={13} />
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setTransacaoCobrarPix(t); }}
+                              title="Cobrar PIX"
+                              className="tbl-action-btn"
+                              style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.35)', color: '#10b981' }}
+                            >
+                              <Zap size={14} color="#10b981" />
                             </button>
                           )}
-                          <button onClick={() => import('@/lib/pdf-generator').then(m => m.gerarReciboPDF(t))} title="Gerar Recibo" style={{ background: 'var(--bg-active)', border: '1px solid var(--border)', color: 'var(--text-primary)', borderRadius: 6, padding: '3px 6px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}>
-                            <Download size={13} />
+                          <button
+                            onClick={() => import('@/lib/pdf-generator').then(m => m.gerarReciboPDF(t))}
+                            title="Gerar Recibo PDF"
+                            className="tbl-action-btn"
+                            style={{ background: 'var(--bg-active)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                          >
+                            <Download size={14} color="currentColor" />
                           </button>
-                          <button onClick={() => onDuplicarLancamento && onDuplicarLancamento(t)} title="Duplicar" style={{ background: 'var(--bg-active)', border: '1px solid var(--border)', color: 'var(--text-primary)', borderRadius: 6, padding: '3px 6px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}>
-                            <Repeat size={13} />
+                          <button
+                            onClick={() => onDuplicarLancamento && onDuplicarLancamento(t)}
+                            title="Duplicar Lançamento"
+                            className="tbl-action-btn"
+                            style={{ background: 'var(--bg-active)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                          >
+                            <Repeat size={14} color="currentColor" />
                           </button>
-                          <button onClick={() => handleEditar(t)} title="Editar" style={{ background: 'var(--bg-active)', border: '1px solid var(--border)', color: 'var(--text-primary)', borderRadius: 6, padding: '3px 6px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}>
-                            <Edit3 size={13} />
+                          <button
+                            onClick={() => handleEditar(t)}
+                            title="Editar Lançamento"
+                            className="tbl-action-btn"
+                            style={{ background: 'var(--bg-active)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                          >
+                            <Edit3 size={14} color="currentColor" />
                           </button>
-                          <button onClick={() => handleDeletar(t.id)} title="Excluir" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444', borderRadius: 6, padding: '3px 6px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}>
-                            <Trash2 size={13} />
+                          <button
+                            onClick={() => handleDeletar(t.id)}
+                            title="Excluir Lançamento"
+                            className="tbl-action-btn"
+                            style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.25)', color: '#ef4444' }}
+                          >
+                            <Trash2 size={14} color="#ef4444" />
                           </button>
                         </div>
                       </td>
