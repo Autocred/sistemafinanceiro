@@ -8,7 +8,7 @@ import { FORMAS_PAGAMENTO_LABELS, STATUS_LABELS } from '@/lib/defaults';
 import { DynamicIcon } from '@/components/DynamicIcon';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subMonths, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { PlusCircle, Search, Filter, ChevronLeft, ChevronRight, Trash2, Edit3, Download, RefreshCw, ArrowUpCircle, ArrowDownCircle, CheckSquare, Square, XCircle, AlertTriangle, DollarSign, ChevronDown, ChevronUp, Clock, Zap, Calendar as CalendarIcon, List, Repeat, Paperclip, CheckCircle2, Mic, Sparkles } from 'lucide-react';
+import { LayoutGrid, LayoutList, PlusCircle, Search, Filter, ChevronLeft, ChevronRight, Trash2, Edit3, Download, RefreshCw, ArrowUpCircle, ArrowDownCircle, CheckSquare, Square, XCircle, AlertTriangle, DollarSign, ChevronDown, ChevronUp, Clock, Zap, Calendar as CalendarIcon, List, Repeat, Paperclip, CheckCircle2, Mic, Sparkles } from 'lucide-react';
 import { ordenarMovimentacoesDesc, ordenarVencimentosAsc } from '@/lib/sorting';
 import ModalCobrancaPix from '@/components/ModalCobrancaPix';
 import ModalImportarDocIA from '@/components/ModalImportarDocIA';
@@ -147,6 +147,19 @@ const openSafeAttachment = (url: string) => {
   };
 
   const [filtroData, setFiltroData] = useState<'lancamento' | 'vencimento'>('lancamento');
+  const [modoVisualizacao, setModoVisualizacao] = useState<'cards' | 'tabela'>('cards');
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('modo_visualizacao_lanc');
+      if (saved === 'cards' || saved === 'tabela') setModoVisualizacao(saved);
+    } catch(e) {}
+  }, []);
+
+  const alterarModoVisualizacao = (modo: 'cards' | 'tabela') => {
+    setModoVisualizacao(modo);
+    try { localStorage.setItem('modo_visualizacao_lanc', modo); } catch(e) {}
+  };
   const [filtroCategoria, setFiltroCategoria] = useState('');
   const [filtroCC, setFiltroCC] = useState('');
   const [filtroContato, setFiltroContato] = useState('');
@@ -601,7 +614,41 @@ const openSafeAttachment = (url: string) => {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <h1 style={{ fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>Lancamentos</h1>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          {/* Alternador de Visualização Cards / Tabela Compacta */}
+          <div style={{ display: 'flex', background: 'var(--bg-body)', border: '1px solid var(--border)', borderRadius: 10, padding: 3, gap: 2 }}>
+            <button
+              onClick={() => alterarModoVisualizacao('cards')}
+              title="Visualização em Cards"
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '6px 12px', borderRadius: 8, border: 'none',
+                cursor: 'pointer', fontSize: 11.5, fontWeight: 700,
+                background: modoVisualizacao === 'cards' ? 'var(--primary)' : 'transparent',
+                color: modoVisualizacao === 'cards' ? '#ffffff' : 'var(--text-muted)',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <LayoutGrid size={14} />
+              <span>Cards</span>
+            </button>
+            <button
+              onClick={() => alterarModoVisualizacao('tabela')}
+              title="Visualização em Linhas Compactas (~25 por tela)"
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '6px 12px', borderRadius: 8, border: 'none',
+                cursor: 'pointer', fontSize: 11.5, fontWeight: 700,
+                background: modoVisualizacao === 'tabela' ? 'var(--primary)' : 'transparent',
+                color: modoVisualizacao === 'tabela' ? '#ffffff' : 'var(--text-muted)',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <LayoutList size={14} />
+              <span>Tabela</span>
+            </button>
+          </div>
+
           <button
             onClick={() => setModalImportarDocAberto(true)}
             style={{
@@ -623,7 +670,7 @@ const openSafeAttachment = (url: string) => {
           >
             <Sparkles size={14} /> Ler com IA (Boleto/NF/Recibo)
           </button>
-          <button className="btn-secondary" style={{ borderColor: '#ef4444', color: '#ef4444', fontWeight: 600, fontSize: 11 }} onClick={async () => {
+          <button className="btn-secondary" style={{ borderColor: '#ef4444', color: '#ef4444', fontWeight: 600, fontSize: 10.5 }} onClick={async () => {
              if (confirm('Deseja corrigir a sincronização? Isso forçará o download dos dados reais do servidor. Use isso se os valores estiverem diferentes do Dashboard.')) {
                 try {
                    indexedDB.deleteDatabase('firestore/[DEFAULT]/sistemafinan/main');
@@ -741,7 +788,7 @@ const openSafeAttachment = (url: string) => {
 
         {/* Linha 2: Filtros de Período */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'nowrap' }}>
-          <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', minWidth: 60 }}>Período</span>
+          <span style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', minWidth: 60 }}>Período</span>
           <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, flex: 1, WebkitOverflowScrolling: 'touch' }}>
             {[
               { id: 'hoje', label: 'Hoje' },
@@ -760,7 +807,7 @@ const openSafeAttachment = (url: string) => {
                   background: periodoFiltro === f.id ? 'var(--primary)' : 'var(--bg-body)',
                   color: periodoFiltro === f.id ? '#ffffff' : 'var(--text-primary)',
                   border: `1px solid ${periodoFiltro === f.id ? 'transparent' : 'var(--border)'}`,
-                  fontSize: 11, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
+                  fontSize: 10.5, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
                   transition: 'all 0.2s',
                 }}>
                 {f.label}
@@ -769,19 +816,19 @@ const openSafeAttachment = (url: string) => {
             
             {periodoFiltro === 'data_especifica' && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg-body)', padding: '4px 12px', borderRadius: '10px', border: '1px solid var(--border)' }}>
-                <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)' }}>De:</span>
+                <span style={{ fontSize: 10.5, fontWeight: 600, color: 'var(--text-muted)' }}>De:</span>
                 <input
                   type="date"
                   value={dataEspecificaInicio}
                   onChange={(e) => setDataEspecificaInicio(e.target.value)}
-                  style={{ background: 'transparent', color: 'var(--text-primary)', border: 'none', fontSize: 11, fontWeight: 600, outline: 'none', cursor: 'pointer' }}
+                  style={{ background: 'transparent', color: 'var(--text-primary)', border: 'none', fontSize: 10.5, fontWeight: 600, outline: 'none', cursor: 'pointer' }}
                 />
-                <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)' }}>Até:</span>
+                <span style={{ fontSize: 10.5, fontWeight: 600, color: 'var(--text-muted)' }}>Até:</span>
                 <input
                   type="date"
                   value={dataEspecificaFim}
                   onChange={(e) => setDataEspecificaFim(e.target.value)}
-                  style={{ background: 'transparent', color: 'var(--text-primary)', border: 'none', fontSize: 11, fontWeight: 600, outline: 'none', cursor: 'pointer' }}
+                  style={{ background: 'transparent', color: 'var(--text-primary)', border: 'none', fontSize: 10.5, fontWeight: 600, outline: 'none', cursor: 'pointer' }}
                 />
               </div>
             )}
@@ -790,7 +837,7 @@ const openSafeAttachment = (url: string) => {
 
         {/* Linha 3: Filtros de Status/Tipo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'nowrap' }}>
-          <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', minWidth: 60 }}>Tipos</span>
+          <span style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', minWidth: 60 }}>Tipos</span>
           <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, flex: 1, WebkitOverflowScrolling: 'touch' }}>
             {[
               { id: 'todos', label: 'Todos os Tipos' },
@@ -827,7 +874,7 @@ const openSafeAttachment = (url: string) => {
                     background: isActive ? 'var(--primary)' : 'var(--bg-body)',
                     color: isActive ? '#ffffff' : 'var(--text-primary)',
                     border: `1px solid ${isActive ? 'transparent' : 'var(--border)'}`,
-                    fontSize: 11, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
+                    fontSize: 10.5, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
                     transition: 'all 0.2s',
                   }}>
                   {f.label}
@@ -839,16 +886,16 @@ const openSafeAttachment = (url: string) => {
 
         {/* Linha 4: Filtros Específicos */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', paddingTop: 16, borderTop: '1px solid var(--border)', marginTop: 8 }}>
-            <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', minWidth: 60 }}>Filtros</span>
-            <select value={filtroCategoria} onChange={e => setFiltroCategoria(e.target.value)} style={{ padding: '4px 6px', fontSize: 11, fontWeight: 600, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg-body)', color: 'var(--text-primary)', outline: 'none', minWidth: 180 }}>
+            <span style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', minWidth: 60 }}>Filtros</span>
+            <select value={filtroCategoria} onChange={e => setFiltroCategoria(e.target.value)} style={{ padding: '4px 6px', fontSize: 10.5, fontWeight: 600, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg-body)', color: 'var(--text-primary)', outline: 'none', minWidth: 180 }}>
                 <option value="">Todas as Categorias</option>
                 {categoriasDropdown.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
-            <select value={filtroCC} onChange={e => setFiltroCC(e.target.value)} style={{ padding: '4px 6px', fontSize: 11, fontWeight: 600, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg-body)', color: 'var(--text-primary)', outline: 'none', minWidth: 180 }}>
+            <select value={filtroCC} onChange={e => setFiltroCC(e.target.value)} style={{ padding: '4px 6px', fontSize: 10.5, fontWeight: 600, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg-body)', color: 'var(--text-primary)', outline: 'none', minWidth: 180 }}>
                 <option value="">Todos os C. de Custo</option>
                 {ccDropdown.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
-            <select value={filtroContato} onChange={e => setFiltroContato(e.target.value)} style={{ padding: '4px 6px', fontSize: 11, fontWeight: 600, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg-body)', color: 'var(--text-primary)', outline: 'none', minWidth: 180 }}>
+            <select value={filtroContato} onChange={e => setFiltroContato(e.target.value)} style={{ padding: '4px 6px', fontSize: 10.5, fontWeight: 600, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg-body)', color: 'var(--text-primary)', outline: 'none', minWidth: 180 }}>
                 <option value="">Todos Fornecedores/Clientes</option>
                 {contatosDropdown.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
@@ -867,15 +914,15 @@ const openSafeAttachment = (url: string) => {
             <span style={{ fontSize: 14, fontWeight: 700, color: '#f87171' }}>
               {selecionados.size} {selecionados.size === 1 ? 'selecionado' : 'selecionados'}
             </span>
-            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>de {filtradas.length}</span>
+            <span style={{ fontSize: 10.5, color: 'var(--text-muted)' }}>de {filtradas.length}</span>
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <button onClick={selecionarTodos}
-              className="btn-secondary" style={{ fontSize: 11, padding: '6px 14px' }}>
+              className="btn-secondary" style={{ fontSize: 10.5, padding: '6px 14px' }}>
               {todosSelected ? 'Desmarcar Todos' : 'Selecionar Todos'}
             </button>
             <button onClick={handlePagarSelecionados} disabled={selecionados.size === 0 || pagandoLote}
-              className="btn-primary" style={{ fontSize: 11, padding: '6px 14px', background: 'var(--primary)' }}>
+              className="btn-primary" style={{ fontSize: 10.5, padding: '6px 14px', background: 'var(--primary)' }}>
               {pagandoLote ? 'Processando...' : <><CheckCircle2 size={13} /> Pagar Lote</>}
             </button>
             <button
@@ -883,7 +930,7 @@ const openSafeAttachment = (url: string) => {
               disabled={selecionados.size === 0}
               className="btn-danger"
               style={{
-                fontSize: 11, padding: '6px 14px',
+                fontSize: 10.5, padding: '6px 14px',
                 opacity: selecionados.size === 0 ? 0.4 : 1,
                 cursor: selecionados.size === 0 ? 'not-allowed' : 'pointer',
               }}
@@ -892,7 +939,7 @@ const openSafeAttachment = (url: string) => {
               Excluir
             </button>
             <button onClick={cancelarSelecao}
-              className="btn-secondary" style={{ fontSize: 11, padding: '6px 14px' }}>
+              className="btn-secondary" style={{ fontSize: 10.5, padding: '6px 14px' }}>
               Cancelar
             </button>
           </div>
@@ -942,16 +989,16 @@ const openSafeAttachment = (url: string) => {
       {/* Navegação de Mes (Escondida se o filtro não for por Mes, pois os botões rápidos controlam isso agora) */}
       {periodoFiltro === 'mes' && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-glass)', border: '1px solid var(--border)', borderRadius: 12, padding: '12px 20px', marginBottom: 20 }}>
-          <button onClick={() => setMes(m => subMonths(m, 1))} className="btn-secondary" style={{ padding: '4px 6px', fontSize: 11 }}>
+          <button onClick={() => setMes(m => subMonths(m, 1))} className="btn-secondary" style={{ padding: '4px 6px', fontSize: 10.5 }}>
             <ChevronLeft size={13} />
           </button>
           <div style={{ textAlign: 'center' }}>
             <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', textTransform: 'capitalize' }}>
               {format(mes, "MMMM 'de' yyyy", { locale: ptBR })}
             </p>
-            <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{filtradas.length} lançamentos</p>
+            <p style={{ fontSize: 10.5, color: 'var(--text-muted)', marginTop: 2 }}>{filtradas.length} lançamentos</p>
           </div>
-          <button onClick={() => setMes(m => addMonths(m, 1))} className="btn-secondary" style={{ padding: '4px 6px', fontSize: 11 }}>
+          <button onClick={() => setMes(m => addMonths(m, 1))} className="btn-secondary" style={{ padding: '4px 6px', fontSize: 10.5 }}>
             <ChevronRight size={13} />
           </button>
         </div>
@@ -960,19 +1007,19 @@ const openSafeAttachment = (url: string) => {
       {/* Resumo rápido */}
       <div className="grid-responsive-4" style={{ marginBottom: 20 }}>
         <div style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.15)', borderRadius: 12, padding: '14px 16px', textAlign: 'center' }}>
-          <p style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>Receitas</p>
+          <p style={{ fontSize: 10.5, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>Receitas</p>
           <p style={{ fontSize: 20, fontWeight: 800, color: '#10b981' }}><span className="valor-sensivel">{fmt(totalReceitas)}</span></p>
         </div>
         <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)', borderRadius: 12, padding: '14px 16px', textAlign: 'center' }}>
-          <p style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>Despesas Pagas</p>
+          <p style={{ fontSize: 10.5, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>Despesas Pagas</p>
           <p style={{ fontSize: 20, fontWeight: 800, color: '#ef4444' }}><span className="valor-sensivel">{fmt(despesasPagas)}</span></p>
         </div>
         <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.15)', borderRadius: 12, padding: '14px 16px', textAlign: 'center' }}>
-          <p style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>Despesas a Pagar</p>
+          <p style={{ fontSize: 10.5, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>Despesas a Pagar</p>
           <p style={{ fontSize: 20, fontWeight: 800, color: '#f59e0b' }}><span className="valor-sensivel">{fmt(despesasAPagar)}</span></p>
         </div>
         <div style={{ background: saldo >= 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)', border: `1px solid ${saldo >= 0 ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)'}`, borderRadius: 12, padding: '14px 16px', textAlign: 'center' }}>
-          <p style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>Saldo</p>
+          <p style={{ fontSize: 10.5, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>Saldo</p>
           <p style={{ fontSize: 20, fontWeight: 800, color: saldo >= 0 ? '#10b981' : '#ef4444' }}><span className="valor-sensivel">{fmt(saldo)}</span></p>
         </div>
       </div>
@@ -1068,24 +1115,24 @@ const openSafeAttachment = (url: string) => {
                   </div>
 
                   <div className="lancamento-card-middle">
-                    <div className="lancamento-tags" style={{ display: 'flex', flexWrap: 'nowrap', overflowX: 'auto', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch', gap: 6 }}>
+                    <div className="lancamento-tags" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 5 }}>
 {t.tipo === 'transferencia' ? (
-                         <span style={{ background: 'var(--bg-active)', padding: '4px 8px', fontSize: 11, borderRadius: 8, fontWeight: 500, whiteSpace: 'nowrap', flexShrink: 0, color: 'var(--primary)' }}>
+                         <span style={{ background: 'var(--bg-active)', padding: '3px 6px', fontSize: 10.5, borderRadius: 8, fontWeight: 500, whiteSpace: 'nowrap', flexShrink: 0, color: 'var(--primary)' }}>
                            {t.contaNome || '-'} ➔ {((t as any)['contaDestinãoNome']) || ((t as any)['contaDestinoNome']) || (contas.find(c => c.id === ((t as any)['contaDestinãoId'] || (t as any)['contaDestinoId']))?.nome) || '-'}
                          </span>
                        ) : (
                          <>
-                           <span style={{ background: 'var(--bg-active)', padding: '4px 8px', fontSize: 11, borderRadius: 8, fontWeight: 500, whiteSpace: 'nowrap', flexShrink: 0 }}>{t.contaNome || '-'}</span>
-                           <span style={{ background: 'var(--bg-active)', padding: '4px 8px', fontSize: 11, borderRadius: 8, fontWeight: 500, whiteSpace: 'nowrap', flexShrink: 0 }}>{FORMAS_PAGAMENTO_LABELS[t.formaPagamento] || t.formaPagamento}</span>
+                           <span style={{ background: 'var(--bg-active)', padding: '3px 6px', fontSize: 10.5, borderRadius: 8, fontWeight: 500, whiteSpace: 'nowrap', flexShrink: 0 }}>{t.contaNome || '-'}</span>
+                           <span style={{ background: 'var(--bg-active)', padding: '3px 6px', fontSize: 10.5, borderRadius: 8, fontWeight: 500, whiteSpace: 'nowrap', flexShrink: 0 }}>{FORMAS_PAGAMENTO_LABELS[t.formaPagamento] || t.formaPagamento}</span>
                          </>
                        )}
                        {['master', '9yxuafoC0AV9BrIKem05ponbmgn2', 'autocred-promotora-de-credito'].includes(getTenantId()) && t.comportamento && (
-                         <span style={{ background: t.comportamento === 'fixa' ? 'rgba(139,92,246,0.15)' : 'rgba(245,158,11,0.15)', color: t.comportamento === 'fixa' ? '#6d28d9' : '#b45309', border: `1px solid ${t.comportamento === 'fixa' ? 'var(--primary)' : '#f59e0b'}`, padding: '4px 8px', fontSize: 11 }}>
+                         <span style={{ background: t.comportamento === 'fixa' ? 'rgba(139,92,246,0.15)' : 'rgba(245,158,11,0.15)', color: t.comportamento === 'fixa' ? '#6d28d9' : '#b45309', border: `1px solid ${t.comportamento === 'fixa' ? 'var(--primary)' : '#f59e0b'}`, padding: '3px 6px', fontSize: 10.5 }}>
                            {t.comportamento === 'fixa' ? 'Fixa' : 'Variável'}
                          </span>
                        )}
                        {(t.fornecedorNome || t.clienteNome) && (
-                          <span style={{ background: 'var(--bg-active)', padding: '4px 8px', fontSize: 11, borderRadius: 8, fontWeight: 500, whiteSpace: 'nowrap', flexShrink: 0 }}>👤 {t.fornecedorNome || t.clienteNome}</span>
+                          <span title={t.fornecedorNome || t.clienteNome} style={{ background: 'var(--bg-active)', padding: '3px 7px', fontSize: 10.5, borderRadius: 6, fontWeight: 600, whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>👤 {t.fornecedorNome || t.clienteNome}</span>
                        )}
                        
                          
@@ -1106,13 +1153,13 @@ const openSafeAttachment = (url: string) => {
                        </p>
                        <div className="lancamento-badge-wrapper" style={{ marginTop: 6, display: 'flex', gap: 4, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                           {(t.formaPagamento === 'cartao_credito' || (t.observacoes && t.observacoes.includes('Baixa ref. fatura'))) && t.status === 'pago' && (
-                            <span className="badge" style={{ fontSize: 11, background: 'rgba(139,92,246,0.15)', color: '#7c3aed', border: '1px solid rgba(139,92,246,0.3)' }}>💳 Pgto Cartão</span>
+                            <span className="badge" style={{ fontSize: 10.5, background: 'rgba(139,92,246,0.15)', color: '#7c3aed', border: '1px solid rgba(139,92,246,0.3)' }}>💳 Pgto Cartão</span>
                           )}
 
                           {checkCartaoPendente(t) ? (
-                            <span className="badge badge-yellow" style={{ fontSize: 11 }}>Fatura Aberta</span>
+                            <span className="badge badge-yellow" style={{ fontSize: 10.5 }}>Fatura Aberta</span>
                           ) : (
-                            <span className={`badge ${t.status === 'pago' ? 'badge-green' : t.status === 'atrasado' ? 'badge-red' : 'badge-yellow'}`} style={{ fontSize: 11 }}>
+                            <span className={`badge ${t.status === 'pago' ? 'badge-green' : t.status === 'atrasado' ? 'badge-red' : 'badge-yellow'}`} style={{ fontSize: 10.5 }}>
                               {STATUS_LABELS[t.tipo]?.[t.status] || t.status}
                             </span>
                           )}
@@ -1120,41 +1167,41 @@ const openSafeAttachment = (url: string) => {
                      </div>
                      <div className="lancamento-actions">
                          {!checkCartaoPendente(t) && t.status !== 'pago' && t.formaPagamento !== 'cartao_credito' && (
-                           <button onClick={() => handleMarcarPago(t)} style={{ background: 'var(--primary-light)', border: '1px solid var(--primary-light)', borderRadius: 10, padding: '4px 8px', fontSize: 11, fontWeight: 600, transition: 'all 0.15s' }}>
+                           <button onClick={() => handleMarcarPago(t)} style={{ background: 'var(--primary-light)', border: '1px solid var(--primary-light)', borderRadius: 10, padding: '3px 6px', fontSize: 10.5, fontWeight: 600, transition: 'all 0.15s' }}>
                              <CheckCircle2 size={13} /> Baixar
                            </button>
                          )}
                          {isReceita && t.status !== 'pago' && (
-                           <button onClick={(e) => { e.stopPropagation(); setTransacaoCobrarPix(t); }} style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.3)', color: '#10b981', borderRadius: 10, padding: '4px 8px', fontSize: 11, fontWeight: 700, transition: 'all 0.15s', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }} title="Gerar QR Code PIX e Cobrar via WhatsApp">
+                           <button onClick={(e) => { e.stopPropagation(); setTransacaoCobrarPix(t); }} style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.3)', color: '#10b981', borderRadius: 10, padding: '3px 6px', fontSize: 10.5, fontWeight: 700, transition: 'all 0.15s', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }} title="Gerar QR Code PIX e Cobrar via WhatsApp">
                             <Zap size={13} /> Cobrar PIX
                           </button>
                          )}
                          
                            {t.comprovanteBase64 && !t.anexos && (
                              <button onClick={(e) => { e.stopPropagation(); openSafeAttachment(t.comprovanteBase64 as string); }} 
-                               style={{ background: '#dcfce7', border: '1px solid #bbf7d0', borderRadius: 10, padding: '4px 8px', fontSize: 11, fontWeight: 600, transition: 'all 0.15s' }} title="Ver Anexo">
+                               style={{ background: '#dcfce7', border: '1px solid #bbf7d0', borderRadius: 10, padding: '3px 6px', fontSize: 10.5, fontWeight: 600, transition: 'all 0.15s' }} title="Ver Anexo">
                                <Paperclip size={13} /> Anexo
                              </button>
                            )}
                            {t.anexos && t.anexos.map((a, idx) => (
                              <button key={idx} onClick={(e) => { e.stopPropagation(); openSafeAttachment(a.url); }} 
-                               style={{ background: '#dcfce7', border: '1px solid #bbf7d0', borderRadius: 10, padding: '4px 8px', fontSize: 11, fontWeight: 600, transition: 'all 0.15s' }} title={a.nome}>
+                               style={{ background: '#dcfce7', border: '1px solid #bbf7d0', borderRadius: 10, padding: '3px 6px', fontSize: 10.5, fontWeight: 600, transition: 'all 0.15s' }} title={a.nome}>
                                <Paperclip size={13} /> {t.anexos!.length > 1 ? 'Anexo ' + (idx + 1) : 'Anexo'}
                              </button>
                            ))}
 
 
-<button onClick={() => import('@/lib/pdf-generator').then(m => m.gerarReciboPDF(t))} style={{ background: 'var(--bg-active)', border: '1px solid var(--border)', borderRadius: 10, padding: '4px 8px', fontSize: 11, fontWeight: 600, transition: 'all 0.15s' }}>
+<button onClick={() => import('@/lib/pdf-generator').then(m => m.gerarReciboPDF(t))} style={{ background: 'var(--bg-active)', border: '1px solid var(--border)', borderRadius: 10, padding: '3px 6px', fontSize: 10.5, fontWeight: 600, transition: 'all 0.15s' }}>
   <Download size={13} /> Recibo
 </button>
-<button onClick={() => onDuplicarLancamento && onDuplicarLancamento(t)} style={{ background: 'var(--bg-active)', border: '1px solid var(--border)', borderRadius: 10, padding: '4px 8px', fontSize: 11, fontWeight: 600, transition: 'all 0.15s' }}>
+<button onClick={() => onDuplicarLancamento && onDuplicarLancamento(t)} style={{ background: 'var(--bg-active)', border: '1px solid var(--border)', borderRadius: 10, padding: '3px 6px', fontSize: 10.5, fontWeight: 600, transition: 'all 0.15s' }}>
   <Repeat size={13} /> Duplicar
 </button>
-<button onClick={() => handleEditar(t)} style={{ background: 'var(--bg-active)', border: '1px solid var(--border)', borderRadius: 10, padding: '4px 8px', fontSize: 11, fontWeight: 600, transition: 'all 0.15s' }}>
+<button onClick={() => handleEditar(t)} style={{ background: 'var(--bg-active)', border: '1px solid var(--border)', borderRadius: 10, padding: '3px 6px', fontSize: 10.5, fontWeight: 600, transition: 'all 0.15s' }}>
   <Edit3 size={13} /> Editar
 </button>
 
-                         <button onClick={() => handleDeletar(t.id)} style={{ background: 'var(--bg-active)', border: '1px solid var(--border)', borderRadius: 10, padding: '4px 6px', fontSize: 11, cursor: 'pointer', color: 'var(--text-secondary)', transition: 'all 0.15s' }}>
+                         <button onClick={() => handleDeletar(t.id)} style={{ background: 'var(--bg-active)', border: '1px solid var(--border)', borderRadius: 10, padding: '4px 6px', fontSize: 10.5, cursor: 'pointer', color: 'var(--text-secondary)', transition: 'all 0.15s' }}>
                            <Trash2 size={13} />
                          </button>
                      </div>

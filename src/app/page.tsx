@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
@@ -9,7 +9,10 @@ import { DashboardHeader } from '@/components/NewMobileBankApp';
 import {
   LayoutDashboard, ListOrdered, BarChart3, CreditCard,
   Settings, Server, Bot, PlusCircle, BookOpen, LogOut, ShieldCheck,
-  BrainCircuit, Calendar, RefreshCw, Zap, Users, TrendingUp, Target, ChevronDown, ChevronRight, Menu, Search, AlertTriangle, Sparkles, Building2
+  BrainCircuit, Calendar, RefreshCw, Zap, Users, TrendingUp, Target,
+  ChevronDown, ChevronRight, Menu, Search, AlertTriangle, Sparkles,
+  Building2, Landmark, FileText, PieChart, Wallet, Receipt,
+  ClipboardList, Bell, GitMerge, UserCheck, Activity, Lock, Cpu
 } from 'lucide-react';
 import { setTenantId } from '@/lib/storage';
 import { MENU_PERMISSION_MAP } from '@/lib/permissions';
@@ -58,35 +61,38 @@ const AtualizacoesCliente = dynamic(() => import('@/components/AtualizacoesClien
 const AgingList          = dynamic(() => import('@/components/AgingList').then(m => ({ default: m.AgingList })), { ssr: false, loading: () => <div style={{display:'flex',justifyContent:'center',alignItems:'center',height:'100vh',flexDirection:'column'}}><div className='spinner'></div><p style={{marginTop:16,color:'var(--text-muted)'}}>Carregando módulo...</p></div> });
 
 const NAV_ITEMS = [
-  { id: 'dashboard'    as Pagina, label: 'Dashboard',        icon: LayoutDashboard, grupo: 'Principal' },
-  { id: 'dashboard_mensal' as Pagina, label: 'Dashboard Mensal', icon: BarChart3, grupo: 'Principal' },
-  { id: 'lancamentos'  as Pagina, label: 'Lançamentos',      icon: ListOrdered,     grupo: 'Principal' },
-  { id: 'metas'        as Pagina, label: 'Metas & Orçamentos', icon: Target,      grupo: 'Principal' },
-  
+  // ── VISÃO GERAL ─────────────────────────────────────────────────────────
+  { id: 'dashboard'         as Pagina, label: 'Dashboard',          sublabel: 'Visão do dia',         icon: LayoutDashboard, grupo: '📊 Visão Geral' },
+  { id: 'dashboard_mensal'  as Pagina, label: 'Resumo Mensal',      sublabel: 'Análise mês a mês',    icon: BarChart3,       grupo: '📊 Visão Geral' },
+  { id: 'lancamentos'       as Pagina, label: 'Lançamentos',        sublabel: 'Receitas e despesas',  icon: ListOrdered,     grupo: '📊 Visão Geral' },
+  { id: 'metas'             as Pagina, label: 'Metas & Orçamentos', sublabel: 'Planejamento anual',   icon: Target,          grupo: '📊 Visão Geral' },
 
-  { id: 'cfo'          as Pagina, label: 'Cockpit CFO',      icon: BrainCircuit,    grupo: 'Inteligência' },
-  { id: 'previsao_ia'  as Pagina, label: 'Previsão Fluxo IA', icon: TrendingUp,    grupo: 'Inteligência' },
-  { id: 'relatorio_avancado' as Pagina, label: 'Relatório Premium', icon: Target,   grupo: 'Inteligência' },
-  { id: 'relatorios'   as Pagina, label: 'Relatórios',       icon: BarChart3,       grupo: 'Inteligência' },
-  { id: 'investimentos'as Pagina, label: 'Hub Patrimônio',   icon: TrendingUp,      grupo: 'Inteligência' },
-  { id: 'inadimplencia' as Pagina, label: 'Inadimplência',   icon: AlertTriangle,   grupo: 'Inteligência' },
-  
-  { id: 'cartoes'      as Pagina, label: 'Cartões Corp.',    icon: CreditCard,      grupo: 'Kaminão (Banking)' },
-  
-  { id: 'contas'       as Pagina, label: 'Contas & Cartões', icon: CreditCard,      grupo: 'Gestão' },
-  { id: 'extrato'      as Pagina, label: 'Extrato Bancário', icon: BookOpen,        grupo: 'Gestão' },
-  { id: 'comissoes'    as Pagina, label: 'Bancos & Comissões', icon: Building2,     grupo: 'Gestão' },
-  { id: 'conciliacao'  as Pagina, label: 'Conciliação OFX',  icon: RefreshCw,       grupo: 'Gestão' },
-  { id: 'calendario'   as Pagina, label: 'Calendário ERP',   icon: Calendar,        grupo: 'Gestão' },
+  // ── BANKING & CONTAS ─────────────────────────────────────────────────────
+  { id: 'contas'            as Pagina, label: 'Contas & Cartões',   sublabel: 'Saldos e limites',     icon: Wallet,          grupo: '🏦 Banking & Contas' },
+  { id: 'cartoes'           as Pagina, label: 'Cartões Corp.',      sublabel: 'Faturas e limites',    icon: CreditCard,      grupo: '🏦 Banking & Contas' },
+  { id: 'extrato'           as Pagina, label: 'Extrato Bancário',   sublabel: 'Movimentações',        icon: Receipt,         grupo: '🏦 Banking & Contas' },
+  { id: 'comissoes'         as Pagina, label: 'Bancos & Comissões', sublabel: 'Carteira diferida',    icon: Building2,       grupo: '🏦 Banking & Contas' },
+  { id: 'conciliacao'       as Pagina, label: 'Conciliação OFX',   sublabel: 'Importar extrato',     icon: RefreshCw,       grupo: '🏦 Banking & Contas' },
 
-  { id: 'aprovacoes'   as Pagina, label: 'Aprovações',       icon: ShieldCheck,     grupo: 'Operacional' },
-  { id: 'regras'       as Pagina, label: 'Automações',       icon: Zap,             grupo: 'Operacional' },
-  { id: 'equipe'       as Pagina, label: 'Minha Equipe',     icon: Users,           grupo: 'Operacional' },
-  { id: 'auditoria'    as Pagina, label: 'Auditoria',        icon: ShieldCheck,     grupo: 'Operacional' },
+  // ── INTELIGÊNCIA & ANÁLISE ────────────────────────────────────────────────
+  { id: 'cfo'               as Pagina, label: 'Cockpit CFO',        sublabel: 'Painel executivo',     icon: BrainCircuit,    grupo: '🧠 Inteligência' },
+  { id: 'previsao_ia'       as Pagina, label: 'Previsão Fluxo IA', sublabel: 'IA preditiva',         icon: TrendingUp,      grupo: '🧠 Inteligência' },
+  { id: 'relatorio_avancado'as Pagina, label: 'Relatório Premium', sublabel: 'Análise profunda',     icon: PieChart,        grupo: '🧠 Inteligência' },
+  { id: 'relatorios'        as Pagina, label: 'Relatórios',         sublabel: 'Gráficos e tabelas',  icon: BarChart3,       grupo: '🧠 Inteligência' },
+  { id: 'investimentos'     as Pagina, label: 'Hub Patrimônio',    sublabel: 'Ativos e carteira',    icon: Landmark,        grupo: '🧠 Inteligência' },
+  { id: 'inadimplencia'     as Pagina, label: 'Inadimplência',     sublabel: 'Aging & cobrança',     icon: AlertTriangle,   grupo: '🧠 Inteligência' },
 
-  { id: 'atualizacoes' as Pagina, label: 'Atualizações',     icon: Server,          grupo: 'Configurações' },
-  { id: 'cadastros'    as Pagina, label: 'Cadastros',        icon: BookOpen,        grupo: 'Gestão' },
-  { id: 'configuracoes'as Pagina, label: 'Configurações',    icon: Settings,        grupo: 'Configurações' },
+  // ── OPERACIONAL ───────────────────────────────────────────────────────────
+  { id: 'calendario'        as Pagina, label: 'Calendário ERP',    sublabel: 'Agenda financeira',    icon: Calendar,        grupo: '⚙️ Operacional' },
+  { id: 'aprovacoes'        as Pagina, label: 'Aprovações',        sublabel: 'Fluxo de alçadas',     icon: UserCheck,       grupo: '⚙️ Operacional' },
+  { id: 'regras'            as Pagina, label: 'Automações',        sublabel: 'Regras inteligentes',  icon: Zap,             grupo: '⚙️ Operacional' },
+  { id: 'equipe'            as Pagina, label: 'Minha Equipe',      sublabel: 'Usuários & acessos',   icon: Users,           grupo: '⚙️ Operacional' },
+  { id: 'auditoria'         as Pagina, label: 'Auditoria',         sublabel: 'Log de atividades',    icon: Activity,        grupo: '⚙️ Operacional' },
+
+  // ── CONFIGURAÇÕES ─────────────────────────────────────────────────────────
+  { id: 'cadastros'         as Pagina, label: 'Cadastros',         sublabel: 'Clientes, fornecedores',icon: ClipboardList,  grupo: '🔧 Configurações' },
+  { id: 'atualizacoes'      as Pagina, label: 'Atualizações',      sublabel: 'Novidades do sistema', icon: Bell,            grupo: '🔧 Configurações' },
+  { id: 'configuracoes'     as Pagina, label: 'Configurações',     sublabel: 'Personalização',       icon: Settings,        grupo: '🔧 Configurações' },
 ];
 
 
@@ -285,9 +291,25 @@ export default function Home() {
   const [appInfo, setAppInfo] = useState<any>(null);
   
   const [gruposExpandidos, setGruposExpandidos] = useState<Record<string, boolean>>({
-    'Principal': true // Apenas o grupo Principal começa aberto
+    '📊 Visão Geral': true // Visão Geral começa aberta
   });
   const [mobileMenuAberto, setMobileMenuAberto] = useState(false);
+  const [sidebarCompacta, setSidebarCompacta] = useState(false);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('sidebar_compacta');
+      if (saved === 'true') setSidebarCompacta(true);
+    } catch(e) {}
+  }, []);
+
+  const toggleSidebar = () => {
+    setSidebarCompacta(prev => {
+      const next = !prev;
+      try { localStorage.setItem('sidebar_compacta', String(next)); } catch(e) {}
+      return next;
+    });
+  };
 
   const toggleGrupo = (nome: string) => {
     setGruposExpandidos(prev => ({
@@ -938,7 +960,7 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
     const isSuperAdminMaster = typeof window !== 'undefined' && (() => { try { return sessionStorage.getItem('master_bypass'); } catch(e) { return null; } })() === 'true' || userProfile?.uid === 'clovis-master-bypass' || userProfile?.email?.includes('clovis@financeai.com');
     if (isSuperAdminMaster) {
       navItemsFiltrados.push(
-        { id: 'licencas' as Pagina, label: 'Painel Master', icon: BookOpen, grupo: 'Configurações' }
+        { id: 'licencas' as Pagina, label: 'Painel Master', sublabel: 'Gestão de Licenças', icon: BookOpen, grupo: '🔧 Configurações' }
       );
     }
     
@@ -1265,7 +1287,7 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
           )}
 
           {/* SIDEBAR */}
-          <aside className={`sidebar ${mobileMenuAberto ? 'mobile-open' : ''}`}>
+          <aside className={`sidebar ${mobileMenuAberto ? 'mobile-open' : ''} ${sidebarCompacta ? 'compacta' : ''}`}>
             <button 
               className="flex items-center justify-center gap-2 w-full mb-6 py-3.5 px-4 transition-all"
               style={{
@@ -1323,7 +1345,7 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
               <Sparkles size={16} color="#c084fc" />
               <span>Ler Boleto/NF com IA</span>
             </button>
-            <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6, overflowY: 'auto', paddingRight: 4 }}>
+            <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 0, overflowY: 'auto', paddingRight: 2 }}>
               {(() => {
                 const grupos = navItemsFiltrados.reduce((acc, item) => {
                   const g = item.grupo || 'Outros';
@@ -1332,58 +1354,112 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
                   return acc;
                 }, {} as Record<string, typeof navItemsFiltrados>);
 
-                // Fixar a ordem dos grupos para manter a consistência
-                const ordemDesejada = ['Principal', 'Inteligência', 'Gestão', 'Operacional', 'Configurações', 'Outros'];
+                const ordemDesejada = ['📊 Visão Geral', '🏦 Banking & Contas', '🧠 Inteligência', '⚙️ Operacional', '🔧 Configurações', 'Outros'];
                 const chavesOrdenadas = Object.keys(grupos).sort((a, b) => {
-                    let idxA = ordemDesejada.indexOf(a);
-                    let idxB = ordemDesejada.indexOf(b);
-                    if(idxA === -1) idxA = 999;
-                    if(idxB === -1) idxB = 999;
-                    return idxA - idxB;
+                  let idxA = ordemDesejada.indexOf(a);
+                  let idxB = ordemDesejada.indexOf(b);
+                  if(idxA === -1) idxA = 999;
+                  if(idxB === -1) idxB = 999;
+                  return idxA - idxB;
                 });
 
-                return chavesOrdenadas.map((nomeGrupo) => {
+                return chavesOrdenadas.map((nomeGrupo, grupIdx) => {
                   const itens = grupos[nomeGrupo];
+                  const isOpen = gruposExpandidos[nomeGrupo];
                   return (
-                    <div key={nomeGrupo} style={{ marginBottom: 2 }}>
-                      <div 
+                    <div key={nomeGrupo} style={{ marginBottom: 4 }}>
+                      {/* Cabeçalho do grupo */}
+                      <div
                         onClick={() => toggleGrupo(nomeGrupo)}
-                        style={{ 
-                          display: 'flex', alignItems: 'center', justifyContent: 'space-between', 
-                          padding: '8px 12px', cursor: 'pointer', 
-                          color: 'rgba(255,255,255,0.7)', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px',
-                          borderRadius: 6
+                        style={{
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                          padding: '7px 10px', cursor: 'pointer',
+                          color: 'rgba(255,255,255,0.85)',
+                          fontSize: '11px', fontWeight: 500,
+                          fontFamily: "'Open Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+                          letterSpacing: '0.5px',
+                          textTransform: 'uppercase',
+                          borderRadius: 8,
+                          marginTop: grupIdx > 0 ? 6 : 0,
+                          borderTop: grupIdx > 0 ? '1px solid rgba(255,255,255,0.07)' : 'none',
+                          paddingTop: grupIdx > 0 ? 10 : 7,
+                          userSelect: 'none'
                         }}
-                        className="transition-colors hover:bg-white/10"
+                        className="transition-colors hover:bg-white/5"
                       >
-                        {nomeGrupo}
-                        {gruposExpandidos[nomeGrupo] ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                        <span>{nomeGrupo}</span>
+                        <span style={{ color: 'rgba(255,255,255,0.85)' }}>{isOpen ? <ChevronDown size={13} strokeWidth={1.8} /> : <ChevronRight size={13} strokeWidth={1.8} />}</span>
                       </div>
-                      
-                      <div 
-                         style={{ 
-                            display: 'flex', flexDirection: 'column', gap: 2, 
-                            overflow: 'hidden',
-                            transition: 'max-height 0.3s ease-in-out',
-                            maxHeight: gruposExpandidos[nomeGrupo] ? '500px' : '0px'
-                         }}
-                      >
+
+                      {/* Itens do grupo */}
+                      <div style={{
+                        display: 'flex', flexDirection: 'column', gap: 1,
+                        overflow: 'hidden',
+                        transition: 'max-height 0.3s cubic-bezier(0.4,0,0.2,1)',
+                        maxHeight: isOpen ? '800px' : '0px'
+                      }}>
                         {itens.map(item => {
                           const Icon = item.icon;
+                          const isActive = paginaAtual === item.id;
+                          const sub = (item as any).sublabel;
                           return (
                             <button key={item.id}
-                              className={`sidebar-link ${paginaAtual === item.id ? 'active' : ''}`}
-                              onClick={() => { 
+                              onClick={() => {
                                 if (item.id === 'licencas') {
                                   window.location.href = '/master';
                                 } else {
-                                  setPaginaAtual(item.id); 
-                                  setMobileMenuAberto(false); 
+                                  setPaginaAtual(item.id);
+                                  setMobileMenuAberto(false);
                                 }
+                              }}
+                              style={{
+                                display: 'flex', alignItems: 'center', gap: 10,
+                                padding: '9px 10px',
+                                borderRadius: 10,
+                                cursor: 'pointer',
+                                border: 'none',
+                                width: '100%', textAlign: 'left',
+                                background: isActive
+                                  ? 'rgba(255,255,255,0.18)'
+                                  : 'transparent',
+                                boxShadow: isActive ? 'inset 0 0 0 1px rgba(255,255,255,0.15)' : 'none',
+                                transition: 'all 0.15s ease',
+                                color: '#ffffff',
+                              }}
+                              className={isActive ? '' : 'hover:bg-white/8'}
+                            >
+                              <span style={{
+                                width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                background: isActive ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.08)',
+                                color: '#ffffff',
+                                transition: 'all 0.15s'
                               }}>
-                              <Icon size={17} />
-                              {item.label}
-                              {item.id === 'licencas' && <span style={{marginLeft: 'auto', background: '#ef4444', color: '#fff', fontSize: 10, padding: '2px 6px', borderRadius: 10, fontWeight: 'bold', textShadow: '0 1px 2px rgba(0,0,0,0.3)'}}>NOVO MASTER</span>}
+                                <Icon size={15} />
+                              </span>
+                              <span style={{ flex: 1, minWidth: 0 }}>
+                                <span style={{
+                                  display: 'block', fontSize: '13.5px', fontWeight: isActive ? 500 : 400,
+                                  color: '#ffffff',
+                                  fontFamily: "'Open Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+                                  lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                                  letterSpacing: '0px'
+                                }}>{item.label}</span>
+                                {sub && (
+                                  <span style={{
+                                    display: 'block', fontSize: '11px', color: 'rgba(255,255,255,0.75)',
+                                    fontFamily: "'Open Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+                                    lineHeight: 1.2, marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                                    fontWeight: 300
+                                  }}>{sub}</span>
+                                )}
+                              </span>
+                              {item.id === 'licencas' && (
+                                <span style={{ background: '#ef4444', color: '#fff', fontSize: 9, padding: '2px 5px', borderRadius: 8, fontWeight: 800, flexShrink: 0 }}>MASTER</span>
+                              )}
+                              {isActive && (
+                                <span style={{ width: 3, height: 18, borderRadius: 2, background: '#ffffff', flexShrink: 0 }} />
+                              )}
                             </button>
                           );
                         })}
@@ -1419,7 +1495,7 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
           </aside>
 
           {/* MAIN */}
-          <main className="main-content" style={{ flex: 1, height: '100%', overflowY: 'auto', overflowX: 'hidden' }}>
+          <main className={`main-content ${sidebarCompacta ? 'sidebar-compacta' : ''}`} style={{ flex: 1, height: '100%', overflowY: 'auto', overflowX: 'hidden' }}>
             <ErrorBoundary fallbackTitle="Erro ao carregar o módulo do Dashboard">{renderPagina()}</ErrorBoundary>
           </main>
         </div>

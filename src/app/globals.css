@@ -764,11 +764,14 @@ select:-webkit-autofill:focus {
 
 /* Main content */
 .main-content {
-  margin-left: 240px; /* 260 width + 16 left + 16 gap */
+  margin-left: 240px;
   min-height: calc(100vh - 64px);
-  padding: 32px 32px 140px;
+  padding: 18px 20px 100px;
   overflow-y: auto !important;
+  overflow-x: hidden;
   flex: 1;
+  max-width: calc(100vw - 240px);
+  box-sizing: border-box;
 }
 
 /* Responsive */
@@ -1828,23 +1831,107 @@ img, svg, canvas, iframe, video {
 }
 
 /* Lancamento V2 Responsividade */
-.lancamento-card { padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
-.lancamento-card-left { display: flex; align-items: center; gap: 16px; flex: 1; min-width: 0; }
-.lancamento-icon-wrapper { width: 46px; height: 46px; }
-.lancamento-title { font-size: 14px; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px; white-space: normal; overflow: visible; line-height: 1.2; }
-.lancamento-subtitle { font-size: 13px; margin-top: 4px; }
-.lancamento-card-middle { flex: 1; display: flex; justify-content: flex-start; min-width: 0; }
-.lancamento-tags { display: flex; gap: 10px; font-size: 12px; color: var(--text-muted); flex-wrap: nowrap; white-space: normal; overflow: visible; line-height: 1.2; }
-.lancamento-card-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; min-width: 0; }
-.lancamento-valor-box { text-align: right; }
-.lancamento-actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
-
-@media (max-width: 1220px) {
-  .lancamento-card { flex-direction: column; align-items: flex-start; gap: 16px; }
-  .lancamento-card-left { width: 100%; }
-  .lancamento-card-middle { width: 100%; margin-left: 62px; }
-  .lancamento-card-right { width: 100%; justify-content: space-between; margin-left: 62px; flex-direction: row-reverse; }
-  .lancamento-valor-box { text-align: left; }
+.lancamento-card {
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+.lancamento-card-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0.9;
+  min-width: 180px;
+}
+.lancamento-icon-wrapper {
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.lancamento-icon-wrapper svg {
+  width: 17px !important;
+  height: 17px !important;
+}
+.lancamento-title {
+  font-size: 13px !important;
+  font-weight: 800;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1.2;
+}
+.lancamento-subtitle {
+  font-size: 11px !important;
+  margin-top: 2px !important;
+  gap: 4px !important;
+}
+.lancamento-card-middle {
+  flex: 2;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  min-width: 0;
+  overflow: visible;
+}
+.lancamento-tags {
+  display: flex;
+  gap: 5px;
+  font-size: 10.5px;
+  color: var(--text-muted);
+  flex-wrap: wrap;
+  align-items: center;
+  overflow: visible;
+}
+.lancamento-tags span {
+  padding: 2px 6px !important;
+  border-radius: 6px !important;
+  font-size: 10.5px !important;
+}
+.lancamento-card-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  justify-content: flex-end;
+}
+.lancamento-valor-box {
+  text-align: right;
+  min-width: 90px;
+}
+.lancamento-valor {
+  font-size: 14px !important;
+  font-weight: 800 !important;
+  line-height: 1.1;
+}
+.lancamento-badge-wrapper {
+  margin-top: 2px !important;
+}
+.lancamento-badge-wrapper .badge {
+  font-size: 9.5px !important;
+  padding: 2px 6px !important;
+}
+.lancamento-actions {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  flex-wrap: nowrap;
+}
+.lancamento-actions button {
+  padding: 4px 7px !important;
+  font-size: 10.5px !important;
+  border-radius: 8px !important;
+  gap: 3px !important;
+  white-space: nowrap;
+}
+.lancamento-actions button svg {
+  width: 12px !important;
+  height: 12px !important;
 }
 
 @media (max-width: 768px) {
@@ -2278,4 +2365,138 @@ body.modo-privacidade .valor-sensivel:hover {
   @media (min-width: 768px) {
     .alertas-row { grid-template-columns: 80px 100px 1fr 140px 120px; }
   }
+}
+
+/* Redução elegante global para caber tudo sem cortar em todas as telas */
+@media (min-width: 1024px) {
+  .app-layout-root {
+    font-size: 13.5px;
+  }
+  .grid-responsive-4 {
+    gap: 10px !important;
+  }
+}
+
+/* Tipografia Estilo Banco Santander na Sidebar */
+.sidebar, .sidebar * {
+  font-family: 'Open Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+.sidebar-link {
+  font-family: 'Open Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-weight: 400 !important;
+  letter-spacing: 0px !important;
+}
+.sidebar-link.active {
+  font-weight: 500 !important;
+}
+
+
+/* ── SIDEBAR RETRÁTIL (SANTANDER STYLE) ─────────────────────────── */
+.sidebar.compacta {
+  width: 64px !important;
+  padding: 12px 6px !important;
+  overflow-x: hidden !important;
+}
+.sidebar.compacta .sidebar-label-text,
+.sidebar.compacta .sidebar-group-header,
+.sidebar.compacta .sidebar-sublabel,
+.sidebar.compacta .sidebar-badge,
+.sidebar.compacta .sidebar-footer-text,
+.sidebar.compacta .sidebar-btn-fulltext {
+  display: none !important;
+}
+.main-content.sidebar-compacta {
+  margin-left: 64px !important;
+  max-width: calc(100vw - 64px) !important;
+}
+.sidebar-compact-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sidebar-compact-item:hover .sidebar-tooltip {
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: translateX(0) translateY(-50%) !important;
+}
+.sidebar-tooltip {
+  position: absolute;
+  left: 54px;
+  top: 50%;
+  transform: translateX(-6px) translateY(-50%);
+  background: #0f172a;
+  color: #ffffff;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 11.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.15s ease-in-out;
+  z-index: 9999;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+/* ── MODO TABELA COMPACTA (LANÇAMENTOS) ─────────────────────────── */
+.lancamentos-table-container {
+  width: 100%;
+  overflow-x: auto;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+}
+.lancamentos-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  text-align: left;
+}
+.lancamentos-table thead th {
+  padding: 9px 12px;
+  background: var(--bg-body);
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.lancamentos-table tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s ease;
+}
+.lancamentos-table tbody tr:hover {
+  background: rgba(255,255,255,0.04);
+}
+[data-theme='light'] .lancamentos-table tbody tr:hover {
+  background: rgba(0,0,0,0.02);
+}
+.lancamentos-table td {
+  padding: 8px 12px;
+  vertical-align: middle;
+  color: var(--text-primary);
+}
+.lancamentos-table .tbl-btn-action {
+  background: var(--bg-active);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  border-radius: 6px;
+  padding: 3px 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+.lancamentos-table .tbl-btn-action:hover {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
 }
