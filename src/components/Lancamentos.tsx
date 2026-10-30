@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { getTenantId, deletarTransacao, formatarMoeda, subscribeTransacoes, subscribeFaturas, subscribeContas } from '@/lib/storage';
+import { getTenantId, deletarTransacao, salvarTransacao, subscribeCategorias, formatarMoeda, subscribeTransacoes, subscribeFaturas, subscribeContas } from '@/lib/storage';
 import { Categoria, Conta, Fatura, Transacao } from '@/lib/types';
 import { calcularTotais, isCartaoPendente, normalizeDate } from '@/lib/financialEngine';
 import { FORMAS_PAGAMENTO_LABELS, STATUS_LABELS } from '@/lib/defaults';
@@ -148,6 +148,65 @@ const openSafeAttachment = (url: string) => {
 
   const [filtroData, setFiltroData] = useState<'lancamento' | 'vencimento'>('lancamento');
   const [modoVisualizacao, setModoVisualizacao] = useState<'cards' | 'tabela'>('cards');
+  const [editingCell, setEditingCell] = useState<{ id: string; field: 'descricao' | 'valor' | 'data' | 'categoria' | 'contato'; val: any } | null>(null);
+  const [listaCategorias, setListaCategorias] = useState<Categoria[]>([]);
+  const [salvandoInline, setSalvandoInline] = useState(false);
+
+  useEffect(() => {
+    const unsub = subscribeCategorias((cats: any[]) => {
+      if (Array.isArray(cats)) setListaCategorias(cats);
+    });
+    return () => { if (unsub) unsub(); };
+  }, []);
+
+  const handleSalvarInline = async (t: Transacao, field: string, val: any) => {
+    if (salvandoInline) return;
+    try {
+      setSalvandoInline(true);
+      const atualizada: any = { ...t };
+
+      if (field === 'descricao') {
+        const text = String(val || '').trim();
+        if (!text) { setEditingCell(null); setSalvandoInline(false); return; }
+        atualizada.descricao = text;
+      } else if (field === 'valor') {
+        const num = Math.abs(parseFloat(String(val).replace(',', '.')) || 0);
+        if (num <= 0) { setEditingCell(null); setSalvandoInline(false); return; }
+        atualizada.valor = num;
+      } else if (field === 'data') {
+        if (!val) { setEditingCell(null); setSalvandoInline(false); return; }
+        atualizada.data = val;
+        if (filtroData === 'vencimento') {
+          atualizada.dataVencimento = val;
+        } else {
+          atualizada.data = val;
+          if (atualizada.status === 'pago') atualizada.dataPagamento = val;
+        }
+      } else if (field === 'categoria') {
+        const cat = listaCategorias.find(c => c.id === val || c.nome === val);
+        if (cat) {
+          atualizada.categoriaId = cat.id;
+          atualizada.categoriaNome = cat.nome;
+          atualizada.categoriaCor = cat.cor || '#64748b';
+          atualizada.categoriaIcone = cat.icone || 'Tag';
+        }
+      } else if (field === 'contato') {
+        const text = String(val || '').trim();
+        if (t.tipo === 'receita') {
+          atualizada.clienteNome = text;
+        } else {
+          atualizada.fornecedorNome = text;
+        }
+      }
+
+      await salvarTransacao(atualizada);
+    } catch (err) {
+      console.error('Erro ao salvar inline:', err);
+    } finally {
+      setEditingCell(null);
+      setSalvandoInline(false);
+    }
+  };
   useEffect(() => {
     try {
       const saved = localStorage.getItem('modo_visualizacao_lanc');
@@ -1079,33 +1138,132 @@ const openSafeAttachment = (url: string) => {
                           </button>
                         </td>
                       )}
-                      <td style={{ padding: '8px 12px', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                        {String(dateToDisplay || '').split('-').reverse().join('/')}
-                        {atrasado && <span style={{ display: 'block', color: '#ef4444', fontSize: '9.5px', fontWeight: 800 }}>Atrasado</span>}
+
+                      {/* DATA (DUPLO CLIQUE PARA EDITAR) */}
+                      <td
+                        onDoubleClick={() => setEditingCell({ id: t.id, field: 'data', val: String(dateToDisplay || '').substring(0, 10) })}
+                        title="Duplo clique para editar data"
+                        style={{ padding: '6px 10px', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap', cursor: 'pointer' }}
+                      >
+                        {editingCell?.id === t.id && editingCell.field === 'data' ? (
+                          <input
+                            type="date"
+                            autoFocus
+                            defaultValue={editingCell.val}
+                            onBlur={(e) => handleSalvarInline(t, 'data', e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleSalvarInline(t, 'data', (e.target as HTMLInputElement).value);
+                              if (e.key === 'Escape') setEditingCell(null);
+                            }}
+                            style={{ fontSize: '11px', padding: '3px 6px', borderRadius: '6px', border: '1px solid var(--primary)', background: 'var(--bg-body)', color: 'var(--text-primary)', outline: 'none' }}
+                          />
+                        ) : (
+                          <>
+                            <span style={{ borderBottom: '1px dashed rgba(255,255,255,0.2)' }}>
+                              {String(dateToDisplay || '').split('-').reverse().join('/')}
+                            </span>
+                            {atrasado && <span style={{ display: 'block', color: '#ef4444', fontSize: '9.5px', fontWeight: 800 }}>Atrasado</span>}
+                          </>
+                        )}
                       </td>
-                      <td style={{ padding: '8px 12px' }}>
-                        <div style={{ fontWeight: 700, fontSize: '12.5px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 5 }}>
-                          {t.descricao}
-                          {t.conciliado && <span title="Conciliado"><CheckCircle2 size={12} color="#10b981" /></span>}
-                        </div>
-                        <div style={{ fontSize: '10.5px', color: t.categoriaCor || 'var(--text-muted)', fontWeight: 500, marginTop: 1 }}>
-                          {isTransf ? 'Transferência' : t.categoriaNome || '-'}
-                        </div>
+
+                      {/* DESCRIÇÃO & CATEGORIA (DUPLO CLIQUE PARA EDITAR) */}
+                      <td style={{ padding: '6px 10px' }}>
+                        {/* Descrição inline */}
+                        {editingCell?.id === t.id && editingCell.field === 'descricao' ? (
+                          <input
+                            type="text"
+                            autoFocus
+                            defaultValue={editingCell.val}
+                            onBlur={(e) => handleSalvarInline(t, 'descricao', e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleSalvarInline(t, 'descricao', (e.target as HTMLInputElement).value);
+                              if (e.key === 'Escape') setEditingCell(null);
+                            }}
+                            style={{ fontSize: '12px', padding: '3px 8px', borderRadius: '6px', border: '1px solid var(--primary)', background: 'var(--bg-body)', color: 'var(--text-primary)', width: '100%', maxWidth: 280, outline: 'none' }}
+                          />
+                        ) : (
+                          <div
+                            onDoubleClick={() => setEditingCell({ id: t.id, field: 'descricao', val: t.descricao })}
+                            title="Duplo clique para editar descrição"
+                            style={{ fontWeight: 700, fontSize: '12.5px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer' }}
+                          >
+                            <span style={{ borderBottom: '1px dashed transparent' }} className="hover:border-white/30">{t.descricao}</span>
+                            {t.conciliado && <span title="Conciliado"><CheckCircle2 size={12} color="#10b981" /></span>}
+                          </div>
+                        )}
+
+                        {/* Categoria inline */}
+                        {editingCell?.id === t.id && editingCell.field === 'categoria' ? (
+                          <select
+                            autoFocus
+                            defaultValue={t.categoriaId || t.categoriaNome}
+                            onChange={(e) => handleSalvarInline(t, 'categoria', e.target.value)}
+                            onBlur={() => setEditingCell(null)}
+                            onKeyDown={(e) => { if (e.key === 'Escape') setEditingCell(null); }}
+                            style={{ fontSize: '10.5px', padding: '2px 4px', borderRadius: '6px', border: '1px solid var(--primary)', background: 'var(--bg-body)', color: 'var(--text-primary)', marginTop: 2, outline: 'none' }}
+                          >
+                            {listaCategorias.length > 0 ? (
+                              listaCategorias.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)
+                            ) : (
+                              categoriasDropdown.map(c => <option key={c} value={c}>{c}</option>)
+                            )}
+                          </select>
+                        ) : (
+                          <div
+                            onDoubleClick={() => setEditingCell({ id: t.id, field: 'categoria', val: t.categoriaId || t.categoriaNome })}
+                            title="Duplo clique para trocar categoria"
+                            style={{ fontSize: '10.5px', color: t.categoriaCor || 'var(--text-muted)', fontWeight: 500, marginTop: 1, cursor: 'pointer', display: 'inline-block' }}
+                          >
+                            <span style={{ borderBottom: '1px dashed rgba(255,255,255,0.15)' }}>
+                              {isTransf ? 'Transferência' : t.categoriaNome || 'Sem categoria'}
+                            </span>
+                          </div>
+                        )}
                       </td>
-                      <td style={{ padding: '8px 12px', fontSize: '11px', color: 'var(--text-secondary)' }}>
-                        {t.fornecedorNome || t.clienteNome || '—'}
+
+                      {/* CONTATO (DUPLO CLIQUE PARA EDITAR) */}
+                      <td
+                        onDoubleClick={() => setEditingCell({ id: t.id, field: 'contato', val: t.fornecedorNome || t.clienteNome || '' })}
+                        title="Duplo clique para editar contato"
+                        style={{ padding: '6px 10px', fontSize: '11px', color: 'var(--text-secondary)', cursor: 'pointer' }}
+                      >
+                        {editingCell?.id === t.id && editingCell.field === 'contato' ? (
+                          <input
+                            type="text"
+                            autoFocus
+                            defaultValue={editingCell.val}
+                            placeholder="Nome do cliente/fornecedor"
+                            onBlur={(e) => handleSalvarInline(t, 'contato', e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleSalvarInline(t, 'contato', (e.target as HTMLInputElement).value);
+                              if (e.key === 'Escape') setEditingCell(null);
+                            }}
+                            style={{ fontSize: '11px', padding: '3px 6px', borderRadius: '6px', border: '1px solid var(--primary)', background: 'var(--bg-body)', color: 'var(--text-primary)', outline: 'none', width: '100%', maxWidth: 160 }}
+                          />
+                        ) : (
+                          <span style={{ borderBottom: '1px dashed rgba(255,255,255,0.15)' }}>
+                            {t.fornecedorNome || t.clienteNome || '—'}
+                          </span>
+                        )}
                       </td>
-                      <td style={{ padding: '8px 12px', fontSize: '11px', color: 'var(--text-secondary)' }}>
+
+                      {/* CONTA */}
+                      <td style={{ padding: '6px 10px', fontSize: '11px', color: 'var(--text-secondary)' }}>
                         {isTransf ? (
                           <span>{t.contaNome || '-'} ➔ {((t as any)['contaDestinãoNome']) || ((t as any)['contaDestinoNome']) || '-'}</span>
                         ) : (
                           t.contaNome || '-'
                         )}
                       </td>
-                      <td style={{ padding: '8px 12px', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+
+                      {/* FORMA */}
+                      <td style={{ padding: '6px 10px', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                         {isTransf ? '—' : (FORMAS_PAGAMENTO_LABELS[t.formaPagamento] || t.formaPagamento)}
                       </td>
-                      <td style={{ padding: '8px 12px', textAlign: 'center' }}>
+
+                      {/* STATUS */}
+                      <td style={{ padding: '6px 10px', textAlign: 'center' }}>
                         {checkCartaoPendente(t) ? (
                           <span className="badge badge-yellow" style={{ fontSize: '9.5px', padding: '2px 6px' }}>Fatura Aberta</span>
                         ) : (
@@ -1114,9 +1272,34 @@ const openSafeAttachment = (url: string) => {
                           </span>
                         )}
                       </td>
-                      <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 800, fontSize: '13px', color: isReceita ? '#15803d' : isTransf ? 'var(--text-primary)' : '#dc2626', whiteSpace: 'nowrap' }}>
-                        {isTransf ? '' : isReceita ? '+' : '-'} <span className="valor-sensivel">{fmt(valorFinal)}</span>
+
+                      {/* VALOR (DUPLO CLIQUE PARA EDITAR) */}
+                      <td
+                        onDoubleClick={() => setEditingCell({ id: t.id, field: 'valor', val: t.valor })}
+                        title="Duplo clique para editar valor"
+                        style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 800, fontSize: '13px', color: isReceita ? '#15803d' : isTransf ? 'var(--text-primary)' : '#dc2626', whiteSpace: 'nowrap', cursor: 'pointer' }}
+                      >
+                        {editingCell?.id === t.id && editingCell.field === 'valor' ? (
+                          <input
+                            type="number"
+                            step="0.01"
+                            autoFocus
+                            defaultValue={editingCell.val}
+                            onBlur={(e) => handleSalvarInline(t, 'valor', e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleSalvarInline(t, 'valor', (e.target as HTMLInputElement).value);
+                              if (e.key === 'Escape') setEditingCell(null);
+                            }}
+                            style={{ fontSize: '12px', fontWeight: 700, padding: '3px 6px', borderRadius: '6px', border: '1px solid var(--primary)', background: 'var(--bg-body)', color: 'var(--text-primary)', outline: 'none', width: 90, textAlign: 'right' }}
+                          />
+                        ) : (
+                          <span style={{ borderBottom: '1px dashed rgba(255,255,255,0.2)' }}>
+                            {isTransf ? '' : isReceita ? '+' : '-'} <span className="valor-sensivel">{fmt(valorFinal)}</span>
+                          </span>
+                        )}
                       </td>
+
+                      {/* AÇÕES */}
                       <td style={{ padding: '6px 8px', textAlign: 'center', whiteSpace: 'nowrap', width: 195, minWidth: 195 }}>
                         <div className="tbl-actions-wrapper">
                           {!checkCartaoPendente(t) && t.status !== 'pago' && t.formaPagamento !== 'cartao_credito' && (

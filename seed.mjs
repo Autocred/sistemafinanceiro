@@ -11,20 +11,20 @@ const db = getFirestore(app);
 
 async function run() {
   await addDoc(collection(db, 'saas_releases'), {
-    versao: 'v3.6.48',
-    titulo: 'Fix Ícones de Ações na Tabela Compacta',
-    descricao: 'Correção de dimensionamento nos botões de ações da Tabela Compacta de Lançamentos, garantindo que todos os ícones apareçam nítidos, com largura fixa e sem compressão.',
+    versao: 'v3.6.49',
+    titulo: 'Edição Rápida Inline na Tabela (Clique Duplo)',
+    descricao: 'Nova funcionalidade de Edição Inline estilo Excel/Notion: dê um clique duplo na Data, Descrição, Categoria, Contato ou Valor para alterar instantaneamente sem abrir modais.',
     dataLancamento: new Date().toISOString(),
     status: 'publicado',
     destaque: true,
     notificarTenants: false,
     alvos: 'todos',
     changes: [
-      { tipo: 'correcao', texto: 'Ícones de Ações: Largura mínima e altura fixa de 28x28px nos botões e 195px na coluna, impedindo que os ícones (Baixar, PIX, Recibo, Duplicar, Editar, Excluir) sejam esmagados.' },
-      { tipo: 'melhoria', texto: 'Contraste e nitidez perfeitos para todas as linhas de receitas e despesas na tabela.' }
+      { tipo: 'nova_funcionalidade', texto: 'Edição Inline com Duplo Clique: Altere Data, Descrição, Categoria, Contato e Valor direto na célula da tabela compacta. Pressione Enter para salvar ou Esc para cancelar.' },
+      { tipo: 'melhoria', texto: 'Alta produtividade: Economize tempo ao ajustar múltiplos lançamentos rapidamente sem precisar abrir a janela completa de edição.' }
     ]
   });
-  console.log('Release notes v3.6.48 added!');
+  console.log('Release notes v3.6.49 added!');
   process.exit(0);
 }
 
