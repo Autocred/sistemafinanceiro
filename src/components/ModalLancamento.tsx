@@ -112,7 +112,7 @@ export const openSafeAttachment = (url: string) => {
 };
 
 export default function ModalLancamento({ onClose, onSalvo, transacaoEditar }: Props) {
-  const [modo, setModo] = useState<Modo>(transacaoEditar ? 'manual' : 'chat');
+  const [modo, setModo] = useState<Modo>('manual');
   const [texto, setTexto] = useState('');
   const [interpretando, setInterpretando] = useState(false);
   
@@ -213,8 +213,8 @@ export default function ModalLancamento({ onClose, onSalvo, transacaoEditar }: P
         setEditando(true);
       }
     })();
-    if (!transacaoEditar) setTimeout(() => textareaRef.current?.focus(), 100);
-  }, [transacaoEditar]);
+    if (!transacaoEditar && modo === 'chat') setTimeout(() => textareaRef.current?.focus(), 100);
+  }, [transacaoEditar, modo]);
 
   const interpretar = useCallback(async (textoParaInterpretar: string) => {
     if (!textoParaInterpretar.trim()) return;
@@ -463,15 +463,15 @@ export default function ModalLancamento({ onClose, onSalvo, transacaoEditar }: P
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: transacaoEditar ? 'linear-gradient(135deg, #3b82f6, #2563eb)' : 'linear-gradient(135deg, #10b981, #059669)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              {transacaoEditar ? <Edit3 size={18} color="white" /> : <Zap size={18} color="white" />}
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: transacaoEditar ? 'linear-gradient(135deg, #3b82f6, #2563eb)' : modo === 'chat' ? 'linear-gradient(135deg, #8b5cf6, #6d28d9)' : 'linear-gradient(135deg, #10b981, #059669)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {transacaoEditar ? <Edit3 size={18} color="white" /> : modo === 'chat' ? <Zap size={18} color="white" /> : <Plus size={18} color="white" />}
             </div>
             <div>
               <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>
-                {transacaoEditar ? 'Editar Lançamento' : 'Lançamento Inteligente'}
+                {transacaoEditar ? 'Editar Lançamento' : modo === 'chat' ? 'Lançamento por IA' : 'Novo Lançamento'}
               </h2>
               <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
-                {transacaoEditar ? 'Edite os dados abaixo' : 'Fale ou digite naturalmente'}
+                {transacaoEditar ? 'Edite os dados abaixo' : modo === 'chat' ? 'Fale ou digite naturalmente' : 'Preencha os campos abaixo'}
               </p>
             </div>
           </div>
@@ -686,7 +686,7 @@ export default function ModalLancamento({ onClose, onSalvo, transacaoEditar }: P
           <div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
               <button onClick={() => setModo('chat')} style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981', border: 'none', padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', gap: 6, alignItems: 'center' }}>
-                <Zap size={14} /> Voltar para IA
+                <Zap size={14} /> Usar Lançamento por IA
               </button>
             </div>
             <ManualForm

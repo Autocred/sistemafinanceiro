@@ -1,17 +1,35 @@
-const CACHE_NAME = 'pwa-cache-v4';
+const CACHE_NAME = 'pwa-cache-v5';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(clients.claim());
+  // Remove todos os caches antigos para forçar atualização imediata
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames
+          .filter((name) => name !== CACHE_NAME)
+          .map((name) => caches.delete(name))
+      );
+    }).then(() => clients.claim())
+  );
+});
+
+// Listener para SKIP_WAITING vindo do cliente
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener('fetch', (event) => {
-  // O navegador exige um evento fetch para habilitar o "Instalar App"
-  // Um event.respondWith vazio é suficiente.
+  // Passa tudo para a rede sem cachear (network-only)
+  // Garante que sempre carregue a versão mais nova
+  event.respondWith(fetch(event.request).catch(() => Response.error()));
 });
+
 
 self.addEventListener('push', function (event) {
   if (event.data) {

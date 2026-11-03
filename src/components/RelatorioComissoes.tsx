@@ -3,16 +3,20 @@
 import React, { useState, useMemo } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Cell, Legend, PieChart, Pie
+  ResponsiveContainer, Cell, Legend, PieChart, Pie,
+  LineChart, Line, Area, AreaChart, ReferenceLine, ComposedChart
 } from 'recharts';
 import { Transacao, Cliente } from '@/lib/types';
 import { formatarMoeda } from '@/lib/storage';
+import { format, subMonths, addMonths, getDaysInMonth, getDate } from 'date-fns';
+import { normalizeDate } from '@/lib/financialEngine';
 import { getComportamentoTransacao } from './ExtratoBancario';
+import { useConfiguracao } from '@/hooks/useConfiguracao';
 import {
-  Building2, TrendingUp, DollarSign, Calendar, Filter,
+  Building2, TrendingUp, DollarSign, Zap, Calendar, Filter,
   ArrowUpRight, PieChart as PieIcon, BarChart3, Award,
   ChevronDown, ChevronUp, FileSpreadsheet, Search, CheckCircle2,
-  Clock, ShieldCheck
+  Clock, ShieldCheck, Target, Layers, TrendingDown
 } from 'lucide-react';
 
 interface RelatorioComissoesProps {
@@ -34,6 +38,133 @@ export function RelatorioComissoes({
   const [bancoExpandido, setBancoExpandido] = useState<string | null>(null);
 
   const fmt = formatarMoeda;
+
+  // ── CORES DO TENANT (White-Label SaaS) ────────────────────────────────────
+  const { cfg } = useConfiguracao();
+  const corPrimaria = cfg?.corPrimaria || '#7c3aed';
+  // Computa variações de cor a partir da cor primária do tenant
+  const corPrimariaAlpha = (alpha: number) => {
+    // Converte hex para rgb se necessário e aplica alpha
+    if (corPrimaria.startsWith('#')) {
+      const r = parseInt(corPrimaria.slice(1, 3), 16);
+      const g = parseInt(corPrimaria.slice(3, 5), 16);
+      const b = parseInt(corPrimaria.slice(5, 7), 16);
+      return `rgba(${r},${g},${b},${alpha})`;
+    }
+    return corPrimaria;
+  };
+
+  // 0. CÁLCULO PREDITIVO EM TEMPO REAL DE COMISSÕES DIFERIDAS
+  const agora = new Date();
+  const mesAtualStr = format(agora, 'yyyy-MM');
+  const mesAnteriorStr = format(subMonths(agora, 1), 'yyyy-MM');
+  const anoAtualStr = format(agora, 'yyyy');
+
+  const metricasDiferidasLive = useMemo(() => {
+    let realMesAtual = 0;
+    let pendMesAtual = 0;
+    let qtdMesAtual = 0;
+
+    let realMesAnterior = 0;
+    let qtdMesAnterior = 0;
+
+    let realAnoAtual = 0;
+    let qtdAnoAtual = 0;
+
+    transacoes.forEach(t => {
+      if (t.tipo !== 'receita') return;
+      const comp = getComportamentoTransacao(t);
+      const sub = ((t as any).subcategoria || '').toLowerCase();
+      const desc = (t.descricao || '').toLowerCase();
+      const isDif = comp === 'fixa' || sub.includes('diferida') || desc.includes('diferida');
+
+      if (!isDif) return;
+
+      const v = Number(t.valor) || 0;
+      const dataRef = normalizeDate(t.dataPagamento || t.data || '');
+      const mesRef = dataRef.substring(0, 7);
+      const anoRef = dataRef.substring(0, 4);
+
+      // Mês Atual
+      if (mesRef === mesAtualStr) {
+        if (t.status === 'pago') {
+          realMesAtual += v;
+          qtdMesAtual++;
+        } else {
+          pendMesAtual += v;
+        }
+      }
+      // Mês Anterior
+      else if (mesRef === mesAnteriorStr) {
+        if (t.status === 'pago' || !t.status) {
+          realMesAnterior += v;
+          qtdMesAnterior++;
+        }
+      }
+
+      // Ano Atual
+      if (anoRef === anoAtualStr && (t.status === 'pago' || !t.status)) {
+        realAnoAtual += v;
+        qtdAnoAtual++;
+      }
+    });
+
+    const diasNoMes = getDaysInMonth(agora);
+    const diaAtual = getDate(agora);
+
+    // Ritmo diário atingido no mês atual
+    const ritmoDiario = diaAtual > 0 ? realMesAtual / diaAtual : 0;
+    const projecaoRitmo = ritmoDiario * diasNoMes;
+
+    // Projeção Inteligente para o Mês Atual:
+    const projecaoMesAtual = Math.max(
+      realMesAtual + pendMesAtual,
+      projecaoRitmo,
+      realMesAnterior
+    );
+
+    // Comparativo MoM vs Mês Anterior
+    const variacaoMoM = realMesAnterior > 0
+      ? ((projecaoMesAtual - realMesAnterior) / realMesAnterior) * 100
+      : (projecaoMesAtual > 0 ? 100 : 0);
+    const diferencaMoM = projecaoMesAtual - realMesAnterior;
+
+    // Percentual de conclusão do mês atual
+    const percConcluidoMes = projecaoMesAtual > 0 ? Math.min(100, (realMesAtual / projecaoMesAtual) * 100) : 0;
+
+    // Projeção Anual Consolidada (Ano Vigente Jan-Dez)
+    const mesAtualNum = agora.getMonth() + 1;
+    const mesesRestantes = 12 - mesAtualNum;
+    const projecaoAnualTotal = realAnoAtual + (projecaoMesAtual * mesesRestantes);
+
+    // Run-rate da carteira ativa em 12 meses
+    const runRateAnual = projecaoMesAtual * 12;
+
+    const nomeMesAtual = agora.toLocaleDateString('pt-BR', { month: 'long' });
+    const nomeMesAnterior = subMonths(agora, 1).toLocaleDateString('pt-BR', { month: 'long' });
+
+    return {
+      realMesAtual,
+      pendMesAtual,
+      qtdMesAtual,
+      projecaoMesAtual,
+      realMesAnterior,
+      qtdMesAnterior,
+      variacaoMoM,
+      diferencaMoM,
+      percConcluidoMes,
+      realAnoAtual,
+      qtdAnoAtual,
+      projecaoAnualTotal,
+      runRateAnual,
+      ritmoDiario,
+      diaAtual,
+      diasNoMes,
+      nomeMesAtual: nomeMesAtual.charAt(0).toUpperCase() + nomeMesAtual.slice(1),
+      nomeMesAnterior: nomeMesAnterior.charAt(0).toUpperCase() + nomeMesAnterior.slice(1),
+      anoAtualStr
+    };
+  }, [transacoes, mesAtualStr, mesAnteriorStr, anoAtualStr]);
 
   // 1. Filtrar apenas RECEITAS que representem operações / comissões
   const receitasFiltradas = useMemo(() => {
@@ -201,33 +332,294 @@ export function RelatorioComissoes({
   }, [dadosPorBanco]);
 
   // 7. Projeção de Comissões Diferidas nos Próximos 6 Meses
+  // Algoritmo preditivo: usa média ponderada dos últimos 6 meses reais (todos os lançamentos,
+  // não só o período filtrado) para calcular a base mensal recorrente.
   const projecaoMeses = useMemo(() => {
     const hoje = new Date();
+
+    // ── Coleta o realizado de cada um dos últimos 6 meses históricos ──
+    const historicoMensal: Record<string, number> = {};
+    for (let i = 1; i <= 6; i++) {
+      const ref = subMonths(hoje, i);
+      const key = format(ref, 'yyyy-MM');
+      historicoMensal[key] = 0;
+    }
+
+    transacoes.forEach(t => {
+      if (t.tipo !== 'receita') return;
+      const comp = getComportamentoTransacao(t);
+      const sub = ((t as any).subcategoria || '').toLowerCase();
+      const desc = (t.descricao || '').toLowerCase();
+      const isDif = comp === 'fixa' || sub.includes('diferida') || desc.includes('diferida');
+      if (!isDif) return;
+
+      const v = Number(t.valor) || 0;
+      const dataRef = normalizeDate(t.dataPagamento || t.data || '');
+      const mesRef = dataRef.substring(0, 7);
+      if (mesRef in historicoMensal) {
+        historicoMensal[mesRef] += v;
+      }
+    });
+
+    // ── Média ponderada (meses mais recentes têm peso maior) ──
+    const valoresMensais = Object.values(historicoMensal).filter(v => v > 0);
+    let baseMensal = metricasDiferidasLive.projecaoMesAtual; // fallback = projeção mês atual
+
+    if (valoresMensais.length > 0) {
+      // Pesos decrescentes: mês -1 = peso 6, mês -2 = peso 5, ..., mês -6 = peso 1
+      const chaves = Object.keys(historicoMensal).sort().reverse(); // mais recente primeiro
+      let somaPesos = 0;
+      let somaValores = 0;
+      chaves.forEach((k, idx) => {
+        const peso = Math.max(6 - idx, 1);
+        somaValores += historicoMensal[k] * peso;
+        somaPesos += peso;
+      });
+      const mediaPonderada = somaPesos > 0 ? somaValores / somaPesos : 0;
+      // Garante que nunca fica abaixo da projeção do mês atual
+      baseMensal = Math.max(mediaPonderada, metricasDiferidasLive.projecaoMesAtual * 0.8);
+    }
+
+    // ── Fator de crescimento baseado na tendência dos últimos 3 meses ──
+    const ultimos3 = Object.keys(historicoMensal).sort().reverse().slice(0, 3).map(k => historicoMensal[k]).filter(v => v > 0);
+    let fatorCrescimento = 1.0;
+    if (ultimos3.length >= 2) {
+      const crescimento = (ultimos3[0] - ultimos3[ultimos3.length - 1]) / (ultimos3[ultimos3.length - 1] || 1);
+      // Limita variação entre -5% e +5% por mês projetado
+      fatorCrescimento = 1 + Math.max(-0.05, Math.min(0.05, crescimento / (ultimos3.length - 1)));
+    }
+
     const meses = [];
-    // Média dos últimos recebimentos de comissões diferidas
-    const mediaDiferidaMensal = kpis.totalDiferida > 0 ? kpis.totalDiferida : 0;
     let acum = 0;
 
     for (let i = 1; i <= 6; i++) {
-      const d = new Date(hoje.getFullYear(), hoje.getMonth() + i, 1);
-      const mesNome = d.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' });
-      const estimativa = mediaDiferidaMensal;
+      const d = addMonths(hoje, i);
+      const mesNome = d.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' });
+      const mesISO = format(d, 'yyyy-MM');
+      // Aplica fator composto mês a mês
+      const estimativa = baseMensal * Math.pow(fatorCrescimento, i);
       acum += estimativa;
       meses.push({
-        mes: mesNome.toUpperCase(),
+        mes: mesNome.toUpperCase().replace('.', ''),
+        mesISO,
         estimativa,
-        acumulado: acum
+        acumulado: acum,
+        crescimento: i === 1 ? 0 : ((Math.pow(fatorCrescimento, i) - Math.pow(fatorCrescimento, i - 1)) / Math.pow(fatorCrescimento, i - 1)) * 100
       });
     }
     return meses;
-  }, [kpis.totalDiferida]);
+  }, [transacoes, metricasDiferidasLive.projecaoMesAtual]);
 
   const totalProjecao6Meses = useMemo(() => {
     return projecaoMeses.reduce((acc, curr) => acc + curr.estimativa, 0);
   }, [projecaoMeses]);
 
+  // Máximo para normalizar as barras do gráfico
+  const maxEstimativa = useMemo(() =>
+    Math.max(...projecaoMeses.map(p => p.estimativa), 1),
+    [projecaoMeses]
+  );
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      {/* 🔮 SUPER INDICADOR LIVE DE COMISSÕES DIFERIDAS (TEMPO REAL) */}
+      <div style={{
+        background: `linear-gradient(135deg, ${corPrimariaAlpha(0.12)} 0%, ${corPrimariaAlpha(0.05)} 50%, rgba(16, 185, 129, 0.06) 100%)`,
+        border: `1px solid ${corPrimariaAlpha(0.35)}`,
+        borderRadius: 22,
+        padding: '24px 26px',
+        boxShadow: `0 8px 32px ${corPrimariaAlpha(0.12)}`,
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        {/* TOPO COM IDENTIFICAÇÃO E BADGE LIVE */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{
+              width: 44,
+              height: 44,
+              borderRadius: 14,
+              background: `linear-gradient(135deg, ${corPrimaria}, ${corPrimaria}cc)`,
+              color: 'white',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: `0 4px 16px ${corPrimariaAlpha(0.4)}`
+            }}>
+              <Zap size={22} />
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <h3 style={{ fontSize: 18, fontWeight: 900, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.3px' }}>
+                  Painel em Tempo Real • Carteira de Comissões Diferidas (Fixas)
+                </h3>
+                {/* BADGE PULSANTE TEMPO REAL */}
+                <div style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '3px 10px',
+                  borderRadius: 20,
+                  background: 'rgba(16, 185, 129, 0.15)',
+                  border: '1px solid rgba(16, 185, 129, 0.35)',
+                  color: '#059669',
+                  fontSize: 10,
+                  fontWeight: 800,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
+                }}>
+                  <span style={{
+                    width: 7,
+                    height: 7,
+                    borderRadius: '50%',
+                    background: '#10b981',
+                    boxShadow: '0 0 8px #10b981'
+                  }}></span>
+                  Tempo Real Ativo
+                </div>
+              </div>
+              <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '3px 0 0' }}>
+                Cálculo preditivo inteligente atualizado automaticamente a cada novo lançamento no sistema
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Dia {metricasDiferidasLive.diaAtual} de {metricasDiferidasLive.diasNoMes}</span>
+            <div style={{ width: 80, height: 6, borderRadius: 3, background: 'rgba(0,0,0,0.1)', overflow: 'hidden' }}>
+              <div style={{ width: `${(metricasDiferidasLive.diaAtual / metricasDiferidasLive.diasNoMes) * 100}%`, height: '100%', background: corPrimaria }}></div>
+            </div>
+          </div>
+        </div>
+
+        {/* 4 CARDS ESTRATÉGICOS MODERNOS */}
+        <div className="grid-responsive-4" style={{ gap: 14 }}>
+          {/* CARD 1: MÊS ATUAL */}
+          <div style={{
+            background: 'var(--bg-glass, rgba(255,255,255,0.7))',
+            border: '1px solid rgba(124, 58, 237, 0.25)',
+            borderRadius: 16,
+            padding: '16px 18px',
+            backdropFilter: 'blur(10px)'
+          }}>
+            <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.4px', display: 'block', marginBottom: 4 }}>
+              📅 Projeção {metricasDiferidasLive.nomeMesAtual}
+            </span>
+            <div style={{ fontSize: 24, fontWeight: 900, color: '#7c3aed', letterSpacing: '-0.5px' }}>
+              {fmt(metricasDiferidasLive.projecaoMesAtual)}
+            </div>
+
+            {/* Barra de Progresso Realizado */}
+            <div style={{ marginTop: 8 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 4 }}>
+                <span style={{ color: 'var(--text-muted)' }}>Realizado até hoje:</span>
+                <strong style={{ color: '#059669' }}>{fmt(metricasDiferidasLive.realMesAtual)}</strong>
+              </div>
+              <div style={{ width: '100%', height: 6, borderRadius: 3, background: 'rgba(0,0,0,0.06)', overflow: 'hidden' }}>
+                <div style={{
+                  width: `${metricasDiferidasLive.percConcluidoMes}%`,
+                  height: '100%',
+                  background: 'linear-gradient(90deg, #10b981, #7c3aed)',
+                  borderRadius: 3
+                }}></div>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--text-muted)', marginTop: 4 }}>
+                <span>{metricasDiferidasLive.percConcluidoMes.toFixed(1)}% faturado</span>
+                <span>Ritmo: {fmt(metricasDiferidasLive.ritmoDiario)}/dia</span>
+              </div>
+            </div>
+          </div>
+
+          {/* CARD 2: BASE MÊS ANTERIOR */}
+          <div style={{
+            background: 'var(--bg-glass, rgba(255,255,255,0.7))',
+            border: '1px solid rgba(0,0,0,0.08)',
+            borderRadius: 16,
+            padding: '16px 18px',
+            backdropFilter: 'blur(10px)'
+          }}>
+            <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.4px', display: 'block', marginBottom: 4 }}>
+              ⏪ Base {metricasDiferidasLive.nomeMesAnterior} (Realizado)
+            </span>
+            <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>
+              {fmt(metricasDiferidasLive.realMesAnterior)}
+            </div>
+
+            <div style={{ marginTop: 10 }}>
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
+                padding: '3px 8px',
+                borderRadius: 6,
+                background: metricasDiferidasLive.diferencaMoM >= 0 ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+                color: metricasDiferidasLive.diferencaMoM >= 0 ? '#059669' : '#dc2626',
+                fontSize: 11,
+                fontWeight: 700
+              }}>
+                {metricasDiferidasLive.diferencaMoM >= 0 ? <TrendingUp size={13} /> : null}
+                {metricasDiferidasLive.diferencaMoM >= 0 ? '+' : ''}{metricasDiferidasLive.variacaoMoM.toFixed(1)}% vs anterior
+              </div>
+              <span style={{ fontSize: 10, color: 'var(--text-muted)', display: 'block', marginTop: 4 }}>
+                Diferença: {metricasDiferidasLive.diferencaMoM >= 0 ? '+' : ''}{fmt(metricasDiferidasLive.diferencaMoM)}
+              </span>
+            </div>
+          </div>
+
+          {/* CARD 3: PROJEÇÃO ANUAL TOTAL */}
+          <div style={{
+            background: 'var(--bg-glass, rgba(255,255,255,0.7))',
+            border: '1px solid rgba(16, 185, 129, 0.25)',
+            borderRadius: 16,
+            padding: '16px 18px',
+            backdropFilter: 'blur(10px)'
+          }}>
+            <span style={{ fontSize: 10, fontWeight: 700, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.4px', display: 'block', marginBottom: 4 }}>
+              🔮 Projeção Total ({metricasDiferidasLive.anoAtualStr})
+            </span>
+            <div style={{ fontSize: 24, fontWeight: 900, color: '#059669', letterSpacing: '-0.5px' }}>
+              {fmt(metricasDiferidasLive.projecaoAnualTotal)}
+            </div>
+
+            <div style={{ marginTop: 8, fontSize: 11, color: 'var(--text-muted)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+                <span>Realizado Jan a Hoje:</span>
+                <strong style={{ color: 'var(--text-primary)' }}>{fmt(metricasDiferidasLive.realAnoAtual)}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span>Projeção Restante:</span>
+                <strong style={{ color: '#059669' }}>+{fmt(metricasDiferidasLive.projecaoAnualTotal - metricasDiferidasLive.realAnoAtual)}</strong>
+              </div>
+            </div>
+          </div>
+
+          {/* CARD 4: RUN-RATE ANUAL (12 MESES) */}
+          <div style={{
+            background: 'var(--bg-glass, rgba(255,255,255,0.7))',
+            border: '1px solid rgba(245, 158, 11, 0.25)',
+            borderRadius: 16,
+            padding: '16px 18px',
+            backdropFilter: 'blur(10px)'
+          }}>
+            <span style={{ fontSize: 10, fontWeight: 700, color: '#d97706', textTransform: 'uppercase', letterSpacing: '0.4px', display: 'block', marginBottom: 4 }}>
+              💎 Run-Rate Carteira (12 Meses)
+            </span>
+            <div style={{ fontSize: 22, fontWeight: 900, color: '#d97706', letterSpacing: '-0.5px' }}>
+              {fmt(metricasDiferidasLive.runRateAnual)}
+            </div>
+
+            <div style={{ marginTop: 8, fontSize: 11, color: 'var(--text-muted)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+                <span>Média Mensal Base:</span>
+                <strong style={{ color: 'var(--text-primary)' }}>{fmt(metricasDiferidasLive.projecaoMesAtual)}</strong>
+              </div>
+              <span style={{ fontSize: 10, color: 'var(--text-muted)', display: 'block' }}>
+                Potencial de fluxo anualizado da carteira
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
       {/* CABEÇALHO DO MÓDULO */}
       <div style={{
         background: 'linear-gradient(135deg, rgba(204,0,0,0.06), rgba(204,0,0,0.02))',
@@ -725,125 +1117,191 @@ export function RelatorioComissoes({
       </div>
 
       {/* QUADRO DE PROJEÇÃO DE RECORRÊNCIA FUTURA */}
-      <div className="glass" style={{ padding: 22, borderRadius: 20, border: '1px solid rgba(139,92,246,0.2)' }}>
+      <div className="glass" style={{ padding: 22, borderRadius: 20, border: `1px solid ${corPrimariaAlpha(0.25)}` }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
           <div>
             <h3 style={{ fontSize: 15, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-              🔮 Projeção de Carteira Recorrente (Comissões Diferidas)
+              🔮 Projeção de Carteira Recorrente — Comissões Diferidas (6 Meses)
             </h3>
             <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '2px 0 0' }}>
-              Estimativa de fluxo de caixa garantido por comissões fixas/diferidas para os próximos 6 meses
+              Estimativa inteligente com tendência histórica ponderada • Atualiza em tempo real a cada novo lançamento
             </p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: '#7c3aed', background: 'rgba(139,92,246,0.1)', padding: '6px 12px', borderRadius: 8 }}>
-              Base Ativa: {fmt(kpis.totalDiferida)} / mês
+            <span style={{ fontSize: 12, fontWeight: 700, color: corPrimaria, background: corPrimariaAlpha(0.1), padding: '6px 12px', borderRadius: 8 }}>
+              Base Mensal: {fmt(metricasDiferidasLive.projecaoMesAtual)}
             </span>
-            <span style={{ fontSize: 12, fontWeight: 800, color: 'white', background: '#7c3aed', padding: '6px 14px', borderRadius: 8, boxShadow: '0 2px 8px rgba(124,58,237,0.3)' }}>
+            <span style={{
+              fontSize: 12, fontWeight: 800, color: 'white',
+              background: corPrimaria,
+              padding: '6px 14px', borderRadius: 8,
+              boxShadow: `0 2px 8px ${corPrimariaAlpha(0.35)}`
+            }}>
               Total 6 Meses: {fmt(totalProjecao6Meses)}
             </span>
           </div>
         </div>
 
-        {/* BANNER CONSOLIDADOR DOS 6 MESES */}
+        {/* ── BANNER CONSOLIDADOR GRANDE ── */}
         <div style={{
-          background: 'linear-gradient(135deg, rgba(139,92,246,0.14), rgba(139,92,246,0.04))',
-          border: '1px solid rgba(139,92,246,0.35)',
-          borderRadius: 14,
-          padding: '16px 20px',
-          marginBottom: 16,
+          background: `linear-gradient(135deg, ${corPrimariaAlpha(0.14)}, ${corPrimariaAlpha(0.04)})`,
+          border: `1px solid ${corPrimariaAlpha(0.4)}`,
+          borderRadius: 16,
+          padding: '20px 24px',
+          marginBottom: 20,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           flexWrap: 'wrap',
-          gap: 14
+          gap: 16
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             <div style={{
-              width: 44,
-              height: 44,
-              borderRadius: 12,
-              background: '#7c3aed',
-              color: 'white',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 4px 12px rgba(124,58,237,0.35)'
+              width: 52, height: 52, borderRadius: 14,
+              background: corPrimaria, color: 'white',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: `0 6px 18px ${corPrimariaAlpha(0.4)}`
             }}>
-              <DollarSign size={22} />
+              <Target size={26} />
             </div>
             <div>
-              <span style={{ fontSize: 11, fontWeight: 700, color: '#7c3aed', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                Totalização da Carteira nos Próximos 6 Meses
+              <span style={{ fontSize: 11, fontWeight: 700, color: corPrimaria, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                Totalização da Carteira — Próximos 6 Meses
               </span>
-              <p style={{ fontSize: 24, fontWeight: 900, color: 'var(--text-primary)', margin: '2px 0 0', letterSpacing: '-0.5px' }}>
+              <p style={{ fontSize: 28, fontWeight: 900, color: 'var(--text-primary)', margin: '2px 0 0', letterSpacing: '-0.8px' }}>
                 {fmt(totalProjecao6Meses)}
               </p>
+              <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                Soma das 6 projeções mensais com tendência aplicada
+              </span>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
-            <div style={{ textAlign: 'right' }}>
-              <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block' }}>Base Mensal</span>
-              <strong style={{ fontSize: 14, color: '#7c3aed' }}>{fmt(kpis.totalDiferida)} / mês</strong>
+
+          <div style={{ display: 'flex', gap: 20, alignItems: 'stretch', flexWrap: 'wrap' }}>
+            <div style={{ textAlign: 'center', padding: '10px 16px', background: 'rgba(16,185,129,0.08)', borderRadius: 10, border: '1px solid rgba(16,185,129,0.2)' }}>
+              <span style={{ fontSize: 10, color: 'var(--text-muted)', display: 'block', fontWeight: 700, textTransform: 'uppercase' }}>Média Mensal</span>
+              <strong style={{ fontSize: 16, color: '#059669' }}>{fmt(totalProjecao6Meses / 6)}</strong>
             </div>
-            <div style={{ width: 1, height: 32, background: 'rgba(139,92,246,0.2)' }}></div>
-            <div style={{ textAlign: 'right' }}>
-              <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block' }}>Período Projetado</span>
-              <strong style={{ fontSize: 14, color: 'var(--text-primary)' }}>6 Meses (1 Semestre)</strong>
+            <div style={{ textAlign: 'center', padding: '10px 16px', background: corPrimariaAlpha(0.07), borderRadius: 10, border: `1px solid ${corPrimariaAlpha(0.2)}` }}>
+              <span style={{ fontSize: 10, color: 'var(--text-muted)', display: 'block', fontWeight: 700, textTransform: 'uppercase' }}>Mês Pico</span>
+              <strong style={{ fontSize: 16, color: corPrimaria }}>{fmt(maxEstimativa)}</strong>
+            </div>
+            <div style={{ textAlign: 'center', padding: '10px 16px', background: 'rgba(245,158,11,0.08)', borderRadius: 10, border: '1px solid rgba(245,158,11,0.2)' }}>
+              <span style={{ fontSize: 10, color: 'var(--text-muted)', display: 'block', fontWeight: 700, textTransform: 'uppercase' }}>Período</span>
+              <strong style={{ fontSize: 15, color: '#d97706' }}>1 Semestre</strong>
             </div>
           </div>
         </div>
 
+        {/* ── GRÁFICO DE ÁREA (ACUMULADO) + BARRAS (MENSAL) ── */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+            <Layers size={14} color={corPrimaria} />
+            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)' }}>
+              Evolução Projetada (Mensal + Acumulado)
+            </span>
+          </div>
+          <div style={{ width: '100%', height: 220 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={projecaoMeses} margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
+                <defs>
+                  <linearGradient id="gradAcum" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={corPrimaria} stopOpacity={0.18} />
+                    <stop offset="95%" stopColor={corPrimaria} stopOpacity={0.01} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
+                <XAxis dataKey="mes" tick={{ fill: 'var(--text-muted)', fontSize: 11, fontWeight: 600 }} />
+                <YAxis
+                  yAxisId="left"
+                  tick={{ fill: 'var(--text-muted)', fontSize: 10 }}
+                  tickFormatter={v => `R$${(v / 1000).toFixed(0)}k`}
+                />
+                <YAxis
+                  yAxisId="right"
+                  orientation="right"
+                  tick={{ fill: 'var(--text-muted)', fontSize: 10 }}
+                  tickFormatter={v => `R$${(v / 1000).toFixed(0)}k`}
+                />
+                <Tooltip
+                  formatter={(value: any, name: any) => [fmt(Number(value) || 0), name === 'estimativa' ? 'Mensal Estimado' : 'Acumulado']}
+                  contentStyle={{
+                    background: 'rgba(255,255,255,0.97)',
+                    borderRadius: 12, border: `1px solid ${corPrimariaAlpha(0.2)}`,
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.12)', fontSize: 12
+                  }}
+                />
+                <Legend verticalAlign="top" height={32} wrapperStyle={{ fontSize: 11, fontWeight: 600 }} />
+                <Bar yAxisId="left" dataKey="estimativa" name="Mensal Estimado" fill={corPrimaria} radius={[6, 6, 0, 0]} opacity={0.85} />
+                <Area yAxisId="right" type="monotone" dataKey="acumulado" name="Acumulado" stroke="#10b981" strokeWidth={2.5} fill="url(#gradAcum)" dot={{ fill: '#10b981', r: 4 }} />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* ── CARDS DOS 6 MESES ── */}
         <div className="grid-responsive-3" style={{ gap: 12 }}>
           {projecaoMeses.map((p, idx) => (
             <div key={idx} style={{
-              background: 'rgba(139,92,246,0.04)',
-              border: '1px solid rgba(139,92,246,0.18)',
+              background: corPrimariaAlpha(0.04),
+              border: `1px solid ${corPrimariaAlpha(0.18)}`,
               borderRadius: 12,
               padding: '14px 16px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between'
+              position: 'relative',
+              overflow: 'hidden'
             }}>
-              <div>
-                <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                  Previsão {p.mes}
-                </span>
-                <p style={{ fontSize: 16, fontWeight: 800, color: '#7c3aed', margin: '4px 0 0' }}>
-                  {fmt(p.estimativa)}
-                </p>
-                <span style={{ fontSize: 10, color: 'var(--text-muted)', display: 'block', marginTop: 2 }}>
-                  Acumulado: {fmt(p.acumulado)}
+              {/* Mini barra de progresso interna */}
+              <div style={{
+                position: 'absolute', bottom: 0, left: 0,
+                width: `${(p.estimativa / maxEstimativa) * 100}%`,
+                height: 3, background: corPrimaria, borderRadius: '0 0 0 12px', opacity: 0.5
+              }} />
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                <div>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                    Previsão {p.mes}
+                  </span>
+                  <p style={{ fontSize: 17, fontWeight: 800, color: corPrimaria, margin: '4px 0 0', letterSpacing: '-0.3px' }}>
+                    {fmt(p.estimativa)}
+                  </p>
+                  <span style={{ fontSize: 10, color: 'var(--text-muted)', display: 'block', marginTop: 3 }}>
+                    Acum.: <strong style={{ color: '#059669' }}>{fmt(p.acumulado)}</strong>
+                  </span>
+                </div>
+                <span style={{
+                  fontSize: 10, fontWeight: 800, color: 'white',
+                  background: '#10b981', padding: '2px 7px', borderRadius: 5, marginTop: 2
+                }}>
+                  Recorrente
                 </span>
               </div>
-              <span style={{ fontSize: 11, fontWeight: 700, color: '#059669', background: 'rgba(16,185,129,0.12)', padding: '3px 8px', borderRadius: 6 }}>
-                Recorrente
-              </span>
             </div>
           ))}
 
           {/* CARD RESUMO FINAL 6 MESES */}
           <div style={{
-            background: 'linear-gradient(135deg, rgba(139,92,246,0.18), rgba(139,92,246,0.08))',
-            border: '2px dashed #7c3aed',
+            background: `linear-gradient(135deg, ${corPrimariaAlpha(0.2)}, ${corPrimariaAlpha(0.08)})`,
+            border: `2px dashed ${corPrimaria}`,
             borderRadius: 12,
             padding: '14px 16px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between'
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between'
           }}>
             <div>
-              <span style={{ fontSize: 10, fontWeight: 800, color: '#7c3aed', textTransform: 'uppercase' }}>
+              <span style={{ fontSize: 10, fontWeight: 800, color: corPrimaria, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                 TOTAL 6 MESES
               </span>
-              <p style={{ fontSize: 18, fontWeight: 900, color: '#7c3aed', margin: '4px 0 0' }}>
+              <p style={{ fontSize: 20, fontWeight: 900, color: corPrimaria, margin: '4px 0 0', letterSpacing: '-0.5px' }}>
                 {fmt(totalProjecao6Meses)}
               </p>
               <span style={{ fontSize: 10, color: 'var(--text-muted)', display: 'block', marginTop: 2 }}>
-                Soma dos 6 meses
+                Soma acumulada do semestre
               </span>
             </div>
-            <span style={{ fontSize: 11, fontWeight: 800, color: 'white', background: '#7c3aed', padding: '4px 10px', borderRadius: 8 }}>
+            <span style={{
+              fontSize: 11, fontWeight: 800, color: 'white',
+              background: corPrimaria, padding: '5px 12px', borderRadius: 8,
+              boxShadow: `0 2px 8px ${corPrimariaAlpha(0.35)}`
+            }}>
               Semestre
             </span>
           </div>

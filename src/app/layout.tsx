@@ -103,10 +103,34 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             if ('serviceWorker' in navigator) {
               window.addEventListener('load', function() {
                 navigator.serviceWorker.register('/sw.js').then(function(registration) {
+                  // Verifica atualizações imediatamente
                   registration.update();
+
+                  // Quando um novo SW está aguardando, ativa imediatamente
+                  registration.addEventListener('updatefound', function() {
+                    var newWorker = registration.installing;
+                    if (!newWorker) return;
+                    newWorker.addEventListener('statechange', function() {
+                      if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                        // Novo SW instalado, força ativação e recarrega
+                        newWorker.postMessage({ type: 'SKIP_WAITING' });
+                        window.location.reload();
+                      }
+                    });
+                  });
+
                   console.log('ServiceWorker registration successful with scope: ', registration.scope);
                 }, function(err) {
                   console.log('ServiceWorker registration failed: ', err);
+                });
+
+                // Quando o SW tomar o controle, recarrega para pegar novo conteúdo
+                var refreshing = false;
+                navigator.serviceWorker.addEventListener('controllerchange', function() {
+                  if (!refreshing) {
+                    refreshing = true;
+                    window.location.reload();
+                  }
                 });
               });
             }

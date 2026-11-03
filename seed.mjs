@@ -11,20 +11,20 @@ const db = getFirestore(app);
 
 async function run() {
   await addDoc(collection(db, 'saas_releases'), {
-    versao: 'v3.6.51',
-    titulo: 'Preservação do Comportamento (Fixa/Variável) na Edição e Pagamento',
-    descricao: 'Ao editar um lançamento ou efetuar o pagamento, o sistema agora sempre preserva o comportamento original (fixa ou variável), nunca abrindo o campo em branco.',
+    versao: 'v3.6.52',
+    titulo: 'Abertura Direta do Formulário de Lançamento Manual',
+    descricao: 'Ao clicar em Novo Lançamento, o sistema abre diretamente o formulário completo manual com todos os campos prontos para digitação ágil, mantendo a opção de Lançamento por IA com 1 clique.',
     dataLancamento: new Date().toISOString(),
     status: 'publicado',
     destaque: true,
     notificarTenants: false,
     alvos: 'todos',
     changes: [
-      { tipo: 'correcao', texto: 'Comportamento Preservado: Ao editar ou pagar um lançamento, o comportamento (Fixa ou Variável) registrado originalmente é mantido automaticamente e nunca mais abre em branco.' },
-      { tipo: 'melhoria', texto: 'Blindagem no banco de dados e na interface: Atualizações de status para pago mantêm intacta a classificação contábil original do lançamento.' }
+      { tipo: 'melhoria', texto: 'Novo Lançamento Direto no Manual: O modal agora abre imediatamente com todos os campos estruturados (tipo, descrição, valor, datas, categoria, conta e comportamento) para maior agilidade operacional.' },
+      { tipo: 'nova_funcionalidade', texto: 'Alternância Instantânea para IA: Botão "Usar Lançamento por IA" disponível no canto superior para quem desejar ditar por voz ou colar descrições complexas.' }
     ]
   });
-  console.log('Release notes v3.6.51 added!');
+  console.log('Release notes v3.6.52 added!');
   process.exit(0);
 }
 

@@ -30,41 +30,136 @@ export default function Configuracoes() {
     return outputArray;
   };
 
+  const [pushPermissao, setPushPermissao] = useState<string>('default');
+  const [pushLoading, setPushLoading] = useState(false);
+  const [pushStatusMsg, setPushStatusMsg] = useState<string | null>(null);
+
+  const atualizarPermissaoPush = () => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      setPushPermissao(Notification.permission);
+    }
+  };
+
   const handleEnableWebPush = async () => {
+    setPushLoading(true);
+    setPushStatusMsg(null);
     try {
       if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-        alert('Seu navegador nao suporta notificações Push.');
+        alert('Seu navegador não suporta notificações Push.');
         return;
       }
       const perm = await Notification.requestPermission();
+      atualizarPermissaoPush();
       if (perm !== 'granted') {
-        alert('Permissão de notificação negada! Verifique as configurações do navegador e do celular.');
+        alert('Permissão de notificação negada! Verifique as configurações do navegador e do dispositivo.');
         return;
       }
       const reg = await navigator.serviceWorker.ready;
-      const pubKey = 'BNIPGpo2FSX_novxEx4lSAJa397ugkht4aYZBFacXeiorCbWQa0VDBa2rBzYgqaNe1BtQd_n-mT2Gu302TpN6Z0';
-      const sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(pubKey)
-      });
-      setCfg(c => {
-    let arr = [];
-    try {
-      if(c.webPushSubscription) {
-        const parsed = JSON.parse(c.webPushSubscription);
-        arr = Array.isArray(parsed) ? parsed : [parsed];
+      let pubKey = '';
+      try {
+        const pkRes = await fetch('/api/notifications/publicKey');
+        if (pkRes.ok) {
+          const pkData = await pkRes.json();
+          pubKey = pkData.publicKey;
+        }
+      } catch (err) {
+        console.warn('Erro ao obter publicKey:', err);
       }
-    } catch(e){}
-    // Check if sub endpoint already exists
-    if (!arr.find(s => s.endpoint === sub.endpoint)) {
-      arr.push(sub);
-    }
-    return { ...c, webPushSubscription: JSON.stringify(arr) };
-  });
-      alert('notificações ativadas com sucesso neste dispositivo! O sistema tentará entregar os pop-ups nativos quando o app estiver fechado. Lembre-se de clicar no botão Salvar Configurações no topo!');
+      if (!pubKey) {
+        pubKey = 'BC539n2pNdv39O7fC8-RYm8ffBhtB0D_L9s7GQEQydxIR_8RzAj3w7nQCPCiarG4kgmlqto1zXjPZlSQiXWMick';
+      }
+
+      let sub = await reg.pushManager.getSubscription();
+      if (!sub) {
+        sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(pubKey)
+        });
+      }
+
+      const auth = getFirebaseAuth();
+      const uid = auth.currentUser?.uid || 'user-default';
+      const subJson = sub.toJSON ? sub.toJSON() : sub;
+
+      await fetch('/api/notifications/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid, subscription: subJson })
+      });
+
+      setCfg(c => {
+        let arr = [];
+        try {
+          if (c.webPushSubscription) {
+            const parsed = JSON.parse(c.webPushSubscription);
+            arr = Array.isArray(parsed) ? parsed : [parsed];
+          }
+        } catch(e){}
+        if (!arr.find((s) => s && s.endpoint === sub.endpoint)) {
+          arr.push(subJson);
+        }
+        return { ...c, webPushSubscription: JSON.stringify(arr), notificacoesAtivas: true };
+      });
+
+      setPushStatusMsg('✅ Notificações Push ativadas com sucesso neste dispositivo!');
+      alert('Notificações ativadas com sucesso neste dispositivo! Clique em "Salvar Configurações" no topo para manter as preferências.');
     } catch (e: any) {
       console.error(e);
-      alert('Erro ao ativar notificações: ' + e);
+      alert('Erro ao ativar notificações: ' + (e.message || e));
+    } finally {
+      setPushLoading(false);
+    }
+  };
+
+  const handleDispararTestePush = async () => {
+    setPushLoading(true);
+    setPushStatusMsg('Disparando notificação de teste...');
+    try {
+      if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+        try {
+          new Notification(cfg.nomeSistema ? `🔔 ${cfg.nomeSistema}` : '🔔 Alerta de Teste', {
+            body: 'Notificação local de teste disparada com sucesso!',
+            icon: cfg.fotoPerfil || '/icon.png',
+          });
+        } catch (localErr) {
+          console.warn('[Local notification test]', localErr);
+        }
+      }
+
+      let subPayload = null;
+      try {
+        if ('serviceWorker' in navigator) {
+          const reg = await navigator.serviceWorker.ready;
+          const currentSub = await reg.pushManager.getSubscription();
+          if (currentSub) {
+            subPayload = currentSub.toJSON ? currentSub.toJSON() : currentSub;
+          }
+        }
+      } catch (err) {
+        console.warn('Erro ao ler sub atual:', err);
+      }
+
+      const res = await fetch('/api/notifications/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: `🔔 Teste de Notificação - ${cfg.nomeSistema || 'Sistema'}`,
+          body: 'Notificação Push em tempo real enviada com sucesso pelo servidor!',
+          subscription: subPayload,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setPushStatusMsg('🚀 Notificação de teste disparada com sucesso! Verifique a tela do seu celular ou computador.');
+      } else {
+        throw new Error(data.error || 'Erro no servidor ao enviar teste');
+      }
+    } catch (e: any) {
+      console.error(e);
+      setPushStatusMsg('⚠️ Erro ao disparar teste: ' + (e.message || String(e)));
+    } finally {
+      setPushLoading(false);
     }
   };
 
@@ -78,7 +173,7 @@ export default function Configuracoes() {
     backupAutomatico: true,
     tema: 'dark' as 'dark',
   });
-  const [abaAtiva, setAbaAtiva] = useState<'perfil' | 'pix' | 'whatsapp' | 'aparencia' | 'sons' | 'ia' | 'seguranca'>('perfil');
+  const [abaAtiva, setAbaAtiva] = useState<'perfil' | 'notificacoes' | 'pix' | 'whatsapp' | 'aparencia' | 'sons' | 'ia' | 'seguranca'>('perfil');
   const [contas, setContas] = useState<Conta[]>([]);
   const [mostrarKey, setMostrarKey] = useState(false);
   const [salvo, setSalvo] = useState(false);
@@ -135,6 +230,9 @@ export default function Configuracoes() {
       }
       
       setAudioAtivo(isAudioEnabled());
+      if (typeof window !== 'undefined' && 'Notification' in window) {
+        setPushPermissao(Notification.permission);
+      }
       setAudioVolume(getAudioVolume());
       
       try {
@@ -371,6 +469,7 @@ export default function Configuracoes() {
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', paddingBottom: 12, marginBottom: 20, borderBottom: '1px solid var(--border)', scrollbarWidth: 'none' }}>
           {[
             { id: 'perfil', label: 'Perfil & Conta', icon: <User size={16} /> },
+            { id: 'notificacoes', label: '🔔 Notificações', icon: <Bell size={16} color="#f59e0b" /> },
             { id: 'pix', label: '⚡ Chave PIX & Cobrança', icon: <QrCode size={16} color="#06b6d4" /> },
             { id: 'whatsapp', label: '📱 WhatsApp & Disparos', icon: <MessageCircle size={16} color="#10b981" /> },
             { id: 'aparencia', label: 'Aparência & Design', icon: <Palette size={16} /> },
@@ -516,77 +615,264 @@ export default function Configuracoes() {
               <option value="EUR">x!x! EUR - Euro</option>
             </select>
           
-          {/* Automação de Push notificações */}
-          <div style={{ marginTop: 24, borderTop: '1px solid var(--border)', paddingTop: 24 }}>
-            <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>notificações Push (Pop-up do Celular)</h3>
-            <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12 }}>
-              Receba os alertas de vencimento diários direto na tela do seu celular, como um aplicativo normal, mesmo com o sistema fechado (via CRON).
-            </p>
-            <button 
-              onClick={handleEnableWebPush} 
-              className="btn-primary" 
-              style={{ padding: '10px 16px', background: cfg.webPushSubscription ? '#10b981' : 'var(--primary)', border: 'none', borderRadius: 8, cursor: 'pointer', color: 'white', fontWeight: 700 }}
+          <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+            <div>
+              <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                🔔 Notificações & Alertas no Celular
+              </span>
+              <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--text-muted)' }}>
+                Configure push no celular, horários diários, intervalos e alertas na aba dedicada.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setAbaAtiva('notificacoes')}
+              style={{ background: 'var(--blue)', color: 'white', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
             >
-              {cfg.webPushSubscription ? 'S& Push Ativo Neste Dispositivo' : 'x Ativar notificações Pop-up'}
-              </button>
-
-              <div style={{ marginTop: 24 }}>
-                <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 8 }}>Dias da Semana</label>
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((dia, i) => {
-                    const ativo = !cfg.pushDias || cfg.pushDias.includes(i.toString());
-                    return (
-                      <button 
-                        key={dia}
-                        onClick={() => {
-                          const novos = cfg.pushDias ? [...cfg.pushDias] : ['0', '1', '2', '3', '4', '5', '6'];
-                          if (ativo) {
-                            const index = novos.indexOf(i.toString());
-                            if (index > -1) novos.splice(index, 1);
-                          } else {
-                            novos.push(i.toString());
-                          }
-                          setCfg(c => ({ ...c, pushDias: novos }));
-                        }}
-                        style={{
-                          padding: '6px 12px',
-                          borderRadius: 20,
-                          border: `1px solid ${ativo ? 'var(--primary)' : 'var(--border)'}`,
-                          background: ativo ? 'var(--primary)' : 'transparent',
-                          color: ativo ? 'white' : 'var(--text-secondary)',
-                          fontSize: 12,
-                          fontWeight: 600,
-                          cursor: 'pointer',
-                          transition: 'all 0.2s'
-                        }}
-                      >
-                        {dia}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-
-              <div style={{ marginTop: 16 }}>
-                <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 8 }}>Horário do Alerta Diário</label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <input 
-                    type="time" 
-                    className="input-field" 
-                    style={{ width: 120 }}
-                    value={cfg.pushHorario || '08:00'} 
-                    onChange={e => setCfg(c => ({ ...c, pushHorario: e.target.value }))} 
-                  />
-                  <span style={{ fontSize: 11, color: 'var(--text-muted)', background: 'var(--bg-active)', padding: '6px 10px', borderRadius: 6 }}>
-                    Nota: O Vercel CRON (gratuito) agrupa os disparos automáticos pela manhã, mas o horário será respeitado localmente quando possível.
-                  </span>
-                </div>
-              </div>
+              Abrir Notificações →
+            </button>
           </div>
-
         </div>
         </SecaoConfig>
         )}
+
+        
+
+        {/* ======================================================== */}
+        {/* ABA DEDICADA: NOTIFICAÇÕES & ALERTAS                   */}
+        {/* ======================================================== */}
+        {abaAtiva === 'notificacoes' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            {/* 1. Web Push Notifications */}
+            <SecaoConfig titulo="Notificações Push (Celular & Navegador)" icone={<Bell size={18} color="#f59e0b" />}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
+                  Receba alertas instantâneos de contas a vencer e avisos urgentes direto na tela do seu celular ou computador, como um aplicativo nativo.
+                </p>
+
+                {/* Status do Dispositivo e Botões */}
+                <div style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12,
+                  padding: '16px', borderRadius: 12, background: 'var(--bg-secondary)', border: '1px solid var(--border)'
+                }}>
+                  <div>
+                    <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block', marginBottom: 2 }}>
+                      Status da Permissão no Dispositivo
+                    </span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: pushPermissao === 'granted' ? '#10b981' : pushPermissao === 'denied' ? '#ef4444' : '#f59e0b' }}>
+                      {pushPermissao === 'granted' ? '✅ Permissão Concedida' : pushPermissao === 'denied' ? '❌ Permissão Bloqueada no Navegador' : '⏳ Aguardando Ativação'}
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      onClick={handleEnableWebPush}
+                      disabled={pushLoading}
+                      className="btn-primary"
+                      style={{
+                        padding: '10px 18px',
+                        background: cfg.webPushSubscription ? '#10b981' : 'var(--blue)',
+                        border: 'none', borderRadius: 10, cursor: 'pointer', color: 'white', fontWeight: 700, fontSize: 13,
+                        display: 'flex', alignItems: 'center', gap: 8
+                      }}
+                    >
+                      <Bell size={16} />
+                      {cfg.webPushSubscription ? '✅ Dispositivo Inscrito (Reativar)' : '🔔 Ativar Push no Dispositivo'}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleDispararTestePush}
+                      disabled={pushLoading}
+                      style={{
+                        padding: '10px 18px',
+                        background: 'rgba(59, 130, 246, 0.1)',
+                        border: '1px solid var(--blue)',
+                        borderRadius: 10, cursor: 'pointer', color: 'var(--blue)', fontWeight: 700, fontSize: 13,
+                        display: 'flex', alignItems: 'center', gap: 8
+                      }}
+                    >
+                      <Zap size={16} />
+                      {pushLoading ? 'Disparando...' : '🚀 Enviar Notificação de Teste'}
+                    </button>
+                  </div>
+                </div>
+
+                {pushStatusMsg && (
+                  <div style={{
+                    padding: '12px 16px', borderRadius: 10,
+                    background: pushStatusMsg.includes('Erro') || pushStatusMsg.includes('⚠️') ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+                    border: `1px solid ${pushStatusMsg.includes('Erro') || pushStatusMsg.includes('⚠️') ? '#ef4444' : '#10b981'}`,
+                    color: pushStatusMsg.includes('Erro') || pushStatusMsg.includes('⚠️') ? '#ef4444' : '#10b981',
+                    fontSize: 13, fontWeight: 600
+                  }}>
+                    {pushStatusMsg}
+                  </div>
+                )}
+              </div>
+            </SecaoConfig>
+
+            {/* 2. Frequência e Regras de Disparo */}
+            <SecaoConfig titulo="Frequência & Intervalo de Repetição" icone={<History size={18} color="#06b6d4" />}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                
+                {/* Intervalo de repetição (60 minutos por padrão) */}
+                <div>
+                  <label style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>
+                    Intervalo de Repetição para Alertas Pendentes
+                  </label>
+                  <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8 }}>
+                    Quando houver contas vencidas ou a vencer pendentes de ação, com qual frequência o sistema deve re-notificar?
+                  </p>
+                  <select
+                    className="input-field"
+                    value={cfg.pushIntervaloMinutos ?? 60}
+                    onChange={e => setCfg(c => ({ ...c, pushIntervaloMinutos: parseInt(e.target.value) }))}
+                    style={{ maxWidth: 300 }}
+                  >
+                    <option value={30}>A cada 30 minutos</option>
+                    <option value={60}>A cada 60 minutos (Recomendado)</option>
+                    <option value={120}>A cada 2 horas (120 minutos)</option>
+                    <option value={240}>A cada 4 horas (240 minutos)</option>
+                    <option value={1440}>Apenas 1 vez ao dia</option>
+                  </select>
+                </div>
+
+                {/* Horário Inicial Diário */}
+                <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16 }}>
+                  <label style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>
+                    Horário do Primeiro Alerta Diário
+                  </label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <input
+                      type="time"
+                      className="input-field"
+                      style={{ width: 130 }}
+                      value={cfg.pushHorario || '08:00'}
+                      onChange={e => setCfg(c => ({ ...c, pushHorario: e.target.value }))}
+                    />
+                    <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                      Horário em que o primeiro alerta diário será enviado.
+                    </span>
+                  </div>
+                </div>
+
+                {/* Dias da Semana */}
+                <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16 }}>
+                  <label style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', display: 'block', marginBottom: 8 }}>
+                    Dias da Semana para Envio de Alertas
+                  </label>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((dia, i) => {
+                      const ativo = !cfg.pushDias || cfg.pushDias.includes(i.toString());
+                      return (
+                        <button
+                          key={dia}
+                          type="button"
+                          onClick={() => {
+                            const novos = cfg.pushDias ? [...cfg.pushDias] : ['0', '1', '2', '3', '4', '5', '6'];
+                            if (ativo) {
+                              const idx = novos.indexOf(i.toString());
+                              if (idx > -1) novos.splice(idx, 1);
+                            } else {
+                              novos.push(i.toString());
+                            }
+                            setCfg(c => ({ ...c, pushDias: novos }));
+                          }}
+                          style={{
+                            padding: '8px 16px', borderRadius: 20,
+                            border: `1px solid ${ativo ? 'var(--blue)' : 'var(--border)'}`,
+                            background: ativo ? 'var(--blue)' : 'var(--bg-secondary)',
+                            color: ativo ? 'white' : 'var(--text-secondary)',
+                            fontSize: 12, fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s'
+                          }}
+                        >
+                          {dia}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </SecaoConfig>
+
+            {/* 3. Alertas em Tela e Pop-ups */}
+            <SecaoConfig titulo="Alertas em Tela & Pop-ups" icone={<AlertTriangle size={18} color="#10b981" />}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <ToggleConfig
+                  label="Alertas Pop-up Diários"
+                  descricao="Exibe um aviso na tela inicial sobre as contas vencendo no dia"
+                  ativo={cfg.lembretesPopup ?? true}
+                  onChange={v => setCfg(c => ({ ...c, lembretesPopup: v }))}
+                />
+
+                {cfg.lembretesPopup !== false && (
+                  <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 10, padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <ToggleConfig
+                      label="Mostrar apenas ao Iniciar Sessão"
+                      descricao="Não reabrir o popup a cada atualização de página, apenas na primeira vez do dia ou login."
+                      ativo={cfg.lembretesPopupAoIniciar ?? true}
+                      onChange={v => setCfg(c => ({ ...c, lembretesPopupAoIniciar: v }))}
+                    />
+
+                    <div>
+                      <label style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 600, display: 'block', marginBottom: 6 }}>
+                        Horários Adicionais de Alerta Pop-up (Opcional)
+                      </label>
+                      <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8 }}>
+                        Defina horários específicos separados por vírgula (Ex: 09:00, 14:00, 18:00). Máximo de 4 horários.
+                      </p>
+                      <input
+                        type="text"
+                        className="input-field"
+                        placeholder="09:00, 14:00"
+                        defaultValue={(cfg.lembretesPopupHorarios || []).join(', ')}
+                        onBlur={e => {
+                          const v = e.target.value.split(',').map(s => s.trim()).filter(Boolean);
+                          setCfg(c => ({ ...c, lembretesPopupHorarios: v.slice(0, 4) }));
+                        }}
+                        style={{ width: '100%', maxWidth: 300 }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <ToggleConfig
+                  label="Central de Alertas (Ícone do Sino no Topo)"
+                  descricao="Habilita a central e o contador de notificações na barra superior do sistema"
+                  ativo={cfg.lembretesSinao ?? true}
+                  onChange={v => setCfg(c => ({ ...c, lembretesSinao: v }))}
+                />
+              </div>
+            </SecaoConfig>
+
+            {/* 4. Atalho para Central de Alertas */}
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12,
+              padding: 16, borderRadius: 12, background: 'rgba(59, 130, 246, 0.08)', border: '1px solid rgba(59, 130, 246, 0.25)'
+            }}>
+              <div>
+                <h4 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--blue)' }}>
+                  🎯 Central Inteligente de Alertas & Monitoramento
+                </h4>
+                <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--text-muted)' }}>
+                  Acompanhe todas as contas a vencer, vencidas e histórico de pendências em tempo real.
+                </p>
+              </div>
+              <a
+                href={'/central' + (getTenantId() && getTenantId() !== 'master' ? '?tenant=' + encodeURIComponent(getTenantId()) : '')}
+                style={{
+                  background: 'var(--blue)', color: 'white', padding: '9px 18px', borderRadius: 8,
+                  fontSize: 12, fontWeight: 700, textDecoration: 'none'
+                }}
+              >
+                Abrir Central de Alertas →
+              </a>
+            </div>
+          </div>
+        )}
+
 
         {/* PIX e Cobranças */}
         {abaAtiva === 'pix' && (
