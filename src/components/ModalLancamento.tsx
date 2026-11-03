@@ -119,6 +119,7 @@ export default function ModalLancamento({ onClose, onSalvo, transacaoEditar }: P
   const [prelancamento, setPrelancamento] = useState<PreLancamento | null>(
     transacaoEditar ? {
       ...transacaoEditar,
+      comportamento: (transacaoEditar as any).comportamento || (transacaoEditar.recorrente ? 'fixa' : 'variavel'),
       confianca: 1,
       textoOriginal: ''
     } as PreLancamento : null
@@ -337,6 +338,9 @@ export default function ModalLancamento({ onClose, onSalvo, transacaoEditar }: P
         comportamento: (() => {
           const comp = (prelancamento as any).comportamento;
           if (comp === 'fixa' || comp === 'variavel') return comp;
+          if (transacaoEditar && ((transacaoEditar as any).comportamento === 'fixa' || (transacaoEditar as any).comportamento === 'variavel')) {
+            return (transacaoEditar as any).comportamento;
+          }
           const desc = (prelancamento.descricao || '').toLowerCase();
           const sub = ((prelancamento as any).subcategoria || '').toLowerCase();
           if (prelancamento.recorrente || desc.includes('diferida') || sub.includes('diferida') || desc.includes('fixa') || desc.includes('mensal')) return 'fixa';
@@ -871,8 +875,7 @@ function EditarPreLancamento({ prelancamento, categorias, centrosCusto, contas, 
         {p.tipo !== 'transferencia' && (
           <div>
             <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>Comportamento</label>
-            <select className="input-field" value={(p as any).comportamento || ''} onChange={e => set({ ...p, comportamento: e.target.value as 'fixa' | 'variavel' } as any)}>
-              <option value="">— Selecione —</option>
+            <select className="input-field" value={(p as any).comportamento || (p.recorrente ? 'fixa' : 'variavel')} onChange={e => set({ ...p, comportamento: e.target.value as 'fixa' | 'variavel' } as any)}>
               <option value="fixa">Fixa</option>
               <option value="variavel">Variável</option>
             </select>
@@ -1271,7 +1274,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
     cartaoId: '',
     formaPagamento: 'pix' as 'pix' | 'dinheiro' | 'cartao_credito' | 'cartao_debito' | 'transferencia' | 'boleto',
     observacoes: initialData?.observacoes || '',
-      comportamento: initialData?.comportamento || '',
+      comportamento: initialData?.comportamento || (initialData?.recorrente ? 'fixa' : (initialData ? 'variavel' : '')),
     parcelado: false,
     totalParcelas: 1,
     recorrente: false,
@@ -1355,11 +1358,13 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
       // Só preenche automaticamente se digitou algo relevante;
       // mantém seleção manual do usuário se ele já escolheu e não bateu em nenhuma keyword
       comportamento: (() => {
-        if (val.trim().length === 0) return ''; // limpa se apagou tudo
+        // Se já tem um comportamento definido (pelo lançamento original ou escolhido pelo usuário), MANTÉM SEMPRE!
+        if (f.comportamento === 'fixa' || f.comportamento === 'variavel') return f.comportamento;
+        if (initialData?.comportamento === 'fixa' || initialData?.comportamento === 'variavel') return initialData.comportamento;
+        if (val.trim().length === 0) return '';
         if (isFixa) return 'fixa';
         if (isVariavel) return 'variavel';
-        // Se nenhuma keyword, mantém o que o usuário escolheu manualmente (não sobrescreve)
-        return f.comportamento;
+        return f.comportamento || (initialData?.recorrente ? 'fixa' : (initialData ? 'variavel' : ''));
       })()
     }));
     

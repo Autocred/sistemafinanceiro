@@ -189,6 +189,7 @@ export interface HistoricoIA {
 }
 
 export interface PreLancamento {
+  comportamento?: 'fixa' | 'variavel';
   id?: string;
   tipo: TipoTransacao;
   descricao: string;

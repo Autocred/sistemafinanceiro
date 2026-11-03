@@ -601,7 +601,8 @@ const openSafeAttachment = (url: string) => {
     for (const id of ids) {
       const transacao = transacoes.find(t => t.id === id);
       if (transacao && transacao.status === 'pendente') {
-        await salvarTransacao({ ...transacao, status: 'pago', dataPagamento: hoje });
+        const comp = transacao.comportamento || (transacao.recorrente ? 'fixa' : 'variavel');
+        await salvarTransacao({ ...transacao, status: 'pago', dataPagamento: hoje, comportamento: comp });
       }
     }
     setSelecionados(new Set());

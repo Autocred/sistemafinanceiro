@@ -218,7 +218,8 @@ export default function ModalCobrancaPix({ transacao, onClose, onBaixaSucesso }:
       await atualizarTransacao(transacao.id, {
         status: 'pago',
         dataPagamento: hoje,
-        formaPagamento: 'PIX'
+        formaPagamento: 'PIX',
+        comportamento: transacao.comportamento || (transacao.recorrente ? 'fixa' : 'variavel')
       });
 
       playSound('recebimento');

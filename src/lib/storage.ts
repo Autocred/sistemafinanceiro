@@ -384,7 +384,9 @@ export async function atualizarTransacao(id: string, dados: Partial<Transacao>, 
   // Otimização: Se o chamador já tem os dados antigos, usamos sem ler do Firestore
   // Caso contrário, fazemos a leitura normal via runTransaction
   const _executar = async (antiga: Transacao) => {
-    const nova = { ...antiga, ...dados };
+    const comportamentoFinal = dados.comportamento || antiga.comportamento || (antiga.recorrente ? 'fixa' : 'variavel');
+    const nova = { ...antiga, ...dados, comportamento: comportamentoFinal };
+    (dados as any).comportamento = comportamentoFinal;
     delete (dados as any).id;
     
     const now2 = new Date().toISOString();
