@@ -7,7 +7,7 @@ import {
 } from 'recharts';
 import { formatarMoeda, subscribeTransacoes, subscribeTransacoesByMes, subscribeContas, subscribeFaturas, getTenantId } from '@/lib/storage';
 import { Transacao, Conta, Fatura } from '@/lib/types';
-import { getValorFinal } from '@/lib/financialEngine';
+import { getValorFinal, normalizeDate } from '@/lib/financialEngine';
 import { format, subDays, startOfWeek, endOfWeek } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ordenarMovimentacoesDesc } from '@/lib/sorting';
@@ -285,55 +285,77 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
       ? ordenarMovimentacoesDesc([...atrasadasForaDoMes, ...transacoesMes]).slice(0, 8)
       : [...ordenarMovimentacoesDesc(atrasadasForaDoMes), ...ordenarMovimentacoesDesc(transacoesMes)].slice(0, 8);
   const fmt = formatarMoeda;
+  const mesFormatado = `${mesSelecionado.getFullYear()}-${String(mesSelecionado.getMonth() + 1).padStart(2, '0')}`;
 
-  // 1. Dados para Gráfico de Fluxo Diário
-  const chartDataDiário = transacoesMes.reduce((acc: any[], t) => {
-    if (t.status !== 'pago') return acc;
-    // Usa data de pagamento (real fluxo de caixa), senao vencimento, senao data original
-    const dataBase = t.dataPagamento || t.dataVencimento || t.data || '';
-    const dia = dataBase ? dataBase.split('-')[2] : '01';
-      
+  // Transações rigorosamente EFETIVADAS/PAGAS no mês selecionado (levando SEMPRE em conta a data de pagamento)
+  const transacoesPagasMes = useMemo(() => {
+    const mapa = new Map<string, Transacao>();
+    todasTransacoes.forEach(t => { if (t?.id) mapa.set(t.id, t); });
+    transacoesMes.forEach(t => { if (t?.id) mapa.set(t.id, t); });
+
+    return Array.from(mapa.values()).filter(t => {
+      // 1. Deve estar efetivamente pago (recebido é sinônimo para receitas)
+      if (t.status !== 'pago') return false;
+
+      // 2. Data de Pagamento: SEMPRE levar em consideração a data real de pagamento
+      const dtPag = normalizeDate(t.dataPagamento || t.data || '');
+      return dtPag.startsWith(mesFormatado);
+    });
+  }, [todasTransacoes, transacoesMes, mesFormatado]);
+
+  // 1. Dados para Gráfico de Fluxo Diário (Apenas movimentações pagas no mês)
+  const chartDataDiario = useMemo(() => {
+    return transacoesPagasMes.reduce((acc: any[], t) => {
+      // Usa estritamente a data de pagamento
+      const dataBase = normalizeDate(t.dataPagamento || t.data || '');
+      const dia = dataBase ? dataBase.split('-')[2] : '01';
+        
       const isMesAtual = mesSelecionado.getMonth() === new Date().getMonth() && mesSelecionado.getFullYear() === new Date().getFullYear();
       if (isMesAtual && dataBase > format(new Date(), 'yyyy-MM-dd')) return acc; // ignora pagamentos futuros no grafico do mes atual
 
       const existing = acc.find(x => x.name === dia);
-    if (existing) {
-      if (t.tipo === 'receita') existing.receita += getValorFinal(t);
-      else existing.despesa += getValorFinal(t);
-    } else {
-      acc.push({ name: dia, receita: t.tipo === 'receita' ? getValorFinal(t) : 0, despesa: t.tipo === 'despesa' ? getValorFinal(t) : 0 });
-    }
-    return acc;
-  }, []).sort((a, b) => parseInt(a.name) - parseInt(b.name));
+      if (existing) {
+        if (t.tipo === 'receita') existing.receita += getValorFinal(t);
+        else existing.despesa += getValorFinal(t);
+      } else {
+        acc.push({ name: dia, receita: t.tipo === 'receita' ? getValorFinal(t) : 0, despesa: t.tipo === 'despesa' ? getValorFinal(t) : 0 });
+      }
+      return acc;
+    }, []).sort((a, b) => parseInt(a.name) - parseInt(b.name));
+  }, [transacoesPagasMes, mesSelecionado]);
 
-  // 2. Dados para Gráfico de Despesas por Categoria (Donut)
-  const chartDataCategorias = Object.entries(
-    transacoesMes
-      .filter(t => t.tipo === 'despesa')
-      .reduce((acc: Record<string, number>, t) => {
-        const cat = t.categoriaNome || 'Geral';
-        acc[cat] = (acc[cat] || 0) + getValorFinal(t);
-        return acc;
-      }, {})
-  ).map(([name, value]) => ({ name, value }))
-   .sort((a, b) => b.value - a.value);
+  // 2. Dados para Gráfico de Despesas por Categoria (Donut) - APENAS DESPESAS PAGAS NO MÊS
+  const chartDataCategorias = useMemo(() => {
+    return Object.entries(
+      transacoesPagasMes
+        .filter(t => t.tipo === 'despesa')
+        .reduce((acc: Record<string, number>, t) => {
+          const cat = t.categoriaNome || 'Geral';
+          acc[cat] = (acc[cat] || 0) + getValorFinal(t);
+          return acc;
+        }, {})
+    ).map(([name, value]) => ({ name, value }))
+     .sort((a, b) => b.value - a.value);
+  }, [transacoesPagasMes]);
 
-  // 3. Dados para Distribuição por Forma de Pagamento
+  // 3. Dados para Distribuição por Forma de Pagamento - APENAS DESPESAS PAGAS NO MÊS
   const fmtPagto: Record<string, string> = { 
     pix: 'PIX', cartao_credito: 'Cartão Crédito', cartao_debito: 'Cartão Débito', 
     dinheiro: 'Dinheiro', boleto: 'Boleto', transferencia: 'Transferência', cheque: 'Cheque', outro: 'Outro' 
   };
 
-  const chartDataPagamentos = Object.entries(
-    transacoesMes
-      .filter(t => t.tipo === 'despesa')
-      .reduce((acc: Record<string, number>, t) => {
-        const forma = fmtPagto[t.formaPagamento || ''] || t.formaPagamento || 'Outro';
-        acc[forma] = (acc[forma] || 0) + getValorFinal(t);
-        return acc;
-      }, {})
-  ).map(([name, value]) => ({ name, value }))
-   .sort((a, b) => b.value - a.value);
+  const chartDataPagamentos = useMemo(() => {
+    return Object.entries(
+      transacoesPagasMes
+        .filter(t => t.tipo === 'despesa')
+        .reduce((acc: Record<string, number>, t) => {
+          const forma = fmtPagto[t.formaPagamento || ''] || t.formaPagamento || 'Outro';
+          acc[forma] = (acc[forma] || 0) + getValorFinal(t);
+          return acc;
+        }, {})
+    ).map(([name, value]) => ({ name, value }))
+     .sort((a, b) => b.value - a.value);
+  }, [transacoesPagasMes]);
 
   // ================= CÃLCULO PROJEï¿½!ÃO DE FLUXO DE CAIXA (30 DIAS) =================
   const projecaoData = useMemo(() => {
@@ -1186,11 +1208,11 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
             <Activity size={18} color="var(--primary)" />
           </div>
           <div style={{ height: 260, width: '100%' }}>
-            {chartDataDiário.length === 0 ? (
+            {chartDataDiario.length === 0 ? (
               <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: 13, fontWeight: 600 }}>Sem movimentações pagas no período.</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartDataDiário} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <AreaChart data={chartDataDiario} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorReceita" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#16a34a" stopOpacity={0.15}/>
@@ -1228,7 +1250,7 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
           </div>
           <div style={{ height: 260, width: '100%', display: 'flex', alignItems: 'center' }}>
             {chartDataCategorias.length === 0 ? (
-              <div style={{ width: '100%', textAlign: 'center', color: '#94a3b8', fontSize: 13, fontWeight: 600 }}>Nenhuma despesa registrada neste mês.</div>
+              <div style={{ width: '100%', textAlign: 'center', color: '#94a3b8', fontSize: 13, fontWeight: 600 }}>Nenhuma despesa paga neste mês.</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -1282,7 +1304,7 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
           </div>
           <div style={{ height: 260, width: '100%' }}>
             {chartDataPagamentos.length === 0 ? (
-              <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: 13, fontWeight: 600 }}>Sem dados de pagamento no mês.</div>
+              <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: 13, fontWeight: 600 }}>Sem despesas pagas no mês.</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartDataPagamentos} layout="vertical" margin={{ top: 10, right: 20, left: 30, bottom: 0 }}>

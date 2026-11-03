@@ -11,20 +11,22 @@ const db = getFirestore(app);
 
 async function run() {
   await addDoc(collection(db, 'saas_releases'), {
-    versao: 'v3.6.52',
-    titulo: 'Abertura Direta do Formulário de Lançamento Manual',
-    descricao: 'Ao clicar em Novo Lançamento, o sistema abre diretamente o formulário completo manual com todos os campos prontos para digitação ágil, mantendo a opção de Lançamento por IA com 1 clique.',
+    versao: 'v3.6.53',
+    titulo: 'Gráficos baseados exclusivamente na data de pagamento',
+    descricao: 'Todos os gráficos do Dashboard (Fluxo de Caixa, Despesas por Categoria e Meios de Pagamento) agora utilizam estritamente a data de pagamento efetiva para filtrar e exibir dados, evitando que lançamentos pendentes ou com data de competência diferente apareçam nos períodos incorretos.',
     dataLancamento: new Date().toISOString(),
     status: 'publicado',
     destaque: true,
     notificarTenants: false,
     alvos: 'todos',
     changes: [
-      { tipo: 'melhoria', texto: 'Novo Lançamento Direto no Manual: O modal agora abre imediatamente com todos os campos estruturados (tipo, descrição, valor, datas, categoria, conta e comportamento) para maior agilidade operacional.' },
-      { tipo: 'nova_funcionalidade', texto: 'Alternância Instantânea para IA: Botão "Usar Lançamento por IA" disponível no canto superior para quem desejar ditar por voz ou colar descrições complexas.' }
+      { tipo: 'correcao', texto: 'Despesas por Categoria: Agora exibe somente despesas com status "pago" e cuja data de pagamento pertença ao mês selecionado.' },
+      { tipo: 'correcao', texto: 'Fluxo de Caixa Diário: Filtragem rigorosa pela data de pagamento real, nunca pela data de competência ou vencimento.' },
+      { tipo: 'correcao', texto: 'Meios de Pagamento: Igualmente corrigido para usar apenas transações efetivamente pagas no mês.' },
+      { tipo: 'correcao', texto: 'Despesas por Categoria (componente auxiliar): Filtro ajustado para exibir apenas despesas pagas no mês atual.' }
     ]
   });
-  console.log('Release notes v3.6.52 added!');
+  console.log('Release notes v3.6.53 added!');
   process.exit(0);
 }
 

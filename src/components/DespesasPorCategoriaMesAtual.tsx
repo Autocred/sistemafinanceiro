@@ -15,7 +15,11 @@ export function DespesasPorCategoriaMesAtual({ transacoes }: Props) {
     const hoje = new Date();
     const mesAtualStr = hoje.toISOString().split('T')[0].substring(0, 7); // yyyy-MM
     
-    const despesasMes = transacoes.filter(t => t.tipo === 'despesa' && t.data.startsWith(mesAtualStr));
+    const despesasMes = transacoes.filter(t => 
+      t.tipo === 'despesa' && 
+      t.status === 'pago' &&
+      (t.dataPagamento || t.data || '').startsWith(mesAtualStr)
+    );
     
     const agrupado: Record<string, number> = {};
     for (const t of despesasMes) {
