@@ -352,15 +352,19 @@ export async function salvarTransacao(transacao: Omit<Transacao, 'id' | 'criadoE
   }
 
   try {
-    const { registrarAuditoria } = await import('./audit');
-    const { playSound } = await import('./audio');
-    await registrarAuditoria({
-      acao: 'NOVA_TRANSACAO',
-      categoria: 'financeiro',
-      detalhes: `${nova.tipo.toUpperCase()}: ${nova.descricao} - R$ ${nova.valor.toFixed(2)} (${nova.status})`,
-      resultado: 'SUCESSO'
-    });
-    if (nova.status === 'pago') playSound(nova.tipo === 'receita' ? 'recebimento' : 'pagamento');
+    import('./audit').then(({ registrarAuditoria }) => {
+      registrarAuditoria({
+        acao: 'NOVA_TRANSACAO',
+        categoria: 'financeiro',
+        detalhes: `${nova.tipo.toUpperCase()}: ${nova.descricao} - R$ ${nova.valor.toFixed(2)} (${nova.status})`,
+        resultado: 'SUCESSO'
+      }).catch(() => {});
+    }).catch(() => {});
+    if (nova.status === 'pago') {
+      import('./audio').then(({ playSound }) => {
+        playSound(nova.tipo === 'receita' ? 'recebimento' : 'pagamento');
+      }).catch(() => {});
+    }
   } catch (e) {}
 
   invalidateCache('transacoes');
@@ -558,13 +562,14 @@ export async function atualizarTransacao(id: string, dados: Partial<Transacao>, 
   }
 
   try {
-    const { registrarAuditoria } = await import('./audit');
-    await registrarAuditoria({
-      acao: 'EDICAO_TRANSACAO',
-      categoria: 'financeiro',
-      detalhes: `ID: ${id}. Campos alterados: ${Object.keys(dados).join(', ')}`,
-      resultado: 'SUCESSO'
-    });
+    import('./audit').then(({ registrarAuditoria }) => {
+      registrarAuditoria({
+        acao: 'EDICAO_TRANSACAO',
+        categoria: 'financeiro',
+        detalhes: `ID: ${id}. Campos alterados: ${Object.keys(dados).join(', ')}`,
+        resultado: 'SUCESSO'
+      }).catch(() => {});
+    }).catch(() => {});
   } catch (e) {}
 
   invalidateCache('transacoes');

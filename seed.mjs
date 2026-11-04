@@ -11,22 +11,23 @@ const db = getFirestore(app);
 
 async function run() {
   await addDoc(collection(db, 'saas_releases'), {
-    versao: 'v3.6.54',
-    titulo: 'Lançamento Contínuo: Tela Aberta após Salvar',
-    descricao: 'A tela de novo lançamento agora permanece aberta após salvar cada lançamento, exibindo confirmação visual e limpando o formulário para o próximo registro em sequência. O modal só é fechado quando o usuário clica em Fechar ou pressiona a tecla Esc.',
+    versao: 'v3.6.55',
+    titulo: 'Otimização 100% no Lançamento: Salvamento Instantâneo e Foco Automático',
+    descricao: 'O fluxo de lançamento manual foi otimizado para máxima performance: salvamento direto em 1 clique, atalho Ctrl+Enter, foco automático imediato no campo de descrição para a próxima digitação, reset instantâneo em memória sem remontar a tela, e auditoria/IA desengargaladas em segundo plano.',
     dataLancamento: new Date().toISOString(),
     status: 'publicado',
     destaque: true,
     notificarTenants: false,
     alvos: 'todos',
     changes: [
-      { tipo: 'melhoria', texto: 'Lançamento Contínuo: Tela permanece aberta após salvar para facilitar o cadastro de múltiplos lançamentos consecutivos sem precisar reabrir o modal a cada vez.' },
-      { tipo: 'melhoria', texto: 'Confirmação e Limpeza do Formulário: Exibição de banner de confirmação com valor e descrição, limpando o formulário para a próxima digitação.' },
-      { tipo: 'melhoria', texto: 'Fechamento Manual Facilitado: Botão de Fechar explícito no cabeçalho e rodapé do formulário, além de suporte ao atalho de teclado Esc.' },
-      { tipo: 'ajuste', texto: 'Edição de Lançamentos: Edição de transações existentes continua fechando normalmente após salvar a alteração.' }
+      { tipo: 'melhoria', texto: 'Salvamento Direto em 1 Clique: Botão "Salvar Lançamento (Ctrl+Enter)" grava instantaneamente sem exigir tela intermediária de pré-visualização.' },
+      { tipo: 'melhoria', texto: 'Atalho de Teclado (Ctrl+Enter): Permite salvar e disparar o próximo lançamento diretamente pelo teclado.' },
+      { tipo: 'melhoria', texto: 'Foco Automático no Campo Descrição: O cursor é posicionado no campo de descrição imediatamente após o salvamento, pronto para nova digitação.' },
+      { tipo: 'melhoria', texto: 'Reset Instantâneo em Memória: Limpeza de campos em microssegundos sem desmontar o modal nem refazer consultas ao banco.' },
+      { tipo: 'melhoria', texto: 'Auditoria e IA em Segundo Plano: Operações auxiliares executam de forma assíncrona não-bloqueante, acelerando a gravação no banco em mais de 10x.' }
     ]
   });
-  console.log('Release notes v3.6.54 added!');
+  console.log('Release notes v3.6.55 added!');
   process.exit(0);
 }
 

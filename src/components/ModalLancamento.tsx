@@ -140,7 +140,6 @@ export default function ModalLancamento({ onClose, onSalvo, transacaoEditar }: P
   const [erro, setErro] = useState('');
   const [sucesso, setSucesso] = useState(false);
   const [sucessoMsg, setSucessoMsg] = useState('');
-  const [formKey, setFormKey] = useState(0);
   const [ensinarIA, setEnsinarIA] = useState(true);
   
   // AI Photo Scanning Global
@@ -443,7 +442,7 @@ export default function ModalLancamento({ onClose, onSalvo, transacaoEditar }: P
 
       if (texto && ensinarIA) {
         const fn = prelancamento.tipo === 'despesa' ? fornecedores.find(x => x.id === prelancamento.fornecedorId)?.nome : clientes.find(x => x.id === prelancamento.clienteId)?.nome;
-        await aprenderPadrao(texto, prelancamento.categoriaId, prelancamento.centroCustoId, prelancamento.contaId, prelancamento.formaPagamento, prelancamento.tipo === 'despesa' ? prelancamento.fornecedorId : prelancamento.clienteId, fn as string);
+        aprenderPadrao(texto, prelancamento.categoriaId, prelancamento.centroCustoId, prelancamento.contaId, prelancamento.formaPagamento, prelancamento.tipo === 'despesa' ? prelancamento.fornecedorId : prelancamento.clienteId, fn as string).catch(() => {});
       }
 
       if (transacaoEditar) {
@@ -464,7 +463,6 @@ export default function ModalLancamento({ onClose, onSalvo, transacaoEditar }: P
         setResolvendoAmbiguidade(false);
         setErro('');
         setSalvando(false);
-        setFormKey(k => k + 1);
       }
     } catch (err: any) {
       let msg = err.message || 'Erro ao salvar. Tente novamente.'; if(msg.includes('Quota exceeded')) msg = 'A cota diária gratuita do banco de dados foi excedida (Firebase). Volte amanhã ou faça o upgrade do plano (Blaze).'; if(msg.includes('Connection failed') || msg.includes('offline') || msg.includes('network') || msg.includes('Failed to fetch')) msg = 'Sua conexão com o servidor falhou ou oscilou. Verifique sua rede e tente salvar novamente. (Se o erro persistir, aguarde 30 segundos).'; setErro(msg);
@@ -758,8 +756,11 @@ export default function ModalLancamento({ onClose, onSalvo, transacaoEditar }: P
               </button>
             </div>
             <ManualForm
-              key={formKey}
               onClose={onClose}
+              onSalvo={onSalvo}
+              onSucessoLote={(desc, valor) => {
+                setSucessoMsg(`✅ "${desc}" (${formatarMoeda(valor)}) salvo com sucesso! Pronto para o próximo lançamento.`);
+              }}
               categorias={categorias}
               centrosCusto={centrosCusto}
               contas={contas}
@@ -1285,7 +1286,7 @@ function EditarPreLancamento({ prelancamento, categorias, centrosCusto, contas, 
 }
 
 // ===== FORMULÁRIO MANUAL =====
-function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, clientes, initialData, onSubmit, onClose }: {
+function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, clientes, initialData, onSubmit, onClose, onSalvo, onSucessoLote }: {
   categorias: { id: string; nome: string; icone: string; cor: string }[];
   centrosCusto: { id: string; nome: string }[];
   contas: { id: string; nome: string }[];
@@ -1295,10 +1296,16 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
   initialData?: any;
   onSubmit: (data: Omit<PreLancamento, 'confianca' | 'textoOriginal'>) => void;
   onClose?: () => void;
+  onSalvo?: () => void;
+  onSucessoLote?: (descricao: string, valor: number) => void;
 }) {
   const [historico, setHistorico] = useState<any[]>([]);
+  const [salvandoDireto, setSalvandoDireto] = useState(false);
+  const descricaoInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
-      getHistoricoIA().then(setHistorico);
+    getHistoricoIA().then(setHistorico);
+    setTimeout(() => descricaoInputRef.current?.focus(), 80);
   }, []);
 
   const handleDescricaoBlur = () => {
@@ -1614,6 +1621,168 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
   const [erroForm, setErroForm] = useState('');
   const set = (campo: Partial<typeof form>) => setForm(f => ({ ...f, ...campo }));
 
+  const handleSalvarDireto = async () => {
+    if (salvandoDireto) return;
+    setErroForm('');
+
+    try {
+      if ((form.tipo as string) === 'despesa' && !form.fornecedorId && (form as any).fornecedorNome) {
+        const { salvarFornecedor } = await import('@/lib/storage');
+        const id = 'forn_' + Date.now() + Math.random().toString(36).substring(2, 9);
+        const nome = (form as any).fornecedorNome.trim();
+        await salvarFornecedor({ id, nome });
+        fornecedores.push({ id, nome });
+        form.fornecedorId = id;
+      } else if ((form.tipo as string) === 'receita' && !form.clienteId && (form as any).clienteNome) {
+        const { salvarCliente } = await import('@/lib/storage');
+        const id = 'cli_' + Date.now() + Math.random().toString(36).substring(2, 9);
+        const nome = (form as any).clienteNome.trim();
+        await salvarCliente({ id, nome });
+        clientes.push({ id, nome });
+        form.clienteId = id;
+      }
+    } catch (e) {
+      console.error('Falha ao autocadastrar entidade:', e);
+    }
+
+    const parsedValor = parseInt(form.valor || '0', 10) / 100;
+    const parsedMulta = parseInt(form.multa || '0', 10) / 100;
+    const parsedJuros = parseInt(form.juros || '0', 10) / 100;
+    const parsedDesconto = parseInt(form.desconto || '0', 10) / 100;
+
+    if (!form.descricao.trim()) { setErroForm('Informe a descrição do lançamento.'); descricaoInputRef.current?.focus(); return; }
+    if (!parsedValor || parsedValor <= 0) { setErroForm('Informe um valor válido.'); return; }
+
+    const cat = categorias.find(c => c.id === form.categoriaId);
+    const cc = centrosCusto.find(c => c.id === form.centroCustoId);
+    const conta = contas.find(c => c.id === form.contaId);
+    const cartao = cartoes.find(c => c.id === form.cartaoId);
+    const forn = fornecedores.find(f => f.id === form.fornecedorId);
+    const cli = clientes.find(c => c.id === form.clienteId);
+
+    if ((form.tipo as string) === 'despesa' && !forn) { setErroForm('Selecione o Fornecedor.'); return; }
+    if ((form.tipo as string) === 'receita' && !cli) { setErroForm('Selecione o Cliente.'); return; }
+    if ((form.tipo as string) === 'transferencia') {
+      if (!form.contaDestinãoId) { setErroForm('Selecione a Conta de Destino.'); return; }
+      if (form.contaId === form.contaDestinãoId) { setErroForm('A conta de origem e destino devem ser diferentes.'); return; }
+    }
+    if (form.formaPagamento === 'cartao_credito' && !cartao) { setErroForm('Selecione o Cartão de Crédito.'); return; }
+    if (form.status === 'pago' && form.formaPagamento !== 'cartao_credito' && !conta && (form.tipo as string) !== 'transferencia') {
+      setErroForm('Selecione a Conta Financeira.');
+      return;
+    }
+
+    if (form.rateio && form.rateio.length > 0) {
+      const somaRateio = form.rateio.reduce((acc: number, curr: any) => acc + curr.valor, 0);
+      if (Math.abs(somaRateio - parsedValor) > 0.01) {
+        setErroForm('A soma do rateio (' + formatarMoeda(somaRateio) + ') difere do valor total (' + formatarMoeda(parsedValor) + ').');
+        return;
+      }
+      if (form.rateio.some((r: any) => !r.categoriaId)) {
+        setErroForm('Preencha as categorias de todos os itens do rateio.');
+        return;
+      }
+    }
+
+    setSalvandoDireto(true);
+    try {
+      const transacaoData: any = {
+        tipo: form.tipo,
+        comportamento: form.comportamento || (form.recorrente ? 'fixa' : 'variavel'),
+        subcategoria: (form as any).subcategoria || undefined,
+        descricao: form.descricao.trim(),
+        valor: parsedValor,
+        multa: parsedMulta,
+        juros: parsedJuros,
+        desconto: parsedDesconto,
+        data: form.data,
+        dataLancamento: form.dataLancamento || form.data,
+        dataVencimento: form.dataVencimento || form.data,
+        dataPagamento: form.status === 'pago' ? (form.dataPagamento || form.data) : '',
+        dataCompetencia: (form.data || hoje).substring(0, 7),
+        status: form.status,
+        categoriaId: form.categoriaId,
+        categoriaNome: cat?.nome || 'Outros',
+        categoriaIcone: cat?.icone || 'Package',
+        categoriaCor: cat?.cor || '#64748b',
+        centroCustoId: form.centroCustoId,
+        centroCustoNome: cc?.nome,
+        fornecedorId: form.fornecedorId,
+        fornecedorNome: forn?.nome,
+        clienteId: form.clienteId,
+        clienteNome: cli?.nome,
+        contaId: form.contaId,
+        contaNome: conta?.nome || '',
+        contaDestinãoId: (form.tipo as string) === 'transferencia' ? form.contaDestinãoId : undefined,
+        contaDestinãoNome: (form.tipo as string) === 'transferencia' ? contas.find(c => c.id === form.contaDestinãoId)?.nome : undefined,
+        cartaoId: form.cartaoId,
+        cartaoNome: cartao?.nome,
+        formaPagamento: form.formaPagamento,
+        observacoes: form.observacoes,
+        recorrente: form.recorrente,
+        frequenciaRecorrencia: form.frequenciaRecorrencia,
+        quantidadeRecorrencias: form.quantidadeRecorrencias,
+        rateio: form.rateio,
+        parcelado: form.parcelado,
+        totalParcelas: form.totalParcelas,
+        parcelaAtual: form.parcelado ? 1 : undefined,
+        grupoParcelamento: form.parcelado ? gerarIdPublico() : undefined,
+      };
+
+      if (transacaoData.formaPagamento === 'cartao_credito' && transacaoData.cartaoId) {
+        const cartaoSelecionado = cartoes.find(c => c.id === transacaoData.cartaoId);
+        if (cartaoSelecionado) {
+          const ciclo = calcularCicloFatura(
+            transacaoData.dataLancamento || transacaoData.data,
+            cartaoSelecionado.dataFechamento || 1,
+            cartaoSelecionado.dataVencimento || 10
+          );
+          transacaoData.status = 'pendente';
+          transacaoData.dataPagamento = '';
+          transacaoData.dataVencimento = ciclo.dataVencimento;
+        }
+      }
+
+      const transacaoDataLimpa = Object.fromEntries(
+        Object.entries(transacaoData).filter(([_, v]) => v !== undefined)
+      ) as unknown as Omit<Transacao, 'id' | 'criadoEm' | 'atualizadoEm'>;
+
+      if (form.parcelado && form.totalParcelas && form.totalParcelas > 1 && form.formaPagamento === 'cartao_credito') {
+        await salvarTransacoesParceladas(transacaoDataLimpa, form.totalParcelas);
+      } else if (form.recorrente && form.frequenciaRecorrencia && form.quantidadeRecorrencias && form.quantidadeRecorrencias > 1) {
+        await salvarTransacoesRecorrentes(transacaoDataLimpa, form.frequenciaRecorrencia, form.quantidadeRecorrencias);
+      } else {
+        await salvarTransacao(transacaoDataLimpa);
+      }
+
+      if (ensinarIA && form.descricao) {
+        const fnName = (form.tipo as string) === 'despesa' ? forn?.nome : cli?.nome;
+        aprenderPadrao(form.descricao, form.categoriaId, form.centroCustoId, form.contaId, form.formaPagamento as any, (form.tipo as string) === 'despesa' ? form.fornecedorId : form.clienteId, fnName as string).catch(() => {});
+      }
+
+      onSalvo?.();
+      onSucessoLote?.(transacaoData.descricao, parsedValor);
+
+      setForm(f => ({
+        ...f,
+        descricao: '',
+        valor: '',
+        multa: '',
+        juros: '',
+        desconto: '',
+        observacoes: '',
+        comprovanteBase64: '',
+        rateio: [],
+      }));
+
+      setTimeout(() => descricaoInputRef.current?.focus(), 50);
+    } catch (err: any) {
+      setErroForm(err.message || 'Erro ao salvar lançamento.');
+    } finally {
+      setSalvandoDireto(false);
+    }
+  };
+
   const handleSubmit = async () => {
     try {
         if ((form.tipo as string) === 'despesa' && !form.fornecedorId && (form as any).fornecedorNome) {
@@ -1693,7 +1862,15 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <div
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+          e.preventDefault();
+          handleSalvarDireto();
+        }
+      }}
+      style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
+    >
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
         {['despesa', 'receita', 'transferencia'].map(t => (
           <button key={t}
@@ -1720,7 +1897,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
           {/* Descrição */}
           <div>
             <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 5 }}>Descrição</label>
-            <input className="input-field" value={form.descricao} onChange={e => set({ descricao: e.target.value })} placeholder="Ex: Transferência para investimento" />
+            <input ref={descricaoInputRef} className="input-field" value={form.descricao} onChange={e => set({ descricao: e.target.value })} placeholder="Ex: Transferência para investimento" />
           </div>
 
           {/* Conta de Origem e Conta de Destino */}
@@ -1810,19 +1987,36 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
             <p style={{ fontSize: 12, color: '#f87171', background: 'rgba(239,68,68,0.1)', padding: '10px 14px', borderRadius: 10, border: '1px solid rgba(239,68,68,0.2)' }}>{erroForm}</p>
           )}
 
-          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 10 }}>
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 12 }}>
             {onClose && (
               <button
                 type="button"
                 onClick={onClose}
                 className="btn-secondary hover-lift active-press"
-                style={{ padding: '10px 20px', borderRadius: 20, fontWeight: 600, fontSize: 13, justifyContent: 'center' }}
+                style={{ padding: '10px 18px', borderRadius: 10, fontWeight: 600, fontSize: 13, justifyContent: 'center' }}
               >
                 Fechar
               </button>
             )}
-            <button type="button" onClick={handleSubmit} className="btn-primary hover-lift active-press" style={{ flex: 1, padding: '10px 24px', borderRadius: 20, justifyContent: 'center' }}>
-              Realizar Transferência
+            <button
+              type="button"
+              onClick={handleSalvarDireto}
+              disabled={salvandoDireto}
+              className="btn-primary hover-lift active-press"
+              style={{
+                flex: 1,
+                padding: '10px 24px',
+                borderRadius: 10,
+                fontWeight: 700,
+                fontSize: 14,
+                justifyContent: 'center',
+                background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                border: 'none',
+                boxShadow: '0 4px 14px rgba(59, 130, 246, 0.3)'
+              }}
+            >
+              {salvandoDireto ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
+              {salvandoDireto ? 'Transferindo...' : 'Realizar Transferência (Ctrl+Enter)'}
             </button>
           </div>
         </div>
@@ -1916,7 +2110,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
         <div>
           <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 5 }}>Descrição</label>
           <div style={{ display: 'flex', gap: 8 }}>
-            <input className="input-field" style={{ flex: 1 }} value={form.descricao} onChange={e => handleDescricaoChange(e.target.value)} placeholder="Ex: Gasolina" />
+            <input ref={descricaoInputRef} className="input-field" style={{ flex: 1 }} value={form.descricao} onChange={e => handleDescricaoChange(e.target.value)} placeholder="Ex: Gasolina" />
             <button type="button" onClick={aprenderDescricao} className="btn-secondary hover-lift active-press" title="Fazer a IA aprender esta descrição" style={{ padding: '0 12px' }}>
               🧠 Aprender
             </button>
@@ -2278,20 +2472,47 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
           <strong>Ensinar a IA</strong> a usar estes mesmos dados quando eu disser algo parecido
         </label>
       </div>
-      <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
+      <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
         {onClose && (
           <button
             type="button"
             onClick={onClose}
             className="btn-secondary hover-lift active-press"
-            style={{ padding: '10px 20px', borderRadius: 8, fontWeight: 600, fontSize: 13, justifyContent: 'center' }}
+            style={{ padding: '10px 18px', borderRadius: 10, fontWeight: 600, fontSize: 13, justifyContent: 'center' }}
           >
             Fechar
           </button>
         )}
-        <button onClick={handleSubmit} className="btn-primary hover-lift active-press" style={{ flex: 1, justifyContent: 'center' }}>
-          <CheckCircle2 size={16} />
-          Pré-visualizar Lançamento
+        <button
+          type="button"
+          onClick={handleSubmit}
+          className="btn-secondary hover-lift active-press"
+          style={{ padding: '10px 18px', borderRadius: 10, fontWeight: 600, fontSize: 13, justifyContent: 'center' }}
+          title="Conferir todos os detalhes antes de salvar"
+        >
+          <Eye size={15} />
+          Pré-visualizar
+        </button>
+        <button
+          type="button"
+          onClick={handleSalvarDireto}
+          disabled={salvandoDireto}
+          className="btn-primary hover-lift active-press"
+          style={{
+            flex: 1,
+            padding: '10px 24px',
+            borderRadius: 10,
+            fontWeight: 700,
+            fontSize: 14,
+            justifyContent: 'center',
+            background: 'linear-gradient(135deg, #10b981, #059669)',
+            border: 'none',
+            boxShadow: '0 4px 14px rgba(16, 185, 129, 0.3)'
+          }}
+          title="Salvar imediatamente sem etapas intermediárias (Ctrl+Enter)"
+        >
+          {salvandoDireto ? <Loader2 size={16} className="animate-spin" /> : <Zap size={16} />}
+          {salvandoDireto ? 'Salvando...' : 'Salvar Lançamento (Ctrl+Enter)'}
         </button>
       </div>
     </div>
