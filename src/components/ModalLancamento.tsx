@@ -139,6 +139,8 @@ export default function ModalLancamento({ onClose, onSalvo, transacaoEditar }: P
   const [feedbackVoz, setFeedbackVoz] = useState('');
   const [erro, setErro] = useState('');
   const [sucesso, setSucesso] = useState(false);
+  const [sucessoMsg, setSucessoMsg] = useState('');
+  const [formKey, setFormKey] = useState(0);
   const [ensinarIA, setEnsinarIA] = useState(true);
   
   // AI Photo Scanning Global
@@ -198,6 +200,23 @@ export default function ModalLancamento({ onClose, onSalvo, transacaoEditar }: P
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const recognitionRef = useRef<any | null>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
+  useEffect(() => {
+    if (sucessoMsg) {
+      const timer = setTimeout(() => setSucessoMsg(''), 8000);
+      return () => clearTimeout(timer);
+    }
+  }, [sucessoMsg]);
 
   useEffect(() => {
     (async () => {
@@ -427,8 +446,26 @@ export default function ModalLancamento({ onClose, onSalvo, transacaoEditar }: P
         await aprenderPadrao(texto, prelancamento.categoriaId, prelancamento.centroCustoId, prelancamento.contaId, prelancamento.formaPagamento, prelancamento.tipo === 'despesa' ? prelancamento.fornecedorId : prelancamento.clienteId, fn as string);
       }
 
-      setSucesso(true);
-      setTimeout(() => onSalvo(), 900);
+      if (transacaoEditar) {
+        setSucesso(true);
+        setTimeout(() => {
+          onSalvo();
+          onClose();
+        }, 800);
+      } else {
+        onSalvo();
+        const descSalva = prelancamento.descricao || 'Lançamento';
+        const valSalvo = prelancamento.valor || 0;
+        setSucessoMsg(`✅ "${descSalva}" (${formatarMoeda(valSalvo)}) salvo com sucesso! A tela continua aberta para o próximo lançamento.`);
+        setPrelancamento(null);
+        setEditando(false);
+        setTexto('');
+        setScanData(null);
+        setResolvendoAmbiguidade(false);
+        setErro('');
+        setSalvando(false);
+        setFormKey(k => k + 1);
+      }
     } catch (err: any) {
       let msg = err.message || 'Erro ao salvar. Tente novamente.'; if(msg.includes('Quota exceeded')) msg = 'A cota diária gratuita do banco de dados foi excedida (Firebase). Volte amanhã ou faça o upgrade do plano (Blaze).'; if(msg.includes('Connection failed') || msg.includes('offline') || msg.includes('network') || msg.includes('Failed to fetch')) msg = 'Sua conexão com o servidor falhou ou oscilou. Verifique sua rede e tente salvar novamente. (Se o erro persistir, aguarde 30 segundos).'; setErro(msg);
       setSalvando(false);
@@ -440,7 +477,7 @@ export default function ModalLancamento({ onClose, onSalvo, transacaoEditar }: P
   
   
     
-  if (sucesso) {
+  if (sucesso && transacaoEditar) {
     return (
       <div className="modal-overlay">
         <div className="modal-box" style={{ textAlign: 'center', padding: 40 }}>
@@ -475,10 +512,41 @@ export default function ModalLancamento({ onClose, onSalvo, transacaoEditar }: P
               </p>
             </div>
           </div>
-          <button onClick={onClose} style={{ background: 'var(--border)', border: '1px solid var(--border-hover)', borderRadius: 8, padding: '6px 8px', cursor: 'pointer', color: 'var(--text-secondary)' }}>
-            <X size={18} />
+          <button type="button" onClick={onClose} className="hover-lift active-press" style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--border)', border: '1px solid var(--border-hover)', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', color: 'var(--text-secondary)', fontWeight: 600, fontSize: 13, transition: 'all 0.2s' }} title="Fechar janela (Esc)">
+            <span>Fechar</span>
+            <X size={16} />
           </button>
         </div>
+
+        {sucessoMsg && (
+          <div className="fade-in" style={{
+            background: 'rgba(16, 185, 129, 0.12)',
+            border: '1px solid rgba(16, 185, 129, 0.35)',
+            borderRadius: 12,
+            padding: '12px 16px',
+            marginBottom: 16,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            color: '#10b981',
+            fontWeight: 600,
+            fontSize: 13,
+            boxShadow: '0 4px 12px rgba(16, 185, 129, 0.08)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <CheckCircle2 size={18} color="#10b981" style={{ flexShrink: 0 }} />
+              <span>{sucessoMsg}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSucessoMsg('')}
+              style={{ background: 'transparent', border: 'none', color: '#10b981', cursor: 'pointer', padding: 4 }}
+              title="Dispensar aviso"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        )}
 
         {erro && (
           <div style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.4)', borderRadius: 12, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10, color: '#ef4444', fontWeight: 600, fontSize: 13 }}>
@@ -690,6 +758,8 @@ export default function ModalLancamento({ onClose, onSalvo, transacaoEditar }: P
               </button>
             </div>
             <ManualForm
+              key={formKey}
+              onClose={onClose}
               categorias={categorias}
               centrosCusto={centrosCusto}
               contas={contas}
@@ -1215,7 +1285,7 @@ function EditarPreLancamento({ prelancamento, categorias, centrosCusto, contas, 
 }
 
 // ===== FORMULÁRIO MANUAL =====
-function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, clientes, initialData, onSubmit }: {
+function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, clientes, initialData, onSubmit, onClose }: {
   categorias: { id: string; nome: string; icone: string; cor: string }[];
   centrosCusto: { id: string; nome: string }[];
   contas: { id: string; nome: string }[];
@@ -1224,6 +1294,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
   clientes: { id: string; nome: string }[];
   initialData?: any;
   onSubmit: (data: Omit<PreLancamento, 'confianca' | 'textoOriginal'>) => void;
+  onClose?: () => void;
 }) {
   const [historico, setHistorico] = useState<any[]>([]);
   useEffect(() => {
@@ -1740,7 +1811,17 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
           )}
 
           <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 10 }}>
-            <button type="button" onClick={handleSubmit} className="btn-primary hover-lift active-press" style={{ padding: '10px 24px', borderRadius: 20, width: '100%', justifyContent: 'center' }}>
+            {onClose && (
+              <button
+                type="button"
+                onClick={onClose}
+                className="btn-secondary hover-lift active-press"
+                style={{ padding: '10px 20px', borderRadius: 20, fontWeight: 600, fontSize: 13, justifyContent: 'center' }}
+              >
+                Fechar
+              </button>
+            )}
+            <button type="button" onClick={handleSubmit} className="btn-primary hover-lift active-press" style={{ flex: 1, padding: '10px 24px', borderRadius: 20, justifyContent: 'center' }}>
               Realizar Transferência
             </button>
           </div>
@@ -2197,11 +2278,22 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
           <strong>Ensinar a IA</strong> a usar estes mesmos dados quando eu disser algo parecido
         </label>
       </div>
-      <button onClick={handleSubmit} className="btn-primary hover-lift active-press" style={{ width: '100%', justifyContent: 'center' }}>
-
-        <CheckCircle2 size={16} />
-        Pré-visualizar Lançamento
-      </button>
+      <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="btn-secondary hover-lift active-press"
+            style={{ padding: '10px 20px', borderRadius: 8, fontWeight: 600, fontSize: 13, justifyContent: 'center' }}
+          >
+            Fechar
+          </button>
+        )}
+        <button onClick={handleSubmit} className="btn-primary hover-lift active-press" style={{ flex: 1, justifyContent: 'center' }}>
+          <CheckCircle2 size={16} />
+          Pré-visualizar Lançamento
+        </button>
+      </div>
     </div>
       )}
     </div>

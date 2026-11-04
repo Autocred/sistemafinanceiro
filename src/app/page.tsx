@@ -1573,7 +1573,7 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
       {modalAberto && (
         <ModalLancamento
           onClose={() => { setModalAberto(false); setTransacaoEditar(null); }}
-          onSalvo={() => { setModalAberto(false); setTransacaoEditar(null); setRefreshKey(k => k + 1); }}
+          onSalvo={() => { setRefreshKey(k => k + 1); }}
           transacaoEditar={transacaoEditar}
         />
       )}

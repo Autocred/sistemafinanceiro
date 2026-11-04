@@ -11,22 +11,22 @@ const db = getFirestore(app);
 
 async function run() {
   await addDoc(collection(db, 'saas_releases'), {
-    versao: 'v3.6.53',
-    titulo: 'Gráficos baseados exclusivamente na data de pagamento',
-    descricao: 'Todos os gráficos do Dashboard (Fluxo de Caixa, Despesas por Categoria e Meios de Pagamento) agora utilizam estritamente a data de pagamento efetiva para filtrar e exibir dados, evitando que lançamentos pendentes ou com data de competência diferente apareçam nos períodos incorretos.',
+    versao: 'v3.6.54',
+    titulo: 'Lançamento Contínuo: Tela Aberta após Salvar',
+    descricao: 'A tela de novo lançamento agora permanece aberta após salvar cada lançamento, exibindo confirmação visual e limpando o formulário para o próximo registro em sequência. O modal só é fechado quando o usuário clica em Fechar ou pressiona a tecla Esc.',
     dataLancamento: new Date().toISOString(),
     status: 'publicado',
     destaque: true,
     notificarTenants: false,
     alvos: 'todos',
     changes: [
-      { tipo: 'correcao', texto: 'Despesas por Categoria: Agora exibe somente despesas com status "pago" e cuja data de pagamento pertença ao mês selecionado.' },
-      { tipo: 'correcao', texto: 'Fluxo de Caixa Diário: Filtragem rigorosa pela data de pagamento real, nunca pela data de competência ou vencimento.' },
-      { tipo: 'correcao', texto: 'Meios de Pagamento: Igualmente corrigido para usar apenas transações efetivamente pagas no mês.' },
-      { tipo: 'correcao', texto: 'Despesas por Categoria (componente auxiliar): Filtro ajustado para exibir apenas despesas pagas no mês atual.' }
+      { tipo: 'melhoria', texto: 'Lançamento Contínuo: Tela permanece aberta após salvar para facilitar o cadastro de múltiplos lançamentos consecutivos sem precisar reabrir o modal a cada vez.' },
+      { tipo: 'melhoria', texto: 'Confirmação e Limpeza do Formulário: Exibição de banner de confirmação com valor e descrição, limpando o formulário para a próxima digitação.' },
+      { tipo: 'melhoria', texto: 'Fechamento Manual Facilitado: Botão de Fechar explícito no cabeçalho e rodapé do formulário, além de suporte ao atalho de teclado Esc.' },
+      { tipo: 'ajuste', texto: 'Edição de Lançamentos: Edição de transações existentes continua fechando normalmente após salvar a alteração.' }
     ]
   });
-  console.log('Release notes v3.6.53 added!');
+  console.log('Release notes v3.6.54 added!');
   process.exit(0);
 }
 
