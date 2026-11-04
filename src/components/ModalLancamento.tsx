@@ -140,6 +140,7 @@ export default function ModalLancamento({ onClose, onSalvo, transacaoEditar }: P
   const [erro, setErro] = useState('');
   const [sucesso, setSucesso] = useState(false);
   const [sucessoMsg, setSucessoMsg] = useState('');
+  const [resetCount, setResetCount] = useState(0);
   const [ensinarIA, setEnsinarIA] = useState(true);
   
   // AI Photo Scanning Global
@@ -463,6 +464,7 @@ export default function ModalLancamento({ onClose, onSalvo, transacaoEditar }: P
         setResolvendoAmbiguidade(false);
         setErro('');
         setSalvando(false);
+        setResetCount(k => k + 1);
       }
     } catch (err: any) {
       let msg = err.message || 'Erro ao salvar. Tente novamente.'; if(msg.includes('Quota exceeded')) msg = 'A cota diária gratuita do banco de dados foi excedida (Firebase). Volte amanhã ou faça o upgrade do plano (Blaze).'; if(msg.includes('Connection failed') || msg.includes('offline') || msg.includes('network') || msg.includes('Failed to fetch')) msg = 'Sua conexão com o servidor falhou ou oscilou. Verifique sua rede e tente salvar novamente. (Se o erro persistir, aguarde 30 segundos).'; setErro(msg);
@@ -756,6 +758,7 @@ export default function ModalLancamento({ onClose, onSalvo, transacaoEditar }: P
               </button>
             </div>
             <ManualForm
+              resetKey={resetCount}
               onClose={onClose}
               onSalvo={onSalvo}
               onSucessoLote={(desc, valor) => {
@@ -1286,7 +1289,7 @@ function EditarPreLancamento({ prelancamento, categorias, centrosCusto, contas, 
 }
 
 // ===== FORMULÁRIO MANUAL =====
-function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, clientes, initialData, onSubmit, onClose, onSalvo, onSucessoLote }: {
+function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, clientes, initialData, onSubmit, onClose, onSalvo, onSucessoLote, resetKey }: {
   categorias: { id: string; nome: string; icone: string; cor: string }[];
   centrosCusto: { id: string; nome: string }[];
   contas: { id: string; nome: string }[];
@@ -1298,6 +1301,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
   onClose?: () => void;
   onSalvo?: () => void;
   onSucessoLote?: (descricao: string, valor: number) => void;
+  resetKey?: number;
 }) {
   const [historico, setHistorico] = useState<any[]>([]);
   const [salvandoDireto, setSalvandoDireto] = useState(false);
@@ -1328,20 +1332,22 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
   const [ensinarIA, setEnsinarIA] = useState(true);
 
   const hoje = format(new Date(), 'yyyy-MM-dd');
-  const [form, setForm] = useState({
+
+  const getCleanForm = () => ({
     tipo: (initialData?.tipo || 'despesa') as 'despesa' | 'receita' | 'transferencia',
-    taxa: (initialData as any)?.taxa || '',
-    tipoTransferencia: (initialData as any)?.tipoTransferencia || 'Interna',
-    descricao: initialData?.descricao || '',
-          fornecedorNome: initialData?.fornecedorNome || '',
-          valor: initialData?.valor || '',
-    multa: initialData?.multa || '',
-    juros: initialData?.juros || '',
-    desconto: initialData?.desconto || '',
-    data: initialData?.data || hoje,
-    dataLancamento: initialData?.data || hoje,
-    dataVencimento: initialData?.data || hoje,
-    dataPagamento: initialData?.data || hoje,
+    taxa: '',
+    tipoTransferencia: 'Interna',
+    descricao: '',
+    fornecedorNome: '',
+    clienteNome: '',
+    valor: '',
+    multa: '',
+    juros: '',
+    desconto: '',
+    data: hoje,
+    dataLancamento: hoje,
+    dataVencimento: hoje,
+    dataPagamento: hoje,
     status: 'pago' as 'pago' | 'pendente' | 'agendado',
     categoriaId: '',
     centroCustoId: '',
@@ -1351,17 +1357,29 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
     contaDestinãoId: '',
     cartaoId: '',
     formaPagamento: 'pix' as 'pix' | 'dinheiro' | 'cartao_credito' | 'cartao_debito' | 'transferencia' | 'boleto',
-    observacoes: initialData?.observacoes || '',
-      comportamento: initialData?.comportamento || (initialData?.recorrente ? 'fixa' : (initialData ? 'variavel' : '')),
+    observacoes: '',
+    comportamento: '',
     parcelado: false,
     totalParcelas: 1,
     recorrente: false,
     frequenciaRecorrencia: 'mensal' as 'semanal' | 'mensal' | 'trimestral' | 'anual',
     quantidadeRecorrencias: 2,
     conciliado: false,
-    comprovanteBase64: initialData?.comprovanteBase64 || '',
-    rateio: initialData?.rateio || [],
+    comprovanteBase64: '',
+    rateio: [],
   });
+
+  const [form, setForm] = useState(getCleanForm());
+
+  useEffect(() => {
+    if (resetKey !== undefined && resetKey > 0) {
+      setForm(getCleanForm());
+      setErroForm('');
+      setNovoCadastro(null);
+      setNovoNome('');
+      setTimeout(() => descricaoInputRef.current?.focus(), 60);
+    }
+  }, [resetKey]);
 
   useEffect(() => {
     if (initialData?.descricao) {
@@ -1763,19 +1781,13 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
       onSalvo?.();
       onSucessoLote?.(transacaoData.descricao, parsedValor);
 
-      setForm(f => ({
-        ...f,
-        descricao: '',
-        valor: '',
-        multa: '',
-        juros: '',
-        desconto: '',
-        observacoes: '',
-        comprovanteBase64: '',
-        rateio: [],
-      }));
+      // Limpa 100% de todos os campos para o novo lançamento
+      setForm(getCleanForm());
+      setErroForm('');
+      setNovoCadastro(null);
+      setNovoNome('');
 
-      setTimeout(() => descricaoInputRef.current?.focus(), 50);
+      setTimeout(() => descricaoInputRef.current?.focus(), 60);
     } catch (err: any) {
       setErroForm(err.message || 'Erro ao salvar lançamento.');
     } finally {

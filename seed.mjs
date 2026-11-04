@@ -11,23 +11,21 @@ const db = getFirestore(app);
 
 async function run() {
   await addDoc(collection(db, 'saas_releases'), {
-    versao: 'v3.6.55',
-    titulo: 'Otimização 100% no Lançamento: Salvamento Instantâneo e Foco Automático',
-    descricao: 'O fluxo de lançamento manual foi otimizado para máxima performance: salvamento direto em 1 clique, atalho Ctrl+Enter, foco automático imediato no campo de descrição para a próxima digitação, reset instantâneo em memória sem remontar a tela, e auditoria/IA desengargaladas em segundo plano.',
+    versao: 'v3.6.56',
+    titulo: 'Limpeza Total de Campos (100%) para Novos Lançamentos',
+    descricao: 'Ao salvar cada lançamento, todos os campos (Fornecedor, Cliente, Comportamento, Conta Bancária, Categoria, Centro de Custo, Meio de Pagamento, Valor, Observações e Anexos) são 100% resetados para o estado limpo inicial, posicionando o cursor na Descrição.',
     dataLancamento: new Date().toISOString(),
     status: 'publicado',
     destaque: true,
     notificarTenants: false,
     alvos: 'todos',
     changes: [
-      { tipo: 'melhoria', texto: 'Salvamento Direto em 1 Clique: Botão "Salvar Lançamento (Ctrl+Enter)" grava instantaneamente sem exigir tela intermediária de pré-visualização.' },
-      { tipo: 'melhoria', texto: 'Atalho de Teclado (Ctrl+Enter): Permite salvar e disparar o próximo lançamento diretamente pelo teclado.' },
-      { tipo: 'melhoria', texto: 'Foco Automático no Campo Descrição: O cursor é posicionado no campo de descrição imediatamente após o salvamento, pronto para nova digitação.' },
-      { tipo: 'melhoria', texto: 'Reset Instantâneo em Memória: Limpeza de campos em microssegundos sem desmontar o modal nem refazer consultas ao banco.' },
-      { tipo: 'melhoria', texto: 'Auditoria e IA em Segundo Plano: Operações auxiliares executam de forma assíncrona não-bloqueante, acelerando a gravação no banco em mais de 10x.' }
+      { tipo: 'correcao', texto: 'Limpeza 100% de Campos: Fornecedor, Comportamento, Conta, Categoria e demais campos agora são completamente desmarcados e limpos após salvar.' },
+      { tipo: 'melhoria', texto: 'Sincronização Direta e Pré-visualização: Tanto no salvamento direto em 1 clique quanto via pré-visualização, todos os campos retornam zerados e prontos para o próximo registro.' },
+      { tipo: 'melhoria', texto: 'Foco no Campo Descrição: Mantém o cursor pronto para a digitação imediata da nova despesa ou receita.' }
     ]
   });
-  console.log('Release notes v3.6.55 added!');
+  console.log('Release notes v3.6.56 added!');
   process.exit(0);
 }
 
