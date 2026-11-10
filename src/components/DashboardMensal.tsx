@@ -45,6 +45,7 @@ export default function DashboardMensal() {
   const [categoriaFiltro, setCategoriaFiltro] = useState<string>('Todas');
   const [centroCustoFiltro, setCentroCustoFiltro] = useState<string>('Todos');
   const [modoEvolucao, setModoEvolucao] = useState<'ano' | 'ultimos6'>('ano');
+  const [modoEvolucaoReceitas, setModoEvolucaoReceitas] = useState<'ano' | 'ultimos6'>('ano');
   
   // Tabela
   const [pesquisa, setPesquisa] = useState('');
@@ -953,6 +954,149 @@ export default function DashboardMensal() {
             <span>🔴 Total Despesas ({ano}): <b style={{ color: '#ef4444' }}>{formatarMoeda(evolucaoAno.reduce((acc, m) => acc + m.valor, 0))}</b></span>
             <span>🟢 Total Receitas ({ano}): <b style={{ color: '#10b981' }}>{formatarMoeda(evolucaoAno.reduce((acc, m) => acc + m.receitas, 0))}</b></span>
             <span>⭐ Mês Ativo: <b style={{ color: '#ef4444' }}>{MESES[mes]}</b></span>
+          </div>
+        </div>
+
+        {/* GRÁFICO 4: Evolução das Receitas do Ano */}
+        <div className="bi-chart-container glass-panel hover-lift fade-in-up" style={{ animationDelay: '0.95s' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 16 }}>
+            <div>
+              <h3 className="chart-title" style={{ display: 'flex', alignItems: 'center', gap: 8, margin: 0 }}>
+                <TrendingUp size={18} color="#10b981" /> Evolução das Receitas ({ano})
+              </h3>
+              <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
+                Histórico mensal de faturamento e entradas com destaque para o mês ativo ({MESES[mes]})
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <button
+                type="button"
+                onClick={() => setModoEvolucaoReceitas('ano')}
+                style={{
+                  padding: '5px 12px',
+                  borderRadius: 6,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  border: '1px solid ' + (modoEvolucaoReceitas === 'ano' ? '#10b981' : 'var(--border)'),
+                  background: modoEvolucaoReceitas === 'ano' ? '#10b981' : 'var(--bg-hover)',
+                  color: modoEvolucaoReceitas === 'ano' ? '#ffffff' : 'var(--text-secondary)',
+                  transition: 'all 0.2s'
+                }}
+              >
+                Ano Completo (12M)
+              </button>
+              <button
+                type="button"
+                onClick={() => setModoEvolucaoReceitas('ultimos6')}
+                style={{
+                  padding: '5px 12px',
+                  borderRadius: 6,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  border: '1px solid ' + (modoEvolucaoReceitas === 'ultimos6' ? '#10b981' : 'var(--border)'),
+                  background: modoEvolucaoReceitas === 'ultimos6' ? '#10b981' : 'var(--bg-hover)',
+                  color: modoEvolucaoReceitas === 'ultimos6' ? '#ffffff' : 'var(--text-secondary)',
+                  transition: 'all 0.2s'
+                }}
+              >
+                Últimos 6 Meses
+              </button>
+            </div>
+          </div>
+
+          <div style={{ height: 320, width: '100%' }}>
+            <ResponsiveContainer>
+              <BarChart
+                data={modoEvolucaoReceitas === 'ano' ? evolucaoAno : evolucaoAno.slice(Math.max(0, mes >= 5 ? mes - 5 : 0), Math.max(6, mes + 1))}
+                margin={{ top: 25, right: 20, left: 10, bottom: 5 }}
+              >
+                <defs>
+                  <linearGradient id="colorEvolucaoRec" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#10b981" stopOpacity={0.9} />
+                    <stop offset="100%" stopColor="#059669" stopOpacity={0.5} />
+                  </linearGradient>
+                  <linearGradient id="colorEvolucaoRecSelected" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#34d399" stopOpacity={1} />
+                    <stop offset="50%" stopColor="#10b981" stopOpacity={1} />
+                    <stop offset="100%" stopColor="#047857" stopOpacity={1} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" opacity={0.5} />
+                <XAxis
+                  dataKey="mes"
+                  stroke="#94a3b8"
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={{ stroke: '#cbd5e1' }}
+                  tick={{ fill: '#64748b', fontSize: 12, fontWeight: 600 }}
+                />
+                <YAxis
+                  stroke="#94a3b8"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fill: '#64748b', fontSize: 11 }}
+                  tickFormatter={(v) => v >= 1000 ? `R$ ${(v / 1000).toFixed(0)}k` : `R$ ${v}`}
+                  domain={[0, 'auto']}
+                />
+                <RechartsTooltip
+                  cursor={{ fill: 'rgba(16, 185, 129, 0.08)' }}
+                  content={({ active, payload, label }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      return (
+                        <div style={{ background: '#0f172a', color: '#ffffff', padding: '10px 14px', borderRadius: 8, boxShadow: '0 4px 14px rgba(0,0,0,0.3)', border: '1px solid #334155' }}>
+                          <p style={{ fontWeight: 800, color: '#ffffff', marginBottom: 4, fontSize: 13 }}>
+                            {data.mesCompleto || label} ({ano}) {data.isSelected ? '★ Mês Selecionado' : ''}
+                          </p>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#34d399' }}>
+                            <span>●</span> Receitas: <b style={{ color: '#ffffff' }}>{formatarMoeda(data.receitas || 0)}</b>
+                          </div>
+                          {data.valor > 0 && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#f87171', marginTop: 4 }}>
+                              <span>●</span> Despesas: <b style={{ color: '#ffffff' }}>{formatarMoeda(data.valor || 0)}</b>
+                            </div>
+                          )}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: data.saldo >= 0 ? '#6ee7b7' : '#fca5a5', marginTop: 4, borderTop: '1px solid #334155', paddingTop: 4 }}>
+                            <span>Saldo Líquido:</span> <b style={{ color: '#ffffff' }}>{formatarMoeda(data.saldo || 0)}</b>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Bar dataKey="receitas" radius={[6, 6, 0, 0]} animationDuration={1000} barSize={32}>
+                  {(modoEvolucaoReceitas === 'ano' ? evolucaoAno : evolucaoAno.slice(Math.max(0, mes >= 5 ? mes - 5 : 0), Math.max(6, mes + 1))).map((entry, index) => (
+                    <Cell
+                      key={`cell-ev-rec-${index}`}
+                      fill={entry.isSelected ? 'url(#colorEvolucaoRecSelected)' : 'url(#colorEvolucaoRec)'}
+                      stroke={entry.isSelected ? '#047857' : 'transparent'}
+                      strokeWidth={entry.isSelected ? 2 : 0}
+                      style={{ filter: entry.isSelected ? 'drop-shadow(0 4px 8px rgba(16,185,129,0.45))' : 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }}
+                    />
+                  ))}
+                  <LabelList
+                    dataKey="receitas"
+                    position="top"
+                    formatter={(v) => {
+                      const num = Number(v) || 0;
+                      return num > 0 ? formatarMoeda(num) : '';
+                    }}
+                    style={{ fill: '#059669', fontSize: 11, fontWeight: 700 }}
+                  />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Mini resumo do ano */}
+          <div style={{ marginTop: 14, display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, fontSize: 12, color: 'var(--text-secondary)', padding: '10px 0 0', borderTop: '1px solid var(--border)' }}>
+            <span>🟢 Total Receitas ({ano}): <b style={{ color: '#10b981' }}>{formatarMoeda(evolucaoAno.reduce((acc, m) => acc + m.receitas, 0))}</b></span>
+            <span>📈 Média Mensal: <b style={{ color: '#059669' }}>{formatarMoeda(evolucaoAno.reduce((acc, m) => acc + m.receitas, 0) / 12)}</b></span>
+            <span>⭐ Mês Ativo: <b style={{ color: '#10b981' }}>{MESES[mes]}</b></span>
           </div>
         </div>
 
