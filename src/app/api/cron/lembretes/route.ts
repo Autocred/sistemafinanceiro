@@ -153,6 +153,22 @@ export async function GET(request: Request) {
     console.log(`[CRON LEMBRETES] Enviando notificação para ${telefoneMaster}...`);
     const resultado = await enviarMensagemWhatsApp(telefoneMaster, texto, apiUrl, apiToken);
 
+    if (!resultado.sucesso) {
+      return NextResponse.json({
+        success: false,
+        error: resultado.erro || 'Falha ao entregar no gateway WhatsApp (Evolution API)',
+        telefone: telefoneMaster,
+        resultadoZap: resultado,
+        totais: {
+          pagarHoje: { qtd: pagarHoje.length, valor: totalPagarHoje },
+          receberHoje: { qtd: receberHoje.length, valor: totalReceberHoje },
+          pagarAtrasadas: { qtd: pagarAtrasadas.length, valor: totalPagarAtrasadas },
+          receberAtrasadas: { qtd: receberAtrasadas.length, valor: totalReceberAtrasadas },
+        },
+        mensagemPreview: texto
+      }, { status: 502 });
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Lembrete diário enviado com sucesso!',

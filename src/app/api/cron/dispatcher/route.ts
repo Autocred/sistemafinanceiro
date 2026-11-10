@@ -158,7 +158,8 @@ export async function GET(request: Request) {
       };
 
       // ─── LEMBRETE MATINAL (Contas a Pagar/Receber) ───
-      const deveEnviarLembrete = (forceAll || forceTipo === 'lembretes' || (diaPermitido && atingiuHorario(horarioLembretes))) && ultimoEnvioLembretes !== hojeSp;
+      const deveEnviarLembrete = (forceAll || forceTipo === 'lembretes') ||
+        (diaPermitido && atingiuHorario(horarioLembretes) && ultimoEnvioLembretes !== hojeSp);
       if (deveEnviarLembrete) {
         console.log(`[DISPATCHER] ✅ Disparando Lembrete para ${tenant.nome} (${numero}) | Horário config: ${horarioLembretes} | Hora atual: ${agoraSp}`);
         try {
@@ -176,7 +177,8 @@ export async function GET(request: Request) {
       }
 
       // ─── METAS - HORÁRIO 1 (Meio-Dia) ───
-      const deveEnviarMetas1 = metasAtivo && (forceAll || forceTipo === 'metas1' || (diaPermitido && atingiuHorario(horarioMetas1))) && ultimoEnvioMetas1 !== hojeSp;
+      const deveEnviarMetas1 = metasAtivo && ((forceAll || forceTipo === 'metas1') ||
+        (diaPermitido && atingiuHorario(horarioMetas1) && ultimoEnvioMetas1 !== hojeSp));
       if (deveEnviarMetas1) {
         console.log(`[DISPATCHER] ✅ Disparando Metas 1 para ${tenant.nome} (${numero}) | Horário config: ${horarioMetas1} | Hora atual: ${agoraSp}`);
         try {
@@ -194,7 +196,8 @@ export async function GET(request: Request) {
       }
 
       // ─── FECHAMENTO DIÁRIO ───
-      const deveEnviarFechamento = (forceAll || forceTipo === 'fechamento' || (diaPermitido && atingiuHorario(horarioFechamento))) && ultimoEnvioFechamento !== hojeSp;
+      const deveEnviarFechamento = (forceAll || forceTipo === 'fechamento') ||
+        (diaPermitido && atingiuHorario(horarioFechamento) && ultimoEnvioFechamento !== hojeSp);
       if (deveEnviarFechamento) {
         console.log(`[DISPATCHER] ✅ Disparando Fechamento para ${tenant.nome} (${numero}) | Horário config: ${horarioFechamento} | Hora atual: ${agoraSp}`);
         try {
@@ -212,14 +215,17 @@ export async function GET(request: Request) {
       }
 
       // ─── METAS - HORÁRIO 2 (Fechamento do Expediente) ───
-      const deveEnviarMetas2 = metasAtivo && (forceAll || forceTipo === 'metas2' || (diaPermitido && atingiuHorario(horarioMetas2))) && ultimoEnvioMetas2 !== hojeSp;
+      const deveEnviarMetas2 = metasAtivo && ((forceAll || forceTipo === 'metas2') ||
+        (diaPermitido && atingiuHorario(horarioMetas2) && ultimoEnvioMetas2 !== hojeSp));
       if (deveEnviarMetas2) {
         console.log(`[DISPATCHER] ✅ Disparando Metas 2 para ${tenant.nome} (${numero}) | Horário config: ${horarioMetas2} | Hora atual: ${agoraSp}`);
         try {
           const url = `${protocol}://${host}/api/cron/resumo-metas?tenantId=${tenant.id}&numero=${numero}&nome=${encodeURIComponent(tenant.nome)}&slot=18h`;
           const res = await fetch(url);
           const json = await res.json();
-          await salvarFlag('ultimoEnvioMetas2', hojeSp);
+          if (json && json.success !== false) {
+            await salvarFlag('ultimoEnvioMetas2', hojeSp);
+          }
           acoesDisparadas.push({ tipo: 'metas_2', tenant: tenant.id, numero, horarioConfig: horarioMetas2, sucesso: true, retorno: json });
         } catch (err: any) {
           console.error(`[DISPATCHER] ❌ Erro metas 2 ${tenant.id}:`, err);
@@ -228,8 +234,8 @@ export async function GET(request: Request) {
       }
 
       // ─── FECHAMENTO MENSAL EXECUTIVO ───
-      const deveEnviarMensal = fechamentoMensalAtivo && diaDoMesSp === diaFechamentoMensal && ultimoEnvioFechamentoMensal !== mesAtualSp &&
-        (forceAll || forceTipo === 'mensal' || atingiuHorario(horarioFechamentoMensal));
+      const deveEnviarMensal = fechamentoMensalAtivo && ((forceAll || forceTipo === 'mensal') ||
+        (diaDoMesSp === diaFechamentoMensal && ultimoEnvioFechamentoMensal !== mesAtualSp && atingiuHorario(horarioFechamentoMensal)));
       if (deveEnviarMensal) {
         console.log(`[DISPATCHER] ✅ Disparando Fechamento Mensal para ${tenant.nome} (${numero}) | Horário config: ${horarioFechamentoMensal} | Hora atual: ${agoraSp}`);
         try {
