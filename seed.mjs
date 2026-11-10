@@ -11,20 +11,19 @@ const db = getFirestore(app);
 
 async function run() {
   await addDoc(collection(db, 'saas_releases'), {
-    versao: 'v3.6.82',
-    titulo: 'Ajuste de Retorno nos Disparos e Bypass de Testes Forçados',
-    descricao: 'Atualização das rotinas de disparo: status HTTP 502 e relatório detalhado quando o gateway de WhatsApp estiver inacessível, e liberação de testes manuais forçados (?force=true / botões de teste) mesmo quando o envio diário já constar como executado.',
+    versao: 'v3.6.83',
+    titulo: 'Tratamento Amigável de Status e Diagnóstico do Servidor WhatsApp',
+    descricao: 'Aprimoramento nas mensagens de diagnóstico e teste de WhatsApp: exibição de aviso claro e intuitivo orientando a verificação do container no Railway em caso de indisponibilidade da Evolution API.',
     dataLancamento: new Date().toISOString(),
     status: 'publicado',
     destaque: true,
     notificarTenants: false,
     alvos: 'todos',
     changes: [
-      { tipo: 'correcao', texto: 'Feedback Real de Envio: As rotinas de Lembrete e Fechamento agora reportam falha caso o gateway de WhatsApp não confirme o envio, evitando falso-positivo no status.' },
-      { tipo: 'melhoria', texto: 'Bypass para Testes Manuais: Testes forçados via painel ou parâmetro ignoram a trava de envio único do dia para permitir validação em tempo real.' }
+      { tipo: 'melhoria', texto: 'Diagnóstico Amigável no Painel: Alertas de teste de WhatsApp agora traduzem erros do Railway (como 404 Application not found) em orientações claras para reativar o container.' }
     ]
   });
-  console.log('Release notes v3.6.82 added!');
+  console.log('Release notes v3.6.83 added!');
   process.exit(0);
 }
 

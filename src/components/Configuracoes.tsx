@@ -1898,8 +1898,14 @@ document.cookie = 'app_pin_code=' + encodeURIComponent(novoPin) + '; max-age=315
                       const nomeAtual = cfg.nomeSistema || cfg.nomeUsuario || (currentTenant === 'master' ? 'Clovis Master' : 'Autocred Promotora');
                       const res = await fetch(`/api/cron/fechamento-diario?tenantId=${encodeURIComponent(currentTenant)}&numero=${encodeURIComponent(cfg.whatsappNumeros || '')}&nome=${encodeURIComponent(nomeAtual)}`);
                       const json = await res.json();
+                      const formatarErroZap = (raw: string) => {
+                        if (raw.includes('Application not found') || raw.includes('404')) {
+                          return '⚠️ O servidor da Evolution API no Railway está desligado/pausado ou a URL mudou. Acesse seu painel da Railway (railway.app) para reativar o container.';
+                        }
+                        return raw;
+                      };
                       if (json.success) alert('✅ Mensagem de fechamento entregue no seu WhatsApp!');
-                      else alert('Resposta: ' + (json.message || json.error));
+                      else alert('Aviso: ' + formatarErroZap(json.message || json.error || JSON.stringify(json)));
                     } catch (err: any) {
                       alert('Erro ao disparar: ' + err.message);
                     }
@@ -1923,8 +1929,14 @@ document.cookie = 'app_pin_code=' + encodeURIComponent(novoPin) + '; max-age=315
                       const nomeAtual = cfg.nomeSistema || cfg.nomeUsuario || (currentTenant === 'master' ? 'Clovis Master' : 'Autocred Promotora');
                       const res = await fetch(`/api/cron/lembretes?tenantId=${encodeURIComponent(currentTenant)}&numero=${encodeURIComponent(cfg.whatsappNumeros || '')}&nome=${encodeURIComponent(nomeAtual)}`);
                       const json = await res.json();
+                      const formatarErroZap = (raw: string) => {
+                        if (raw.includes('Application not found') || raw.includes('404')) {
+                          return '⚠️ O servidor da Evolution API no Railway está desligado/pausado ou a URL mudou. Acesse seu painel da Railway (railway.app) para reativar o container.';
+                        }
+                        return raw;
+                      };
                       if (json.success) alert('✅ Mensagem de lembrete entregue no seu WhatsApp!');
-                      else alert('Resposta: ' + (json.message || json.error));
+                      else alert('Aviso: ' + formatarErroZap(json.message || json.error || JSON.stringify(json)));
                     } catch (err: any) {
                       alert('Erro ao disparar: ' + err.message);
                     }
@@ -1948,8 +1960,14 @@ document.cookie = 'app_pin_code=' + encodeURIComponent(novoPin) + '; max-age=315
                       const nomeAtual = cfg.nomeSistema || cfg.nomeUsuario || (currentTenant === 'master' ? 'Clovis Master' : 'Autocred Promotora');
                       const res = await fetch(`/api/cron/resumo-metas?tenantId=${encodeURIComponent(currentTenant)}&numero=${encodeURIComponent(cfg.whatsappNumeros || '')}&nome=${encodeURIComponent(nomeAtual)}&slot=12h`);
                       const json = await res.json();
+                      const formatarErroZap = (raw: string) => {
+                        if (raw.includes('Application not found') || raw.includes('404')) {
+                          return '⚠️ O servidor da Evolution API no Railway está desligado/pausado ou a URL mudou. Acesse seu painel da Railway (railway.app) para reativar o container.';
+                        }
+                        return raw;
+                      };
                       if (json.success) alert('✅ Mensagem de Metas entregue no seu WhatsApp!');
-                      else alert('Resposta: ' + (json.message || json.error));
+                      else alert('Aviso: ' + formatarErroZap(json.message || json.error || JSON.stringify(json)));
                     } catch (err: any) {
                       alert('Erro ao disparar: ' + err.message);
                     }
@@ -1973,10 +1991,16 @@ document.cookie = 'app_pin_code=' + encodeURIComponent(novoPin) + '; max-age=315
                       const nomeAtual = cfg.nomeSistema || cfg.nomeUsuario || (currentTenant === 'master' ? 'Clovis Master' : 'Autocred Promotora');
                       const res = await fetch(`/api/cron/fechamento-mensal?tenantId=${encodeURIComponent(currentTenant)}&numero=${encodeURIComponent(cfg.whatsappNumeros || '')}&nome=${encodeURIComponent(nomeAtual)}`);
                       const json = await res.json();
+                      const formatarErroZap = (raw: string) => {
+                        if (raw.includes('Application not found') || raw.includes('404')) {
+                          return '⚠️ O servidor da Evolution API no Railway está desligado/pausado ou a URL mudou. Acesse seu painel da Railway (railway.app) para reativar o container.';
+                        }
+                        return raw;
+                      };
                       if (json.success) {
                         alert('✅ Relatório Executivo e PDF de Fechamento Mensal enviados com sucesso no WhatsApp!');
                       } else {
-                        alert('Resposta: ' + (json.message || json.error));
+                        alert('Aviso: ' + formatarErroZap(json.message || json.error || JSON.stringify(json)));
                       }
                     } catch (err: any) {
                       alert('Erro ao disparar: ' + err.message);
