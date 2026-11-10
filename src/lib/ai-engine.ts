@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 // Motor de IA para interpretação de linguagem natural
 // Funciona offline com regras inteligentes e fuzzy search + OpenAI como fallback
@@ -667,7 +667,18 @@ function calcularConfianca(fatores: Record<string, boolean>): number {
 }
 
 // Salvar padrão aprendido com contexto rico
-export async function aprenderPadrao(textoOriginal: string, categoriaId: string, centroCustoId?: string, contaId?: string, formaPagamento?: FormaPagamento, fornecedorId?: string, fornecedorNome?: string) {
+export async function aprenderPadrao(
+  textoOriginal: string,
+  categoriaId: string,
+  centroCustoId?: string,
+  contaId?: string,
+  formaPagamento?: FormaPagamento,
+  fornecedorId?: string,
+  fornecedorNome?: string,
+  clienteId?: string,
+  cartaoId?: string,
+  comportamento?: 'fixa' | 'variavel'
+) {
   let palavraChave = '';
   
   if (fornecedorNome && fornecedorNome.trim().length > 2) {
@@ -682,16 +693,95 @@ export async function aprenderPadrao(textoOriginal: string, categoriaId: string,
 
   if (palavraChave.length < 2) return;
 
+  const descLimpa = textoOriginal ? textoOriginal.trim() : '';
+  const descReal = (descLimpa.length > 1 && descLimpa.toLowerCase() !== (fornecedorNome || '').toLowerCase().trim())
+    ? descLimpa
+    : undefined;
+
   await salvarHistoricoIA({
     texto: palavraChave,
+    descricao: descReal,
     categoriaId,
     centroCustoId,
     fornecedorId,
+    clienteId,
     contaId,
+    cartaoId,
     formaPagamento,
+    comportamento,
     timestamp: new Date().toISOString(),
     count: 1,
   });
+}
+
+// Buscar sugestões de preenchimento baseadas em fornecedor ou cliente (aprendizado por entidade)
+export async function buscarSugestoesPorEntidade(
+  entidadeId: string,
+  tipoEntidade: 'fornecedor' | 'cliente'
+): Promise<{
+  categoriaId?: string;
+  centroCustoId?: string;
+  contaId?: string;
+  cartaoId?: string;
+  formaPagamento?: FormaPagamento;
+  comportamento?: 'fixa' | 'variavel';
+  descricao?: string;
+} | null> {
+  try {
+    const historico = await getHistoricoIA();
+    // Filtra registros associados a esta entidade
+    const campo = tipoEntidade === 'fornecedor' ? 'fornecedorId' : 'clienteId';
+    const registros = historico
+      .filter((h: any) => h[campo] === entidadeId)
+      .sort((a: any, b: any) => (b.count || 0) - (a.count || 0));
+    
+    if (registros.length === 0) return null;
+    
+    // Pega o registro mais frequente e usa seus dados
+    const melhor = registros[0];
+
+    // Procura registro com descricao salva (que seja diferente de palavra-chave se palavra-chave for o fornecedor)
+    const comDescricao = registros.find((r: any) => r.descricao && r.descricao.trim().length > 1);
+    const descSugerida = comDescricao?.descricao || (melhor.descricao && melhor.descricao.trim().length > 1 ? melhor.descricao : undefined);
+
+    // Procura registro com comportamento explícito
+    const comComp = registros.find((r: any) => r.comportamento === 'fixa' || r.comportamento === 'variavel');
+    let compSugerido: 'fixa' | 'variavel' | undefined = (comComp?.comportamento === 'fixa' || comComp?.comportamento === 'variavel')
+      ? comComp.comportamento
+      : (melhor.comportamento === 'fixa' || melhor.comportamento === 'variavel' ? melhor.comportamento : undefined);
+
+    if (!compSugerido) {
+      const textoAnalise = `${descSugerida || ''} ${melhor.texto || ''}`.toLowerCase();
+      const isFixa = 
+        textoAnalise.includes('diferid') ||
+        textoAnalise.includes('mensal') ||
+        textoAnalise.includes('fix') ||
+        textoAnalise.includes('recorrent') ||
+        textoAnalise.includes('assinatura') ||
+        textoAnalise.includes('plano') ||
+        textoAnalise.includes('aluguel') ||
+        textoAnalise.includes('salario') ||
+        textoAnalise.includes('salário') ||
+        textoAnalise.includes('condomin') ||
+        textoAnalise.includes('internet') ||
+        textoAnalise.includes('iptu') ||
+        textoAnalise.includes('ipva') ||
+        textoAnalise.includes('seguro');
+      compSugerido = isFixa ? 'fixa' : 'variavel';
+    }
+
+    return {
+      categoriaId: melhor.categoriaId || undefined,
+      centroCustoId: melhor.centroCustoId || undefined,
+      contaId: melhor.contaId || undefined,
+      cartaoId: melhor.cartaoId || undefined,
+      formaPagamento: melhor.formaPagamento || undefined,
+      comportamento: compSugerido,
+      descricao: descSugerida,
+    };
+  } catch {
+    return null;
+  }
 }
 
 // ... as funções de Chat IA permanecem inalteradas, se quiser depois pode atualizar também.

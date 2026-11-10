@@ -2,12 +2,12 @@ import { getFormasPagamentoCustom } from '@/lib/firebase';
 'use client';
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { PreLancamento, Transacao } from '@/lib/types';
-import { interpretarTexto, aprenderPadrao, calcularDataVencimentoCartao } from '@/lib/ai-engine';
+import { PreLancamento, Transacao, Fornecedor, Cliente } from '@/lib/types';
+import { interpretarTexto, aprenderPadrao, calcularDataVencimentoCartao, buscarSugestoesPorEntidade } from '@/lib/ai-engine';
 import { extrairDadosDocumento } from '@/lib/ocr-pipeline';
 import ModalImportarDocIA from '@/components/ModalImportarDocIA';
 import { DynamicIcon } from '@/components/DynamicIcon';
-import { getTenantId, getHistoricoIA, salvarTransacao, atualizarTransacao, salvarTransacoesRecorrentes, salvarTransacoesParceladas, getCategorias, getCentrosCusto, getContas, getCartoes, getFornecedores, getClientes, salvarFornecedor, salvarCliente, formatarMoeda, gerarIdPublico, salvarConta } from '@/lib/storage';
+import { getTenantId, getHistoricoIA, getTransacoes, salvarTransacao, atualizarTransacao, salvarTransacoesRecorrentes, salvarTransacoesParceladas, getCategorias, getCentrosCusto, getContas, getCartoes, getFornecedores, getClientes, salvarFornecedor, salvarCliente, formatarMoeda, gerarIdPublico, salvarConta } from '@/lib/storage';
 import { calcularCicloFatura } from '@/lib/cartao-utils';
 import { FORMAS_PAGAMENTO_LABELS, FREQUENCIA_LABELS } from '@/lib/defaults';
 import { format } from 'date-fns';
@@ -54,7 +54,7 @@ const compressImage = (file: File): Promise<string> => {
 };
 
 import {
-  Mic, MicOff, Send, X, Check, Edit3, Loader2,
+  AlertTriangle, Mic, MicOff, Send, X, Check, Edit3, Loader2,
   Zap, MessageSquare, PenLine, AlertCircle, CheckCircle2, RefreshCw, Plus, ChevronRight, Building2, Camera, Sparkles, Paperclip, Trash2, Eye
 } from 'lucide-react';
 
@@ -443,7 +443,7 @@ export default function ModalLancamento({ onClose, onSalvo, transacaoEditar }: P
 
       if (texto && ensinarIA) {
         const fn = prelancamento.tipo === 'despesa' ? fornecedores.find(x => x.id === prelancamento.fornecedorId)?.nome : clientes.find(x => x.id === prelancamento.clienteId)?.nome;
-        aprenderPadrao(texto, prelancamento.categoriaId, prelancamento.centroCustoId, prelancamento.contaId, prelancamento.formaPagamento, prelancamento.tipo === 'despesa' ? prelancamento.fornecedorId : prelancamento.clienteId, fn as string).catch(() => {});
+        aprenderPadrao(texto, prelancamento.categoriaId, prelancamento.centroCustoId, prelancamento.contaId, prelancamento.formaPagamento, prelancamento.tipo === 'despesa' ? prelancamento.fornecedorId : undefined, fn as string, prelancamento.tipo === 'receita' ? prelancamento.clienteId : undefined, prelancamento.cartaoId, (prelancamento as any).comportamento).catch(() => {});
       }
 
       if (transacaoEditar) {
@@ -913,8 +913,8 @@ function EditarPreLancamento({ prelancamento, categorias, centrosCusto, contas, 
   centrosCusto: { id: string; nome: string }[];
   contas: { id: string; nome: string }[];
   cartoes: { id: string; nome: string; dataFechamento?: number; dataVencimento?: number }[];
-  fornecedores: { id: string; nome: string }[];
-  clientes: { id: string; nome: string }[];
+  fornecedores: Fornecedor[];
+  clientes: Cliente[];
   onChange: (p: PreLancamento) => void;
   onConfirmar: () => void;
   ensinarIA: boolean;
@@ -1294,8 +1294,8 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
   centrosCusto: { id: string; nome: string }[];
   contas: { id: string; nome: string }[];
   cartoes: { id: string; nome: string; dataFechamento?: number; dataVencimento?: number }[];
-  fornecedores: { id: string; nome: string }[];
-  clientes: { id: string; nome: string }[];
+  fornecedores: Fornecedor[];
+  clientes: Cliente[];
   initialData?: any;
   onSubmit: (data: Omit<PreLancamento, 'confianca' | 'textoOriginal'>) => void;
   onClose?: () => void;
@@ -1305,11 +1305,40 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
 }) {
   const [historico, setHistorico] = useState<any[]>([]);
   const [salvandoDireto, setSalvandoDireto] = useState(false);
+  const transacoesCacheRef = useRef<Transacao[]>([]);
+  const historicoCacheRef = useRef<any[]>([]);
   const descricaoInputRef = useRef<HTMLInputElement>(null);
+  const entidadeInputRef = useRef<HTMLInputElement>(null);
+  const valorInputRef = useRef<HTMLInputElement>(null);
+  const dropdownContainerRef = useRef<HTMLDivElement>(null);
+  const [dropdownAberto, setDropdownAberto] = useState(false);
+  const [itemFocadoIdx, setItemFocadoIdx] = useState(0);
+  const [termoBuscaEntidade, setTermoBuscaEntidade] = useState('');
+  const [statsPorEntidade, setStatsPorEntidade] = useState<Record<string, { media: number; count: number }>>({});
+  const [sugestaoValor, setSugestaoValor] = useState<{
+    valorMedio: number;
+    ultimoValor: number;
+    quantidade: number;
+    entidadeNome: string;
+  } | null>(null);
+  const [alertaValorAberto, setAlertaValorAberto] = useState(false);
+  const [alertaValorInfo, setAlertaValorInfo] = useState<{
+    valorAtual: number;
+    valorMedio: number;
+    quantidade: number;
+    entidadeNome: string;
+    percentual: number;
+    onConfirmar: () => void;
+  } | null>(null);
 
   useEffect(() => {
-    getHistoricoIA().then(setHistorico);
-    setTimeout(() => descricaoInputRef.current?.focus(), 80);
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownContainerRef.current && !dropdownContainerRef.current.contains(e.target as Node)) {
+        setDropdownAberto(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const handleDescricaoBlur = () => {
@@ -1369,17 +1398,389 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
     rateio: [],
   });
 
+  const [formKey, setFormKey] = useState(1);
   const [form, setForm] = useState(getCleanForm());
+
+  const limparTodosOsCampos100Pct = useCallback(() => {
+    setFormKey(k => k + 1);
+    setForm(getCleanForm());
+    setTermoBuscaEntidade('');
+    setSugestaoValor(null);
+    setAlertaValorAberto(false);
+    setAlertaValorInfo(null);
+    setDropdownAberto(false);
+    setItemFocadoIdx(0);
+    setNovoCadastro(null);
+    setNovoNome('');
+    setErroForm('');
+
+    if (descricaoInputRef.current) descricaoInputRef.current.value = '';
+    if (valorInputRef.current) valorInputRef.current.value = '';
+    if (entidadeInputRef.current) entidadeInputRef.current.value = '';
+
+    setTimeout(() => {
+      if ((form.tipo as string) === 'transferencia') {
+        descricaoInputRef.current?.focus();
+      } else {
+        entidadeInputRef.current?.focus();
+      }
+    }, 80);
+  }, [form.tipo]);
+
+  const highlightMatch = (texto: string, busca: string) => {
+    if (!busca || !busca.trim()) return <>{texto}</>;
+    const escaped = busca.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp('(' + escaped + ')', 'gi');
+    const partes = texto.split(regex);
+    return (
+      <>
+        {partes.map((parte, i) =>
+          regex.test(parte) ? (
+            <span key={i} style={{ color: '#cc092f', fontWeight: 600 }}>
+              {parte}
+            </span>
+          ) : (
+            <span key={i} style={{ fontWeight: 400 }}>
+              {parte}
+            </span>
+          )
+        )}
+      </>
+    );
+  };
+
+  const handleCriarNovaEntidadeInline = async (nome: string) => {
+    const nomeTrim = nome.trim();
+    if (!nomeTrim) return;
+    const isReceita = (form.tipo as string) === "receita";
+    const novoId = (isReceita ? "cli_" : "forn_") + Date.now();
+    const novaEntidade = { id: novoId, nome: nomeTrim };
+
+    if (isReceita) {
+      const { salvarCliente } = await import("@/lib/storage");
+      await salvarCliente(novaEntidade);
+      clientes.push(novaEntidade);
+    } else {
+      const { salvarFornecedor } = await import("@/lib/storage");
+      await salvarFornecedor(novaEntidade as any);
+      fornecedores.push(novaEntidade as any);
+    }
+
+    await selecionarEntidade(novaEntidade);
+  };
+  const listaEntidadesFiltradas = useMemo(() => {
+    const busca = termoBuscaEntidade.trim().toLowerCase();
+    const lista = (form.tipo === 'receita' ? clientes : fornecedores) || [];
+    if (!busca) return lista.slice(0, 10);
+    return lista.filter(item => item.nome.toLowerCase().includes(busca)).slice(0, 10);
+  }, [form.tipo, clientes, fornecedores, termoBuscaEntidade]);
+  const selecionarEntidade = (entidade: { id: string; nome: string }) => {
+    setDropdownAberto(false);
+    setTermoBuscaEntidade(entidade.nome);
+
+    if ((form.tipo as string) === 'receita') {
+      const cli = clientes.find(c => c.id === entidade.id || c.nome.toLowerCase() === entidade.nome.toLowerCase()) || (entidade as any);
+      
+      const dadosCadastro: any = {};
+      if ((cli as any).categoriaId) dadosCadastro.categoriaId = (cli as any).categoriaId;
+      if ((cli as any).centroCustoId) dadosCadastro.centroCustoId = (cli as any).centroCustoId;
+      if ((cli as any).contaId) dadosCadastro.contaId = (cli as any).contaId;
+      if ((cli as any).cartaoId) dadosCadastro.cartaoId = (cli as any).cartaoId;
+      if ((cli as any).formaPagamento) dadosCadastro.formaPagamento = (cli as any).formaPagamento;
+      if ((cli as any).comportamento) dadosCadastro.comportamento = (cli as any).comportamento;
+      if ((cli as any).descricaoPadrao) dadosCadastro.descricao = (cli as any).descricaoPadrao;
+
+      let memoriaEntidade: any = {};
+      try {
+        const entityMap = JSON.parse(localStorage.getItem('ai_learning_by_entity') || '{}');
+        memoriaEntidade = entityMap[cli.id] || entityMap[cli.nome.toLowerCase().trim()] || {};
+      } catch {}
+
+      let memoriaDict: any = {};
+      try {
+        const dict = (window as any).__ai_dictCache || JSON.parse(localStorage.getItem('ai_learning_dictionary') || '{}');
+        for (const [k, v] of Object.entries(dict as Record<string, any>)) {
+          if (v.clienteId === cli.id || (v.clienteNome && v.clienteNome.toLowerCase() === cli.nome.toLowerCase())) {
+            memoriaDict = {
+              descricao: v.descricao || k,
+              categoriaId: v.categoriaId,
+              centroCustoId: v.centroCustoId,
+              contaId: v.contaId,
+              cartaoId: v.cartaoId,
+              formaPagamento: v.formaPagamento,
+              comportamento: v.comportamento
+            };
+            break;
+          }
+        }
+      } catch {}
+
+      let memoriaTransacao: any = {};
+      try {
+        const ultimas = transacoesCacheRef.current;
+        const todasDoCli = (ultimas || []).filter((t: any) => t.clienteId === cli.id || (t.clienteNome && t.clienteNome.toLowerCase() === cli.nome.toLowerCase()));
+        const tCli = todasDoCli[0];
+        if (tCli) {
+          memoriaTransacao = {
+            descricao: tCli.descricao,
+            categoriaId: tCli.categoriaId,
+            centroCustoId: tCli.centroCustoId,
+            contaId: tCli.contaId,
+            cartaoId: tCli.cartaoId,
+            formaPagamento: tCli.formaPagamento,
+            comportamento: (tCli as any).comportamento || (tCli.recorrente ? 'fixa' : 'variavel')
+          };
+        }
+        const vals = todasDoCli.map((t: any) => Number(t.valor) || 0).filter((v: number) => v > 0);
+        if (vals.length > 0) {
+          const media = vals.reduce((a: number, b: number) => a + b, 0) / vals.length;
+          setSugestaoValor({
+            valorMedio: media,
+            ultimoValor: vals[0] || media,
+            quantidade: vals.length,
+            entidadeNome: cli.nome
+          });
+        } else {
+          setSugestaoValor(null);
+        }
+      } catch {}
+
+      // Sugestão de IA síncrona do cache em memória (zero latência)
+      const hist = historicoCacheRef.current.length > 0 ? historicoCacheRef.current : historico;
+      const registros = (hist || [])
+        .filter((h: any) => h.clienteId === cli.id)
+        .sort((a: any, b: any) => (b.count || 0) - (a.count || 0));
+      const sugestoesIA: any = registros[0] ? {
+        categoriaId: registros[0].categoriaId,
+        centroCustoId: registros[0].centroCustoId,
+        contaId: registros[0].contaId,
+        cartaoId: registros[0].cartaoId,
+        formaPagamento: registros[0].formaPagamento,
+        comportamento: registros[0].comportamento,
+        descricao: registros[0].descricao
+      } : {};
+
+      setForm(prev => {
+        const nf = { ...prev, clienteId: cli.id, clienteNome: cli.nome };
+        const fonte = {
+          ...sugestoesIA,
+          ...memoriaTransacao,
+          ...memoriaDict,
+          ...memoriaEntidade,
+          ...dadosCadastro
+        };
+
+        if (fonte.categoriaId) nf.categoriaId = fonte.categoriaId;
+        if (fonte.centroCustoId) nf.centroCustoId = fonte.centroCustoId;
+        if (fonte.contaId) nf.contaId = fonte.contaId;
+        if (fonte.cartaoId) nf.cartaoId = fonte.cartaoId;
+        if (fonte.formaPagamento) nf.formaPagamento = fonte.formaPagamento;
+
+        const compDeterminadoCli = inferirComportamento(
+          fonte.comportamento,
+          fonte.descricao,
+          cli.nome,
+          (cli as any).recorrente
+        );
+        nf.comportamento = compDeterminadoCli;
+        
+        if (fonte.descricao && fonte.descricao.toLowerCase().trim() !== cli.nome.toLowerCase().trim()) {
+          nf.descricao = fonte.descricao;
+        }
+
+        if (nf.formaPagamento === 'cartao_credito' && nf.cartaoId) {
+          const c = cartoes.find(x => x.id === nf.cartaoId);
+          if (c) {
+            const hoje2 = new Date().toISOString().split('T')[0];
+            const ciclo = calcularCicloFatura(nf.data || hoje2, c.dataFechamento || 1, c.dataVencimento || 10);
+            nf.status = 'pendente';
+            nf.dataPagamento = '';
+            nf.dataVencimento = ciclo.dataVencimento;
+          }
+        }
+        return nf;
+      });
+    } else {
+      const forn = fornecedores.find(f => f.id === entidade.id || f.nome.toLowerCase() === entidade.nome.toLowerCase()) || (entidade as any);
+      
+      const dadosCadastro: any = {};
+      if (forn.categoriaId) dadosCadastro.categoriaId = forn.categoriaId;
+      if (forn.centroCustoId) dadosCadastro.centroCustoId = forn.centroCustoId;
+      if (forn.contaId) dadosCadastro.contaId = forn.contaId;
+      if ((forn as any).cartaoId) dadosCadastro.cartaoId = (forn as any).cartaoId;
+      if (forn.formaPagamento) dadosCadastro.formaPagamento = forn.formaPagamento;
+      if ((forn as any).comportamento) dadosCadastro.comportamento = (forn as any).comportamento;
+      if ((forn as any).descricaoPadrao) dadosCadastro.descricao = (forn as any).descricaoPadrao;
+
+      let memoriaEntidade: any = {};
+      try {
+        const entityMap = JSON.parse(localStorage.getItem('ai_learning_by_entity') || '{}');
+        memoriaEntidade = entityMap[forn.id] || entityMap[forn.nome.toLowerCase().trim()] || {};
+      } catch {}
+
+      let memoriaDict: any = {};
+      try {
+        const dict = (window as any).__ai_dictCache || JSON.parse(localStorage.getItem('ai_learning_dictionary') || '{}');
+        for (const [k, v] of Object.entries(dict as Record<string, any>)) {
+          if (v.fornecedorId === forn.id || (v.fornecedorNome && v.fornecedorNome.toLowerCase() === forn.nome.toLowerCase())) {
+            memoriaDict = {
+              descricao: v.descricao || k,
+              categoriaId: v.categoriaId,
+              centroCustoId: v.centroCustoId,
+              contaId: v.contaId,
+              cartaoId: v.cartaoId,
+              formaPagamento: v.formaPagamento,
+              comportamento: v.comportamento
+            };
+            break;
+          }
+        }
+      } catch {}
+
+      let memoriaTransacao: any = {};
+      try {
+        const ultimas = transacoesCacheRef.current;
+        const todasDoForn = (ultimas || []).filter((t: any) => t.fornecedorId === forn.id || (t.fornecedorNome && t.fornecedorNome.toLowerCase() === forn.nome.toLowerCase()));
+        const tForn = todasDoForn[0];
+        if (tForn) {
+          memoriaTransacao = {
+            descricao: tForn.descricao,
+            categoriaId: tForn.categoriaId,
+            centroCustoId: tForn.centroCustoId,
+            contaId: tForn.contaId,
+            cartaoId: tForn.cartaoId,
+            formaPagamento: tForn.formaPagamento,
+            comportamento: (tForn as any).comportamento || (tForn.recorrente ? 'fixa' : 'variavel')
+          };
+        }
+        const vals = todasDoForn.map((t: any) => Number(t.valor) || 0).filter((v: number) => v > 0);
+        if (vals.length > 0) {
+          const media = vals.reduce((a: number, b: number) => a + b, 0) / vals.length;
+          setSugestaoValor({
+            valorMedio: media,
+            ultimoValor: vals[0] || media,
+            quantidade: vals.length,
+            entidadeNome: forn.nome
+          });
+        } else {
+          setSugestaoValor(null);
+        }
+      } catch {}
+
+      // Sugestão de IA síncrona do cache em memória (zero latência)
+      const hist = historicoCacheRef.current.length > 0 ? historicoCacheRef.current : historico;
+      const registros = (hist || [])
+        .filter((h: any) => h.fornecedorId === forn.id)
+        .sort((a: any, b: any) => (b.count || 0) - (a.count || 0));
+      const sugestoesIA: any = registros[0] ? {
+        categoriaId: registros[0].categoriaId,
+        centroCustoId: registros[0].centroCustoId,
+        contaId: registros[0].contaId,
+        cartaoId: registros[0].cartaoId,
+        formaPagamento: registros[0].formaPagamento,
+        comportamento: registros[0].comportamento,
+        descricao: registros[0].descricao
+      } : {};
+
+      setForm(prev => {
+        const nf = { ...prev, fornecedorId: forn.id, fornecedorNome: forn.nome };
+        const fonte = {
+          ...sugestoesIA,
+          ...memoriaTransacao,
+          ...memoriaDict,
+          ...memoriaEntidade,
+          ...dadosCadastro
+        };
+
+        if (fonte.categoriaId) nf.categoriaId = fonte.categoriaId;
+        if (fonte.centroCustoId) nf.centroCustoId = fonte.centroCustoId;
+        if (fonte.contaId) nf.contaId = fonte.contaId;
+        if (fonte.cartaoId) nf.cartaoId = fonte.cartaoId;
+        if (fonte.formaPagamento) nf.formaPagamento = fonte.formaPagamento;
+
+        const compDeterminadoForn = inferirComportamento(
+          fonte.comportamento,
+          fonte.descricao,
+          forn.nome,
+          (forn as any).recorrente
+        );
+        nf.comportamento = compDeterminadoForn;
+        
+        if (fonte.descricao && fonte.descricao.toLowerCase().trim() !== forn.nome.toLowerCase().trim()) {
+          nf.descricao = fonte.descricao;
+        }
+
+        if (nf.formaPagamento === 'cartao_credito' && nf.cartaoId) {
+          const c = cartoes.find(x => x.id === nf.cartaoId);
+          if (c) {
+            const hoje2 = new Date().toISOString().split('T')[0];
+            const ciclo = calcularCicloFatura(nf.data || hoje2, c.dataFechamento || 1, c.dataVencimento || 10);
+            nf.status = 'pendente';
+            nf.dataPagamento = '';
+            nf.dataVencimento = ciclo.dataVencimento;
+          }
+        }
+        return nf;
+      });
+    }
+
+    // Fluxo Zero Cliques: foca automaticamente no campo Valor após preencher tudo
+    setTimeout(() => {
+      valorInputRef.current?.focus();
+    }, 50);
+  };
+
+
+  useEffect(() => {
+    getHistoricoIA().then(h => {
+      historicoCacheRef.current = h || [];
+      setHistorico(h);
+    }).catch(() => {});
+    
+    getTransacoes().then(txs => {
+      transacoesCacheRef.current = txs || [];
+      const stats: Record<string, { media: number; count: number }> = {};
+      const agregados: Record<string, number[]> = {};
+      txs.forEach(t => {
+        const val = Number(t.valor) || 0;
+        if (val <= 0) return;
+        if (t.fornecedorId) {
+          if (!agregados[t.fornecedorId]) agregados[t.fornecedorId] = [];
+          agregados[t.fornecedorId].push(val);
+        }
+        if (t.fornecedorNome) {
+          const k = t.fornecedorNome.toLowerCase().trim();
+          if (!agregados[k]) agregados[k] = [];
+          agregados[k].push(val);
+        }
+        if (t.clienteId) {
+          if (!agregados[t.clienteId]) agregados[t.clienteId] = [];
+          agregados[t.clienteId].push(val);
+        }
+        if (t.clienteNome) {
+          const k = t.clienteNome.toLowerCase().trim();
+          if (!agregados[k]) agregados[k] = [];
+          agregados[k].push(val);
+        }
+      });
+      for (const [key, vals] of Object.entries(agregados)) {
+        stats[key] = {
+          count: vals.length,
+          media: vals.reduce((a, b) => a + b, 0) / vals.length
+        };
+      }
+      setStatsPorEntidade(stats);
+    }).catch(() => {});
+
+    setTimeout(() => { if ((form.tipo as string) === 'transferencia') { descricaoInputRef.current?.focus(); } else { entidadeInputRef.current?.focus(); } }, 80);
+  }, []);
+
 
   useEffect(() => {
     if (resetKey !== undefined && resetKey > 0) {
-      setForm(getCleanForm());
-      setErroForm('');
-      setNovoCadastro(null);
-      setNovoNome('');
-      setTimeout(() => descricaoInputRef.current?.focus(), 60);
+      limparTodosOsCampos100Pct();
     }
-  }, [resetKey]);
+  }, [resetKey, limparTodosOsCampos100Pct]);
 
   useEffect(() => {
     if (initialData?.descricao) {
@@ -1440,26 +1841,59 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
     }
   };
 
+  const inferirComportamento = (
+    compSugerido?: string,
+    desc?: string,
+    entidadeNome?: string,
+    recorrente?: boolean
+  ): 'fixa' | 'variavel' => {
+    if (compSugerido === 'fixa' || compSugerido === 'variavel') return compSugerido;
+    if (recorrente) return 'fixa';
+    
+    const textoAnalise = `${desc || ''} ${entidadeNome || ''}`.toLowerCase();
+    
+    const isFixa = 
+      textoAnalise.includes('diferid') ||
+      textoAnalise.includes('mensal') ||
+      textoAnalise.includes('fix') ||
+      textoAnalise.includes('recorrent') ||
+      textoAnalise.includes('assinatura') ||
+      textoAnalise.includes('plano') ||
+      textoAnalise.includes('aluguel') ||
+      textoAnalise.includes('salario') ||
+      textoAnalise.includes('salário') ||
+      textoAnalise.includes('condomin') ||
+      textoAnalise.includes('internet') ||
+      textoAnalise.includes('iptu') ||
+      textoAnalise.includes('ipva') ||
+      textoAnalise.includes('seguro');
+
+    if (isFixa) return 'fixa';
+    return 'variavel';
+  };
   // AI Learning function — lógica de comportamento automático pelo campo descrição
+  // A DESCRIÇÃO É UMA CAMADA DE REFINAMENTO: sobrescreve apenas se houver palavras-chave claras
+  // Prioridade: 1) Usuário manual > 2) Palavras-chave na descrição > 3) Sugestão por entidade (já aplicada)
   const handleDescricaoChange = (val: string, fromScanner = false) => {
     const lower = val.toLowerCase();
     // Palavras-chave que indicam FIXA (comissão diferida/recorrente)
-    const isFixa = lower.includes('diferida') || lower.includes('mensal') || lower.includes('fixa') || lower.includes('recorrente') || lower.includes('parcel');
+    const isFixaKeyword = lower.includes('diferida') || lower.includes('mensal') || lower.includes('fixa') || lower.includes('recorrente') || lower.includes('parcel');
     // Palavras-chave que indicam VARIÁVEL (comissão à vista/spot)
-    const isVariavel = lower.includes('à vista') || lower.includes('a vista') || lower.includes('spot') || lower.includes('pontual');
+    const isVariavelKeyword = lower.includes('à vista') || lower.includes('a vista') || lower.includes('spot') || lower.includes('pontual') || lower.includes('avulso');
 
     setForm(f => ({
       ...f,
       descricao: val,
-      // Só preenche automaticamente se digitou algo relevante;
-      // mantém seleção manual do usuário se ele já escolheu e não bateu em nenhuma keyword
+      // Regra de comportamento com hierarquia inteligente:
+      // Palavras-chave na descrição REFINAM (sobrescrevem sugestão da entidade) 
+      // mas respeitam a escolha manual do usuário se ele mudou depois da sugestão da IA
       comportamento: (() => {
-        // Se já tem um comportamento definido (pelo lançamento original ou escolhido pelo usuário), MANTÉM SEMPRE!
-        if (f.comportamento === 'fixa' || f.comportamento === 'variavel') return f.comportamento;
         if (initialData?.comportamento === 'fixa' || initialData?.comportamento === 'variavel') return initialData.comportamento;
-        if (val.trim().length === 0) return '';
-        if (isFixa) return 'fixa';
-        if (isVariavel) return 'variavel';
+        if (val.trim().length === 0) return f.comportamento || '';
+        // Descrição refinando com palavras-chave claras (segunda consideração)
+        if (isFixaKeyword) return 'fixa';
+        if (isVariavelKeyword) return 'variavel';
+        // Mantém o que foi sugerido pela entidade ou pelo usuário
         return f.comportamento || (initialData?.recorrente ? 'fixa' : (initialData ? 'variavel' : ''));
       })()
     }));
@@ -1507,6 +1941,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
               clienteId: f.clienteId || learned.clienteId || '',
               formaPagamento: novaForma,
               contaId: f.contaId || learned.contaId || '',
+              comportamento: f.comportamento || learned.comportamento || f.comportamento,
               cartaoId: novoCartaoId
             };
           });
@@ -1515,25 +1950,76 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
     }
   };
 
-  const aprenderDescricao = () => {
+  const aprenderDescricao = async () => {
     if (!form.descricao.trim()) {
       alert('Preencha a descrição primeiro.');
       return;
     }
     try {
+      const descLimpa = form.descricao.trim();
+      const descKey = descLimpa.toLowerCase();
+      const fnName = (form.tipo as string) === 'receita'
+        ? (clientes.find(x => x.id === form.clienteId)?.nome || (form as any).clienteNome || '')
+        : (fornecedores.find(x => x.id === form.fornecedorId)?.nome || (form as any).fornecedorNome || '');
+      const entidadeId = (form.tipo as string) === 'receita' ? form.clienteId : form.fornecedorId;
+
+      // 1. Dicionário por descrição com comportamento
       const dict = (window as any).__ai_dictCache || ((window as any).__ai_dictCache = JSON.parse(localStorage.getItem('ai_learning_dictionary') || '{}'));
-      dict[form.descricao.toLowerCase().trim()] = {
+      dict[descKey] = {
+        descricao: descLimpa,
         categoriaId: form.categoriaId,
         centroCustoId: form.centroCustoId,
         fornecedorId: form.fornecedorId,
+        fornecedorNome: fnName,
         clienteId: form.clienteId,
+        clienteNome: fnName,
         formaPagamento: form.formaPagamento,
         contaId: form.contaId,
-        cartaoId: form.cartaoId
+        cartaoId: form.cartaoId,
+        comportamento: form.comportamento
       };
-      localStorage.setItem('ai_learning_dictionary', JSON.stringify(dict)); (window as any).__ai_dictCache = dict;
-      alert('🧠 O sistema aprendeu! No próximo lançamento, basta digitar essa descrição e os campos de Categoria, Conta, Forma de Pagamento e Cliente/Fornecedor serão preenchidos sozinhos.');
-    } catch (e) {}
+      localStorage.setItem('ai_learning_dictionary', JSON.stringify(dict));
+      (window as any).__ai_dictCache = dict;
+
+      // 2. Memória rápida por entidade (Fornecedor ou Cliente)
+      const entityMap = JSON.parse(localStorage.getItem('ai_learning_by_entity') || '{}');
+      const dadosEntidade = {
+        descricao: descLimpa,
+        categoriaId: form.categoriaId,
+        centroCustoId: form.centroCustoId,
+        contaId: form.contaId,
+        cartaoId: form.cartaoId,
+        formaPagamento: form.formaPagamento,
+        comportamento: form.comportamento,
+        fornecedorId: form.fornecedorId,
+        fornecedorNome: fnName,
+        clienteId: form.clienteId,
+        clienteNome: fnName
+      };
+      if (entidadeId) entityMap[entidadeId] = dadosEntidade;
+      if (fnName) entityMap[fnName.toLowerCase().trim()] = dadosEntidade;
+      localStorage.setItem('ai_learning_by_entity', JSON.stringify(entityMap));
+
+      // 3. Salva no Firebase / HistoricoIA
+      await aprenderPadrao(
+        descLimpa,
+        form.categoriaId,
+        form.centroCustoId,
+        form.contaId,
+        form.formaPagamento as any,
+        (form.tipo as string) === 'despesa' ? form.fornecedorId : undefined,
+        fnName as string,
+        (form.tipo as string) === 'receita' ? form.clienteId : undefined,
+        form.cartaoId,
+        form.comportamento as any
+      ).catch(() => {});
+
+      const compLabel = form.comportamento === 'fixa' ? 'Fixa' : form.comportamento === 'variavel' ? 'Variável' : 'Automático';
+      alert(`🧠 IA Aprendeu com sucesso!\n\n${fnName ? `Entidade: ${fnName}\n` : ''}Descrição: "${descLimpa}"\nComportamento: ${compLabel}\n\nAo selecionar ${fnName || 'esta entidade'} ou digitar esta descrição, todos os campos serão preenchidos sozinhos!`);
+    } catch (e: any) {
+      console.error('Erro ao aprender:', e);
+      alert('Erro ao aprender: ' + (e?.message || 'Tente novamente'));
+    }
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1620,7 +2106,27 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
     
     if (ensinarIA && form.descricao) {
         const fnName = (form.tipo as string) === 'despesa' ? fornecedores.find(x => x.id === form.fornecedorId)?.nome : clientes.find(x => x.id === form.clienteId)?.nome;
-        aprenderPadrao(form.descricao, form.categoriaId, form.centroCustoId, form.contaId, form.formaPagamento as any, (form.tipo as string) === 'despesa' ? form.fornecedorId : form.clienteId, fnName as string).catch(console.error);
+        aprenderPadrao(form.descricao, form.categoriaId, form.centroCustoId, form.contaId, form.formaPagamento as any, (form.tipo as string) === 'despesa' ? form.fornecedorId : undefined, fnName as string, (form.tipo as string) === 'receita' ? form.clienteId : undefined, form.cartaoId, form.comportamento as any).catch(console.error);
+        try {
+          const entityMap = JSON.parse(localStorage.getItem('ai_learning_by_entity') || '{}');
+          const entId = (form.tipo as string) === 'receita' ? form.clienteId : form.fornecedorId;
+          const aprendizadoEntidade = {
+            descricao: form.descricao.trim(),
+            categoriaId: form.categoriaId,
+            centroCustoId: form.centroCustoId,
+            contaId: form.contaId,
+            cartaoId: form.cartaoId,
+            formaPagamento: form.formaPagamento,
+            comportamento: form.comportamento,
+            fornecedorId: form.fornecedorId,
+            fornecedorNome: fnName,
+            clienteId: form.clienteId,
+            clienteNome: fnName
+          };
+          if (entId) entityMap[entId] = aprendizadoEntidade;
+          if (fnName) entityMap[fnName.toLowerCase().trim()] = aprendizadoEntidade;
+          localStorage.setItem('ai_learning_by_entity', JSON.stringify(entityMap));
+        } catch {}
     }
     onSubmit({
       ...form,
@@ -1639,7 +2145,8 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
   const [erroForm, setErroForm] = useState('');
   const set = (campo: Partial<typeof form>) => setForm(f => ({ ...f, ...campo }));
 
-  const handleSalvarDireto = async () => {
+  const handleSalvarDireto = async (pularValidacaoDiscrepancia?: boolean | React.MouseEvent) => {
+    const pular = pularValidacaoDiscrepancia === true;
     if (salvandoDireto) return;
     setErroForm('');
 
@@ -1670,6 +2177,25 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
 
     if (!form.descricao.trim()) { setErroForm('Informe a descrição do lançamento.'); descricaoInputRef.current?.focus(); return; }
     if (!parsedValor || parsedValor <= 0) { setErroForm('Informe um valor válido.'); return; }
+
+    // Alerta de segurança contra digitação incorreta (ex: digitar 1.000,00 ao invés de 100,00)
+    // Se o valor for 100% ou mais acima da média histórica habitual
+    if (!pular && sugestaoValor && sugestaoValor.valorMedio > 0 && parsedValor >= (sugestaoValor.valorMedio * 2)) {
+      const perc = Math.round((parsedValor / sugestaoValor.valorMedio - 1) * 100);
+      setAlertaValorInfo({
+        valorAtual: parsedValor,
+        valorMedio: sugestaoValor.valorMedio,
+        quantidade: sugestaoValor.quantidade,
+        entidadeNome: sugestaoValor.entidadeNome,
+        percentual: perc,
+        onConfirmar: () => {
+          setAlertaValorAberto(false);
+          handleSalvarDireto(true);
+        }
+      });
+      setAlertaValorAberto(true);
+      return;
+    }
 
     const cat = categorias.find(c => c.id === form.categoriaId);
     const cc = centrosCusto.find(c => c.id === form.centroCustoId);
@@ -1775,19 +2301,34 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
 
       if (ensinarIA && form.descricao) {
         const fnName = (form.tipo as string) === 'despesa' ? forn?.nome : cli?.nome;
-        aprenderPadrao(form.descricao, form.categoriaId, form.centroCustoId, form.contaId, form.formaPagamento as any, (form.tipo as string) === 'despesa' ? form.fornecedorId : form.clienteId, fnName as string).catch(() => {});
+        aprenderPadrao(form.descricao, form.categoriaId, form.centroCustoId, form.contaId, form.formaPagamento as any, (form.tipo as string) === 'despesa' ? form.fornecedorId : undefined, fnName as string, (form.tipo as string) === 'receita' ? form.clienteId : undefined, form.cartaoId, form.comportamento as any).catch(() => {});
+        try {
+          const entityMap = JSON.parse(localStorage.getItem('ai_learning_by_entity') || '{}');
+          const entId = (form.tipo as string) === 'receita' ? form.clienteId : form.fornecedorId;
+          const aprendizadoEntidade = {
+            descricao: form.descricao.trim(),
+            categoriaId: form.categoriaId,
+            centroCustoId: form.centroCustoId,
+            contaId: form.contaId,
+            cartaoId: form.cartaoId,
+            formaPagamento: form.formaPagamento,
+            comportamento: form.comportamento,
+            fornecedorId: form.fornecedorId,
+            fornecedorNome: fnName,
+            clienteId: form.clienteId,
+            clienteNome: fnName
+          };
+          if (entId) entityMap[entId] = aprendizadoEntidade;
+          if (fnName) entityMap[fnName.toLowerCase().trim()] = aprendizadoEntidade;
+          localStorage.setItem('ai_learning_by_entity', JSON.stringify(entityMap));
+        } catch {}
       }
 
       onSalvo?.();
       onSucessoLote?.(transacaoData.descricao, parsedValor);
 
-      // Limpa 100% de todos os campos para o novo lançamento
-      setForm(getCleanForm());
-      setErroForm('');
-      setNovoCadastro(null);
-      setNovoNome('');
-
-      setTimeout(() => descricaoInputRef.current?.focus(), 60);
+      // Limpa 100% de todos os campos AUTOMATICAMENTE no salvamento
+      limparTodosOsCampos100Pct();
     } catch (err: any) {
       setErroForm(err.message || 'Erro ao salvar lançamento.');
     } finally {
@@ -1875,6 +2416,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
 
   return (
     <div
+      key={formKey}
       onKeyDown={(e) => {
         if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
           e.preventDefault();
@@ -1886,7 +2428,7 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
         {['despesa', 'receita', 'transferencia'].map(t => (
           <button key={t}
-            onClick={() => set({ tipo: t as 'despesa' | 'receita' | 'transferencia', descricao: t === 'transferencia' ? 'Transferência entre contas' : form.descricao })}
+            onClick={() => { set({ tipo: t as 'despesa' | 'receita' | 'transferencia', descricao: t === 'transferencia' ? 'Transferência entre contas' : form.descricao }); setTimeout(() => { if (t === 'transferencia') { descricaoInputRef.current?.focus(); } else { entidadeInputRef.current?.focus(); } }, 60); }}
             style={{
               padding: '8px 4px', borderRadius: 8, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
               border: `1px solid ${form.tipo === t ? (t === 'despesa' ? 'rgba(239,68,68,0.4)' : t === 'receita' ? 'rgba(16,185,129,0.4)' : 'rgba(59,130,246,0.4)') : 'var(--border)'}`,
@@ -2035,89 +2577,295 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
 
-      {/* NOVO TOPO (Fornecedor, Recorrente, Comportamento) */}
-      <div className="grid-responsive-3" style={{ alignItems: 'flex-start', marginBottom: 16 }}>
-         <div style={{ zIndex: 10 }}>
-{(form.tipo as string) !== 'transferencia' && (
-      <div>
-        <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 5 }}>{(form.tipo as string) === 'receita' ? 'Cliente' : 'Fornecedor'}</label>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <div style={{ flex: 1 }}>
-            <input list="clientes-fornecedores-list-manual" className="input-field" placeholder={`Buscar ${(form.tipo as string) === 'receita' ? 'cliente' : 'fornecedor'}...`} value={(form.tipo as string) === 'receita' ? (clientes.find(c => c.id === form.clienteId)?.nome || (form as any).clienteNome || '') : (fornecedores.find(f => f.id === form.fornecedorId)?.nome || (form as any).fornecedorNome || '')} onChange={e => {
-              const nome = e.target.value;
-              if ((form.tipo as string) === 'receita') {
-                const cli = clientes.find(c => c.nome.toLowerCase() === nome.toLowerCase());
-                if (cli) {
-                  setForm(f => ({ ...f, clienteId: cli.id, clienteNome: cli.nome } as any));
-                  const historicoSorted = [...historico].sort((a,b)=>b.count-a.count);
-                  const match = historicoSorted.find(h => h.fornecedorId === cli.id); // For clientes, currently using fornecedorId in schema for contatos
-                  if (match) {
-                      setForm(prev => {
-                          const nf = { ...prev };
-                          if (match.categoriaId && !prev.categoriaId) nf.categoriaId = match.categoriaId;
-                          if (match.centroCustoId && !prev.centroCustoId) nf.centroCustoId = match.centroCustoId;
-                          if (match.contaId && !prev.contaId) nf.contaId = match.contaId;
-                          if (match.formaPagamento && !prev.formaPagamento) nf.formaPagamento = match.formaPagamento;
-                          return nf;
-                      });
-                  }
-                }
-                else setForm(f => ({ ...f, clienteId: '', clienteNome: nome } as any));
-              } else {
-                const forn = fornecedores.find(f => f.nome.toLowerCase() === nome.toLowerCase());
-                if (forn) {
-                  setForm(f => ({ ...f, fornecedorId: forn.id, fornecedorNome: forn.nome } as any));
-                  const historicoSorted = [...historico].sort((a,b)=>b.count-a.count);
-                  const match = historicoSorted.find(h => h.fornecedorId === forn.id);
-                  if (match) {
-                      setForm(prev => {
-                          const nf = { ...prev };
-                          if (match.categoriaId && !prev.categoriaId) nf.categoriaId = match.categoriaId;
-                          if (match.centroCustoId && !prev.centroCustoId) nf.centroCustoId = match.centroCustoId;
-                          if (match.contaId && !prev.contaId) nf.contaId = match.contaId;
-                          if (match.formaPagamento && !prev.formaPagamento) nf.formaPagamento = match.formaPagamento;
-                          return nf;
-                      });
-                  }
-                }
-                else setForm(f => ({ ...f, fornecedorId: '', fornecedorNome: nome } as any));
-              }
-            }} />
-            <datalist id="clientes-fornecedores-list-manual">
-              {Array.from(new Set(
-                (form.tipo === 'receita' ? clientes : fornecedores).map(x => x.nome)
-              )).map((nome, i) => <option key={i} value={nome} />)}
-            </datalist>
-          </div>
-          <button type="button" onClick={() => setNovoCadastro((form.tipo as string) === 'receita' ? 'cliente' : 'fornecedor')} className="btn-secondary hover-lift active-press" style={{ padding: '0 12px', flexShrink: 0 }}>
-            <Plus size={16} />
-          </button>
-        </div>
+      {/* Fornecedor/Cliente com autopreenchimento por IA */}
+      {(form.tipo as string) !== 'transferencia' && (
+        <div className="grid-responsive-3" style={{ marginBottom: 0 }}>
+          <div>
+            <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 5 }}>
+              {(form.tipo as string) === 'receita' ? 'Cliente' : 'Fornecedor'}
+              {((form.tipo as string) === 'receita' ? form.clienteId : form.fornecedorId) && (
+                <span style={{ marginLeft: 6, fontSize: 9, color: '#10b981', background: 'rgba(16,185,129,0.12)', padding: '1px 6px', borderRadius: 20, fontWeight: 600 }}>🤖 IA</span>
+              )}
+            </label>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <div ref={dropdownContainerRef} style={{ flex: 1, position: 'relative' }}>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <input
+                    ref={entidadeInputRef}
+                    className="input-field"
+                    autoComplete="one-time-code"
+                    name="search-supplier-no-autofill"
+                    placeholder={`Buscar ${(form.tipo as string) === 'receita' ? 'cliente' : 'fornecedor'}...`}
+                    value={termoBuscaEntidade || ((form.tipo as string) === 'receita'
+                      ? (clientes.find(c => c.id === form.clienteId)?.nome || (form as any).clienteNome || '')
+                      : (fornecedores.find(f => f.id === form.fornecedorId)?.nome || (form as any).fornecedorNome || ''))}
+                    onChange={e => {
+                      const val = e.target.value;
+                      setTermoBuscaEntidade(val);
+                      setDropdownAberto(true);
+                      setItemFocadoIdx(0);
+                      if (!val.trim()) {
+                        if ((form.tipo as string) === 'receita') {
+                          setForm(f => ({ ...f, clienteId: '', clienteNome: '' } as any));
+                        } else {
+                          setForm(f => ({ ...f, fornecedorId: '', fornecedorNome: '' } as any));
+                        }
+                      }
+                    }}
+                    onFocus={() => {
+                      setDropdownAberto(true);
+                    }}
+                    onKeyDown={e => {
+                      if (!dropdownAberto && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+                        setDropdownAberto(true);
+                        e.preventDefault();
+                        return;
+                      }
 
-        {novoCadastro && (
-          <div style={{ marginTop: 8, padding: 12, background: 'var(--bg-glass)', borderRadius: 10, border: '1px solid var(--border-hover)', display: 'flex', gap: 8 }}>
-            <input className="input-field" style={{ flex: 1, padding: '8px 12px' }} value={novoNome} onChange={e => setNovoNome(e.target.value)} placeholder={`Novo ${novoCadastro}`} autoFocus />
-            <button type="button" onClick={handleQuickAdd} className="btn-primary hover-lift active-press" style={{ padding: '8px 12px' }}>Salvar</button>
-            <button type="button" onClick={() => setNovoCadastro(null)} className="btn-secondary hover-lift active-press" style={{ padding: '8px' }}><X size={16} /></button>
-          </div>
-        )}
-      </div>
-      )}
-</div>
-                  <div style={{ flex: 1, minWidth: 150 }}>
-{(form.tipo as string) !== 'transferencia' && (
-            <div style={{ width: "100%" }}>
-              <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 5 }}>Comportamento</label>
-              <select className="input-field" value={form.comportamento} onChange={e => setForm(f => ({ ...f, comportamento: e.target.value }))}>
-                <option value="">— Selecione —</option>
-                <option value="fixa">Fixa</option>
-                <option value="variavel">Variável</option>
-              </select>
+                      if (dropdownAberto && listaEntidadesFiltradas.length > 0) {
+                        if (e.key === 'ArrowDown') {
+                          e.preventDefault();
+                          setItemFocadoIdx(prev => (prev + 1) % listaEntidadesFiltradas.length);
+                        } else if (e.key === 'ArrowUp') {
+                          e.preventDefault();
+                          setItemFocadoIdx(prev => (prev - 1 + listaEntidadesFiltradas.length) % listaEntidadesFiltradas.length);
+                        } else if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const selecionado = listaEntidadesFiltradas[itemFocadoIdx] || listaEntidadesFiltradas[0];
+                          if (selecionado) {
+                            selecionarEntidade(selecionado);
+                          }
+                        } else if (e.key === 'Tab') {
+                          // Tecla TAB: seleciona imediatamente o item focado e avança o cursor naturalmente
+                          const selecionado = listaEntidadesFiltradas[itemFocadoIdx] || listaEntidadesFiltradas[0];
+                          if (selecionado) {
+                            selecionarEntidade(selecionado);
+                          }
+                        } else if (e.key === 'Escape') {
+                          setDropdownAberto(false);
+                        }
+                      }
+                    }}
+                    style={{ paddingRight: 32 }}
+                  />
+                  {((form.tipo as string) === 'receita' ? form.clienteId : form.fornecedorId) && (
+                    <span style={{ position: 'absolute', right: 10, color: '#10b981', pointerEvents: 'none', display: 'flex', alignItems: 'center' }} title="Identificado por IA">
+                      <Check size={16} />
+                    </span>
+                  )}
+                </div>
+
+                {/* DROPDOWN ELEGANTE ESTILO BANCÁRIO BRADESCO - DISCRETO E NÃO NEGRITO */}
+                {dropdownAberto && listaEntidadesFiltradas.length > 0 && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: 'calc(100% + 4px)',
+                      left: 0,
+                      right: 0,
+                      zIndex: 60,
+                      background: 'var(--bg-card, #ffffff)',
+                      backdropFilter: 'blur(20px)',
+                      border: '1px solid var(--border, rgba(0, 0, 0, 0.08))',
+                      borderRadius: 10,
+                      boxShadow: '0 12px 28px -4px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.05)',
+                      overflow: 'hidden',
+                      maxHeight: 260,
+                      overflowY: 'auto'
+                    }}
+                  >
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '7px 12px',
+                      background: 'rgba(0, 0, 0, 0.02)',
+                      borderBottom: '1px solid var(--border, rgba(0, 0, 0, 0.06))',
+                      fontSize: 10,
+                      fontWeight: 500,
+                      color: 'var(--text-muted)',
+                      letterSpacing: '0.3px'
+                    }}>
+                      <span>{(form.tipo as string) === 'receita' ? 'Clientes sugeridos' : 'Fornecedores sugeridos'}</span>
+                      <span style={{ fontSize: 9.5, opacity: 0.75, fontWeight: 400 }}>Pressione [Tab] para preencher</span>
+                    </div>
+
+                    <div style={{ padding: 4 }}>
+                      {listaEntidadesFiltradas.map((item, idx) => {
+                        const isFocado = idx === itemFocadoIdx;
+                        const isSelecionado = ((form.tipo as string) === 'receita' ? form.clienteId : form.fornecedorId) === item.id;
+                        const inicial = item.nome.charAt(0).toUpperCase();
+                        const stats = statsPorEntidade[item.id] || statsPorEntidade[item.nome.toLowerCase().trim()];
+
+                        return (
+                          <div
+                            key={item.id}
+                            onMouseDown={e => {
+                              e.preventDefault();
+                              selecionarEntidade(item);
+                            }}
+                            onMouseEnter={() => setItemFocadoIdx(idx)}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              padding: '7px 10px',
+                              margin: '1px 0',
+                              borderRadius: 6,
+                              cursor: 'pointer',
+                              background: isFocado ? 'rgba(204, 9, 47, 0.05)' : isSelecionado ? 'rgba(16, 185, 129, 0.06)' : 'transparent',
+                              borderLeft: isFocado ? '3px solid #cc092f' : '3px solid transparent',
+                              transition: 'all 0.1s ease'
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
+                              <div style={{
+                                width: 28,
+                                height: 28,
+                                borderRadius: 6,
+                                background: isFocado ? 'rgba(204, 9, 47, 0.1)' : 'rgba(0, 0, 0, 0.04)',
+                                color: isFocado ? '#cc092f' : 'var(--text-secondary)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontWeight: 500,
+                                fontSize: 12,
+                                flexShrink: 0
+                              }}>
+                                {inicial}
+                              </div>
+
+                              <div style={{ minWidth: 0 }}>
+                                <div style={{
+                                  fontSize: 13,
+                                  color: 'var(--text-primary)',
+                                  whiteSpace: 'nowrap',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  letterSpacing: '-0.1px'
+                                }}>
+                                  {highlightMatch(item.nome, termoBuscaEntidade)}
+                                </div>
+                                <div style={{ fontSize: 10, color: 'var(--text-muted)', display: 'flex', gap: 5, alignItems: 'center', fontWeight: 400 }}>
+                                  <span>{(form.tipo as string) === 'receita' ? 'Cliente' : 'Fornecedor'}</span>
+                                  <span>•</span>
+                                  {stats && stats.count > 0 ? (
+                                    <span style={{ color: '#10b981', display: 'inline-flex', alignItems: 'center', gap: 3 }} title={`Baseado em ${stats.count} lançamentos — Média ${formatarMoeda(stats.media)}`}>
+                                      <Sparkles size={10} /> {stats.count}x • Média {formatarMoeda(stats.media)}
+                                    </span>
+                                  ) : (
+                                    <span style={{ color: '#10b981', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                                      <Sparkles size={10} /> IA Pronta
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, marginLeft: 8 }}>
+                              {isFocado && (
+                                <span style={{
+                                  fontSize: 9.5,
+                                  fontWeight: 400,
+                                  padding: '1px 6px',
+                                  borderRadius: 4,
+                                  background: 'rgba(0, 0, 0, 0.04)',
+                                  color: 'var(--text-muted)',
+                                  border: '1px solid var(--border)',
+                                  letterSpacing: '0.2px'
+                                }}>
+                                  Tab ↵
+                                </span>
+                              )}
+                              {isSelecionado && (
+                                <Check size={14} color="#10b981" />
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      {/* Opção Inline de Cadastrar Novo Fornecedor/Cliente se não houver match exato */}
+                      {termoBuscaEntidade.trim().length > 0 && !listaEntidadesFiltradas.some(it => it.nome.toLowerCase() === termoBuscaEntidade.trim().toLowerCase()) && (
+                        <div
+                          onMouseDown={e => {
+                            e.preventDefault();
+                            handleCriarNovaEntidadeInline(termoBuscaEntidade);
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 8,
+                            padding: '8px 10px',
+                            marginTop: 4,
+                            borderRadius: 6,
+                            cursor: 'pointer',
+                            background: 'rgba(16, 185, 129, 0.05)',
+                            borderTop: '1px dashed var(--border, rgba(0, 0, 0, 0.1))',
+                            color: 'var(--text-primary)',
+                            fontSize: 12,
+                            transition: 'all 0.1s ease'
+                          }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(16, 185, 129, 0.12)'; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(16, 185, 129, 0.05)'; }}
+                        >
+                          <div style={{
+                            width: 22,
+                            height: 22,
+                            borderRadius: 6,
+                            background: '#10b981',
+                            color: '#ffffff',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0
+                          }}>
+                            <Plus size={13} />
+                          </div>
+                          <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            Cadastrar <strong style={{ fontWeight: 600 }}>"{termoBuscaEntidade.trim()}"</strong> como novo {(form.tipo as string) === 'receita' ? 'cliente' : 'fornecedor'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <button type="button" onClick={() => setNovoCadastro((form.tipo as string) === 'receita' ? 'cliente' : 'fornecedor')} className="btn-secondary hover-lift active-press" style={{ padding: '0 12px', flexShrink: 0 }} title="Cadastrar novo">
+                <Plus size={16} />
+              </button>
             </div>
-          )}
-</div>
-      </div>
+            {novoCadastro && (
+              <div style={{ marginTop: 8, padding: 12, background: 'var(--bg-glass)', borderRadius: 10, border: '1px solid var(--border-hover)', display: 'flex', gap: 8 }}>
+                <input className="input-field" style={{ flex: 1, padding: '8px 12px' }} value={novoNome} onChange={e => setNovoNome(e.target.value)} placeholder={`Novo ${novoCadastro}`} autoFocus />
+                <button type="button" onClick={handleQuickAdd} className="btn-primary hover-lift active-press" style={{ padding: '8px 12px' }}>Salvar</button>
+                <button type="button" onClick={() => setNovoCadastro(null)} className="btn-secondary hover-lift active-press" style={{ padding: '8px' }}><X size={16} /></button>
+              </div>
+            )}
+          </div>
 
+          {/* Comportamento — refinável pela descrição */}
+          <div>
+            <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 5 }}>
+              Comportamento
+            </label>
+            <select
+              className="input-field"
+              value={form.comportamento}
+              title="Fixo = recorrente/diferido; Variável = à vista/pontual. A IA sugere pelo fornecedor e refina pela descrição."
+              onChange={e => setForm(f => ({ ...f, comportamento: e.target.value }))}
+              style={{
+                borderColor: form.comportamento === 'fixa' ? 'rgba(59,130,246,0.4)' : form.comportamento === 'variavel' ? 'rgba(245,158,11,0.4)' : undefined,
+                background: form.comportamento === 'fixa' ? 'rgba(59,130,246,0.06)' : form.comportamento === 'variavel' ? 'rgba(245,158,11,0.06)' : undefined,
+              }}
+            >
+              <option value="">— IA Decide —</option>
+              <option value="fixa">📌 Fixa (mensal/diferida)</option>
+              <option value="variavel">⚡ Variável (à vista/pontual)</option>
+            </select>
+          </div>
+        </div>
+      )}
       <div className="grid-responsive-3">
         <div>
           <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 5 }}>Descrição</label>
@@ -2130,7 +2878,57 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
         </div>
         <div>
           <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 5 }}>Valor *</label>
-          <input className="input-field" type="text" value={formatarMoedaInput(form.valor)} onChange={e => set({ valor: e.target.value.replace(/\D/g, '') })} placeholder="R$ 0,00" />
+          <input
+            ref={valorInputRef}
+            className="input-field"
+            type="text"
+            value={formatarMoedaInput(form.valor)}
+            onChange={e => set({ valor: e.target.value.replace(/\D/g, '') })}
+            placeholder="R$ 0,00"
+          />
+
+          {/* Sugestão de valor médio histórico e Alerta de discrepância visual inline */}
+          {sugestaoValor && sugestaoValor.valorMedio > 0 && (
+            <div style={{ marginTop: 5 }}>
+              {(!form.valor || form.valor === '0') ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--text-muted)' }}>
+                  <span>💡 Média habitual: <strong style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{formatarMoeda(sugestaoValor.valorMedio)}</strong> ({sugestaoValor.quantidade}x)</span>
+                  <button
+                    type="button"
+                    onClick={() => set({ valor: Math.round(sugestaoValor.valorMedio * 100).toString() })}
+                    style={{
+                      fontSize: 10,
+                      padding: '2px 8px',
+                      borderRadius: 12,
+                      border: '1px solid rgba(16, 185, 129, 0.4)',
+                      background: 'rgba(16, 185, 129, 0.1)',
+                      color: '#10b981',
+                      cursor: 'pointer',
+                      fontWeight: 600
+                    }}
+                  >
+                    Usar
+                  </button>
+                </div>
+              ) : (parseInt(form.valor, 10) / 100) >= (sugestaoValor.valorMedio * 2) ? (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  fontSize: 11,
+                  color: '#d97706',
+                  background: 'rgba(245, 158, 11, 0.1)',
+                  padding: '4px 8px',
+                  borderRadius: 6,
+                  border: '1px solid rgba(245, 158, 11, 0.3)',
+                  marginTop: 4
+                }}>
+                  <AlertTriangle size={13} style={{ flexShrink: 0 }} />
+                  <span>Atenção: +{Math.round(((parseInt(form.valor, 10) / 100) / sugestaoValor.valorMedio - 1) * 100)}% acima da média ({formatarMoeda(sugestaoValor.valorMedio)})</span>
+                </div>
+              ) : null}
+            </div>
+          )}
         </div>
       </div>
 
@@ -2497,6 +3295,16 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
         )}
         <button
           type="button"
+          onClick={limparTodosOsCampos100Pct}
+          className="btn-secondary hover-lift active-press"
+          style={{ padding: '10px 16px', borderRadius: 10, fontWeight: 600, fontSize: 13, justifyContent: 'center', color: '#94a3b8' }}
+          title="Limpar 100% de todos os campos do formulário"
+        >
+          <RefreshCw size={14} />
+          Limpar
+        </button>
+        <button
+          type="button"
           onClick={handleSubmit}
           className="btn-secondary hover-lift active-press"
           style={{ padding: '10px 18px', borderRadius: 10, fontWeight: 600, fontSize: 13, justifyContent: 'center' }}
@@ -2528,6 +3336,126 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
         </button>
       </div>
     </div>
+      )}
+
+      {/* MODAL DE CONFIRMAÇÃO DE SEGURANÇA CONTRA ERRO DE DIGITAÇÃO (VALOR DISCREPANTE) */}
+      {alertaValorAberto && alertaValorInfo && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 99999,
+          background: 'rgba(0, 0, 0, 0.65)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 16
+        }}>
+          <div style={{
+            background: 'var(--bg-card, #ffffff)',
+            borderRadius: 16,
+            maxWidth: 480,
+            width: '100%',
+            padding: 24,
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
+            border: '1px solid var(--border)',
+            animation: 'fadeIn 0.15s ease-out'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+              <div style={{
+                width: 44,
+                height: 44,
+                borderRadius: 12,
+                background: 'rgba(245, 158, 11, 0.15)',
+                color: '#d97706',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }}>
+                <AlertTriangle size={24} />
+              </div>
+              <div>
+                <h3 style={{ fontSize: 17, fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
+                  Atenção: Confirmação de Valor
+                </h3>
+                <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
+                  A IA detectou um valor incomum para este lançamento
+                </p>
+              </div>
+            </div>
+
+            <div style={{
+              background: 'rgba(0, 0, 0, 0.03)',
+              borderRadius: 10,
+              padding: 14,
+              marginBottom: 16,
+              border: '1px solid var(--border)'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 13 }}>
+                <span style={{ color: 'var(--text-muted)' }}>Entidade:</span>
+                <strong style={{ color: 'var(--text-primary)' }}>{alertaValorInfo.entidadeNome}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 13 }}>
+                <span style={{ color: 'var(--text-muted)' }}>Média habitual ({alertaValorInfo.quantidade}x):</span>
+                <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>{formatarMoeda(alertaValorInfo.valorMedio)}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 8, borderTop: '1px solid var(--border)' }}>
+                <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>Valor Digitado:</span>
+                <div style={{ textAlign: 'right' }}>
+                  <span style={{ fontSize: 18, fontWeight: 800, color: '#dc2626' }}>
+                    {formatarMoeda(alertaValorInfo.valorAtual)}
+                  </span>
+                  <div style={{ fontSize: 11, color: '#dc2626', fontWeight: 600 }}>
+                    +{alertaValorInfo.percentual}% acima do habitual
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: 20 }}>
+              Você realmente deseja lançar <strong>{formatarMoeda(alertaValorInfo.valorAtual)}</strong>?
+              Pode ter ocorrido um erro de digitação acidental (ex: digitar zeros a mais).
+            </p>
+
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setAlertaValorAberto(false);
+                  setTimeout(() => {
+                    valorInputRef.current?.focus();
+                    valorInputRef.current?.select();
+                  }, 60);
+                }}
+                className="btn-secondary hover-lift active-press"
+                style={{ padding: '10px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600 }}
+              >
+                Corrigir Valor
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  alertaValorInfo.onConfirmar();
+                }}
+                className="btn-primary hover-lift active-press"
+                style={{
+                  padding: '10px 18px',
+                  borderRadius: 8,
+                  fontSize: 13,
+                  fontWeight: 700,
+                  background: '#d97706',
+                  borderColor: '#d97706'
+                }}
+              >
+                Sim, Confirmar Valor
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -179,11 +179,15 @@ export interface PadraoCategoriaIA {
 
 export interface HistoricoIA {
   texto: string;
+  descricao?: string;
   categoriaId: string;
   centroCustoId?: string;
   fornecedorId?: string;
+  clienteId?: string;
   contaId?: string;
+  cartaoId?: string;
   formaPagamento?: FormaPagamento;
+  comportamento?: string;
   timestamp: string;
   count: number;
 }
