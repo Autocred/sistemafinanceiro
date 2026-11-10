@@ -11,19 +11,19 @@ const db = getFirestore(app);
 
 async function run() {
   await addDoc(collection(db, 'saas_releases'), {
-    versao: 'v3.6.83',
-    titulo: 'Tratamento Amigável de Status e Diagnóstico do Servidor WhatsApp',
-    descricao: 'Aprimoramento nas mensagens de diagnóstico e teste de WhatsApp: exibição de aviso claro e intuitivo orientando a verificação do container no Railway em caso de indisponibilidade da Evolution API.',
+    versao: 'v3.6.84',
+    titulo: 'Atalho Direto para Conexão de WhatsApp e QR Code',
+    descricao: 'Inclusão de atalho visual direto na aba WhatsApp em Configurações para acesso instantâneo à tela de conexão do aparelho e gestão de credenciais da Evolution API (/master/whatsapp).',
     dataLancamento: new Date().toISOString(),
     status: 'publicado',
     destaque: true,
     notificarTenants: false,
     alvos: 'todos',
     changes: [
-      { tipo: 'melhoria', texto: 'Diagnóstico Amigável no Painel: Alertas de teste de WhatsApp agora traduzem erros do Railway (como 404 Application not found) em orientações claras para reativar o container.' }
+      { tipo: 'funcionalidade', texto: 'Acesso Rápido à Conexão WhatsApp: Botão direto em Configurações > WhatsApp para abrir a tela de geração de QR Code e credenciais da API.' }
     ]
   });
-  console.log('Release notes v3.6.83 added!');
+  console.log('Release notes v3.6.84 added!');
   process.exit(0);
 }
 

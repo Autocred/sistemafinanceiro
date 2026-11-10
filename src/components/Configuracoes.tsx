@@ -1664,6 +1664,25 @@ document.cookie = 'app_pin_code=' + encodeURIComponent(novoPin) + '; max-age=315
           
           {(cfg.whatsappAtivo ?? true) && (
             <div style={{ background: 'var(--bg-glass)', border: '1px solid var(--border)', borderRadius: 10, padding: 16, marginTop: 12, display: 'flex', flexDirection: 'column', gap: 14 }}>
+              
+              {/* Atalho para o painel de conexão e QR Code */}
+              <div style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.25)', borderRadius: 10, padding: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 13, color: '#10b981', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <MessageCircle size={16} /> Conexão do WhatsApp & QR Code
+                  </div>
+                  <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
+                    Configure a URL da API (Railway), gere o QR Code do WhatsApp e vincule seu aparelho conectado.
+                  </p>
+                </div>
+                <a
+                  href="/master/whatsapp"
+                  style={{ textDecoration: 'none', fontSize: 12, padding: '8px 14px', background: '#10b981', color: '#fff', borderRadius: 8, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}
+                >
+                  <QrCode size={14} /> Abrir Conexão WhatsApp (/master/whatsapp)
+                </a>
+              </div>
+
               <div>
                 <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>
                   📱 Seu Número de WhatsApp (com DDD)
