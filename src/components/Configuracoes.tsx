@@ -1664,25 +1664,6 @@ document.cookie = 'app_pin_code=' + encodeURIComponent(novoPin) + '; max-age=315
           
           {(cfg.whatsappAtivo ?? true) && (
             <div style={{ background: 'var(--bg-glass)', border: '1px solid var(--border)', borderRadius: 10, padding: 16, marginTop: 12, display: 'flex', flexDirection: 'column', gap: 14 }}>
-              
-              {/* Atalho para o painel de conexão e QR Code */}
-              <div style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.25)', borderRadius: 10, padding: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: 13, color: '#10b981', display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <MessageCircle size={16} /> Conexão do WhatsApp & QR Code
-                  </div>
-                  <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
-                    Configure a URL da API (Railway), gere o QR Code do WhatsApp e vincule seu aparelho conectado.
-                  </p>
-                </div>
-                <a
-                  href="/master/whatsapp"
-                  style={{ textDecoration: 'none', fontSize: 12, padding: '8px 14px', background: '#10b981', color: '#fff', borderRadius: 8, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}
-                >
-                  <QrCode size={14} /> Abrir Conexão WhatsApp (/master/whatsapp)
-                </a>
-              </div>
-
               <div>
                 <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>
                   📱 Seu Número de WhatsApp (com DDD)
@@ -1695,53 +1676,6 @@ document.cookie = 'app_pin_code=' + encodeURIComponent(novoPin) + '; max-age=315
                   onBlur={() => salvar({ ...cfg, ultimoEnvioFechamento: '', ultimoEnvioLembretes: '' })}
                 />
                 <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>Informe o número com DDD que receberá as mensagens (somente números ou formato internacional).</p>
-              </div>
-
-              {/* Dias da Semana para Disparos do WhatsApp */}
-              <div>
-                <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', display: 'block', marginBottom: 8 }}>
-                  📅 Dias da Semana para Envio dos Relatórios no WhatsApp
-                </label>
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((dia, i) => {
-                    const diasAtivos = cfg.whatsappDias || cfg.pushDias || ['1', '2', '3', '4', '5'];
-                    const ativo = diasAtivos.includes(i.toString());
-                    return (
-                      <button
-                        key={dia}
-                        type="button"
-                        onClick={() => {
-                          const novos = [...diasAtivos];
-                          if (ativo) {
-                            const idx = novos.indexOf(i.toString());
-                            if (idx > -1) novos.splice(idx, 1);
-                          } else {
-                            novos.push(i.toString());
-                          }
-                          const upd = { ...cfg, whatsappDias: novos };
-                          setCfg(upd);
-                          salvar(upd);
-                        }}
-                        style={{
-                          padding: '6px 14px',
-                          borderRadius: 16,
-                          fontSize: 12,
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          border: `1px solid ${ativo ? '#10b981' : 'var(--border)'}`,
-                          background: ativo ? '#10b981' : 'var(--bg-glass)',
-                          color: ativo ? '#ffffff' : 'var(--text-secondary)',
-                          transition: 'all 0.15s'
-                        }}
-                      >
-                        {dia}
-                      </button>
-                    );
-                  })}
-                </div>
-                <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', marginTop: 4 }}>
-                  Escolha em quais dias o robô enviará os lembretes e relatórios no seu WhatsApp.
-                </span>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
@@ -1917,14 +1851,8 @@ document.cookie = 'app_pin_code=' + encodeURIComponent(novoPin) + '; max-age=315
                       const nomeAtual = cfg.nomeSistema || cfg.nomeUsuario || (currentTenant === 'master' ? 'Clovis Master' : 'Autocred Promotora');
                       const res = await fetch(`/api/cron/fechamento-diario?tenantId=${encodeURIComponent(currentTenant)}&numero=${encodeURIComponent(cfg.whatsappNumeros || '')}&nome=${encodeURIComponent(nomeAtual)}`);
                       const json = await res.json();
-                      const formatarErroZap = (raw: string) => {
-                        if (raw.includes('Application not found') || raw.includes('404')) {
-                          return '⚠️ O servidor da Evolution API no Railway está desligado/pausado ou a URL mudou. Acesse seu painel da Railway (railway.app) para reativar o container.';
-                        }
-                        return raw;
-                      };
                       if (json.success) alert('✅ Mensagem de fechamento entregue no seu WhatsApp!');
-                      else alert('Aviso: ' + formatarErroZap(json.message || json.error || JSON.stringify(json)));
+                      else alert('Resposta: ' + (json.message || json.error));
                     } catch (err: any) {
                       alert('Erro ao disparar: ' + err.message);
                     }
@@ -1948,14 +1876,8 @@ document.cookie = 'app_pin_code=' + encodeURIComponent(novoPin) + '; max-age=315
                       const nomeAtual = cfg.nomeSistema || cfg.nomeUsuario || (currentTenant === 'master' ? 'Clovis Master' : 'Autocred Promotora');
                       const res = await fetch(`/api/cron/lembretes?tenantId=${encodeURIComponent(currentTenant)}&numero=${encodeURIComponent(cfg.whatsappNumeros || '')}&nome=${encodeURIComponent(nomeAtual)}`);
                       const json = await res.json();
-                      const formatarErroZap = (raw: string) => {
-                        if (raw.includes('Application not found') || raw.includes('404')) {
-                          return '⚠️ O servidor da Evolution API no Railway está desligado/pausado ou a URL mudou. Acesse seu painel da Railway (railway.app) para reativar o container.';
-                        }
-                        return raw;
-                      };
                       if (json.success) alert('✅ Mensagem de lembrete entregue no seu WhatsApp!');
-                      else alert('Aviso: ' + formatarErroZap(json.message || json.error || JSON.stringify(json)));
+                      else alert('Resposta: ' + (json.message || json.error));
                     } catch (err: any) {
                       alert('Erro ao disparar: ' + err.message);
                     }
@@ -1979,14 +1901,8 @@ document.cookie = 'app_pin_code=' + encodeURIComponent(novoPin) + '; max-age=315
                       const nomeAtual = cfg.nomeSistema || cfg.nomeUsuario || (currentTenant === 'master' ? 'Clovis Master' : 'Autocred Promotora');
                       const res = await fetch(`/api/cron/resumo-metas?tenantId=${encodeURIComponent(currentTenant)}&numero=${encodeURIComponent(cfg.whatsappNumeros || '')}&nome=${encodeURIComponent(nomeAtual)}&slot=12h`);
                       const json = await res.json();
-                      const formatarErroZap = (raw: string) => {
-                        if (raw.includes('Application not found') || raw.includes('404')) {
-                          return '⚠️ O servidor da Evolution API no Railway está desligado/pausado ou a URL mudou. Acesse seu painel da Railway (railway.app) para reativar o container.';
-                        }
-                        return raw;
-                      };
                       if (json.success) alert('✅ Mensagem de Metas entregue no seu WhatsApp!');
-                      else alert('Aviso: ' + formatarErroZap(json.message || json.error || JSON.stringify(json)));
+                      else alert('Resposta: ' + (json.message || json.error));
                     } catch (err: any) {
                       alert('Erro ao disparar: ' + err.message);
                     }
@@ -2010,16 +1926,10 @@ document.cookie = 'app_pin_code=' + encodeURIComponent(novoPin) + '; max-age=315
                       const nomeAtual = cfg.nomeSistema || cfg.nomeUsuario || (currentTenant === 'master' ? 'Clovis Master' : 'Autocred Promotora');
                       const res = await fetch(`/api/cron/fechamento-mensal?tenantId=${encodeURIComponent(currentTenant)}&numero=${encodeURIComponent(cfg.whatsappNumeros || '')}&nome=${encodeURIComponent(nomeAtual)}`);
                       const json = await res.json();
-                      const formatarErroZap = (raw: string) => {
-                        if (raw.includes('Application not found') || raw.includes('404')) {
-                          return '⚠️ O servidor da Evolution API no Railway está desligado/pausado ou a URL mudou. Acesse seu painel da Railway (railway.app) para reativar o container.';
-                        }
-                        return raw;
-                      };
                       if (json.success) {
                         alert('✅ Relatório Executivo e PDF de Fechamento Mensal enviados com sucesso no WhatsApp!');
                       } else {
-                        alert('Aviso: ' + formatarErroZap(json.message || json.error || JSON.stringify(json)));
+                        alert('Resposta: ' + (json.message || json.error));
                       }
                     } catch (err: any) {
                       alert('Erro ao disparar: ' + err.message);

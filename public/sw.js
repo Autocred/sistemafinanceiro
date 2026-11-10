@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pwa-cache-v6';
+const CACHE_NAME = 'pwa-cache-v5';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -17,22 +17,10 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Listener para mensagens vindas do cliente
+// Listener para SKIP_WAITING vindo do cliente
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
-  }
-  // Notificação com privilégio de SO disparada pelo cliente
-  if (event.data && event.data.type === 'SHOW_NOTIFICATION') {
-    const { title, options } = event.data;
-    self.registration.showNotification(title || 'Sistema Financeiro', {
-      body: options?.body || '',
-      icon: options?.icon || '/icon-192.png',
-      badge: options?.badge || '/icon-192.png',
-      vibrate: options?.vibrate || [200, 100, 200, 100, 200],
-      tag: options?.tag || 'alerta-contas-pendentes-30min',
-      data: options?.data || { url: '/' }
-    });
   }
 });
 
@@ -41,6 +29,7 @@ self.addEventListener('fetch', (event) => {
   // Garante que sempre carregue a versão mais nova
   event.respondWith(fetch(event.request).catch(() => Response.error()));
 });
+
 
 self.addEventListener('push', function (event) {
   if (event.data) {
@@ -73,17 +62,16 @@ self.addEventListener('push', function (event) {
 
 self.addEventListener('notificationclick', function (event) {
   event.notification.close();
-  const targetUrl = (event.notification.data && event.notification.data.url) || '/';
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windowClients => {
+    clients.matchAll({ type: 'window' }).then(windowClients => {
       for (var i = 0; i < windowClients.length; i++) {
         var client = windowClients[i];
-        if ('focus' in client) {
+        if (client.url === event.notification.data.url && 'focus' in client) {
           return client.focus();
         }
       }
       if (clients.openWindow) {
-        return clients.openWindow(targetUrl);
+        return clients.openWindow(event.notification.data.url);
       }
     })
   );

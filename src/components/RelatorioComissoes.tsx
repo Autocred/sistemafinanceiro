@@ -39,115 +39,6 @@ export function RelatorioComissoes({
 
   const fmt = formatarMoeda;
 
-  // Tooltip customizado com contraste máximo e título 100% legível (Branco Puro em Negrito)
-  const CustomTooltipBancos = ({ active, payload, label }: any) => {
-    if (!active || !payload || !payload.length) return null;
-    return (
-      <div style={{
-        background: '#0f172a',
-        border: '1px solid rgba(255, 255, 255, 0.25)',
-        borderRadius: 12,
-        padding: '10px 14px',
-        boxShadow: '0 12px 32px rgba(0, 0, 0, 0.6)',
-        color: '#ffffff',
-        minWidth: 170
-      }}>
-        <div style={{
-          color: '#ffffff',
-          fontWeight: 800,
-          fontSize: 13,
-          marginBottom: 8,
-          borderBottom: '1px solid rgba(255,255,255,0.15)',
-          paddingBottom: 4
-        }}>
-          {label}
-        </div>
-        {payload.map((entry: any, idx: number) => (
-          <div key={`tip-${idx}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, fontSize: 12, marginBottom: 4 }}>
-            <span style={{ color: entry.fill || entry.color || '#38bdf8', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: entry.fill || entry.color, display: 'inline-block' }}></span>
-              {entry.name}:
-            </span>
-            <span style={{ color: '#ffffff', fontWeight: 800 }}>
-              {fmt(Number(entry.value) || 0)}
-            </span>
-          </div>
-        ))}
-      </div>
-    );
-  };
-
-  const CustomTooltipPizza = ({ active, payload }: any) => {
-    if (!active || !payload || !payload.length) return null;
-    const item = payload[0];
-    return (
-      <div style={{
-        background: '#0f172a',
-        border: '1px solid rgba(255, 255, 255, 0.25)',
-        borderRadius: 12,
-        padding: '10px 14px',
-        boxShadow: '0 12px 32px rgba(0, 0, 0, 0.6)',
-        color: '#ffffff',
-        minWidth: 160
-      }}>
-        <div style={{
-          color: '#ffffff',
-          fontWeight: 800,
-          fontSize: 13,
-          marginBottom: 6,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6
-        }}>
-          <span style={{ width: 10, height: 10, borderRadius: '50%', background: item.payload?.color || item.color, display: 'inline-block' }}></span>
-          {item.name}
-        </div>
-        <div style={{ color: '#ffffff', fontWeight: 800, fontSize: 13 }}>
-          {fmt(Number(item.value) || 0)}
-        </div>
-      </div>
-    );
-  };
-
-  const CustomTooltipProjecao = ({ active, payload, label }: any) => {
-    if (!active || !payload || !payload.length) return null;
-    return (
-      <div style={{
-        background: '#0f172a',
-        border: '1px solid rgba(255, 255, 255, 0.25)',
-        borderRadius: 12,
-        padding: '10px 14px',
-        boxShadow: '0 12px 32px rgba(0, 0, 0, 0.6)',
-        color: '#ffffff',
-        minWidth: 180
-      }}>
-        <div style={{
-          color: '#ffffff',
-          fontWeight: 800,
-          fontSize: 13,
-          marginBottom: 8,
-          borderBottom: '1px solid rgba(255,255,255,0.15)',
-          paddingBottom: 4
-        }}>
-          {label}
-        </div>
-        {payload.map((entry: any, idx: number) => {
-          const nomeFormatado = entry.dataKey === 'estimativa' ? 'Mensal Estimado' : 'Acumulado';
-          return (
-            <div key={`proj-${idx}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, fontSize: 12, marginBottom: 4 }}>
-              <span style={{ color: entry.stroke || entry.fill || entry.color, fontWeight: 700 }}>
-                {nomeFormatado}:
-              </span>
-              <span style={{ color: '#ffffff', fontWeight: 800 }}>
-                {fmt(Number(entry.value) || 0)}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    );
-  };
-
   // ── CORES DO TENANT (White-Label SaaS) ────────────────────────────────────
   const { cfg } = useConfiguracao();
   const corPrimaria = cfg?.corPrimaria || '#7c3aed';
@@ -937,8 +828,17 @@ export function RelatorioComissoes({
                     tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
                     tickFormatter={v => `R$ ${(v / 1000).toFixed(0)}k`}
                   />
-                  <Tooltip content={<CustomTooltipBancos />} />
-                  <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }} />
+                  <Tooltip
+                    formatter={(value: any, name: any) => [fmt(Number(value) || 0), name]}
+                    contentStyle={{
+                      background: 'rgba(255,255,255,0.96)',
+                      borderRadius: 12,
+                      border: '1px solid rgba(0,0,0,0.1)',
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                      fontSize: 12
+                    }}
+                  />
+                  <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: 12, fontWeight: 600 }} />
                   <Bar dataKey="À Vista" stackId="a" fill="#10b981" radius={[0, 0, 4, 4]} />
                   <Bar dataKey="Diferida" stackId="a" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
                 </BarChart>
@@ -983,8 +883,17 @@ export function RelatorioComissoes({
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip content={<CustomTooltipPizza />} />
-                  <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: 11, fontWeight: 600, color: 'var(--text-primary)' }} />
+                  <Tooltip
+                    formatter={(value: any, name: any) => [fmt(Number(value) || 0), name]}
+                    contentStyle={{
+                      background: 'rgba(255,255,255,0.96)',
+                      borderRadius: 12,
+                      border: '1px solid rgba(0,0,0,0.1)',
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                      fontSize: 12
+                    }}
+                  />
+                  <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: 11, fontWeight: 600 }} />
                 </PieChart>
               </ResponsiveContainer>
             )}
@@ -1314,8 +1223,15 @@ export function RelatorioComissoes({
                   tick={{ fill: 'var(--text-muted)', fontSize: 10 }}
                   tickFormatter={v => `R$${(v / 1000).toFixed(0)}k`}
                 />
-                <Tooltip content={<CustomTooltipProjecao />} />
-                <Legend verticalAlign="top" height={32} wrapperStyle={{ fontSize: 11, fontWeight: 600, color: 'var(--text-primary)' }} />
+                <Tooltip
+                  formatter={(value: any, name: any) => [fmt(Number(value) || 0), name === 'estimativa' ? 'Mensal Estimado' : 'Acumulado']}
+                  contentStyle={{
+                    background: 'rgba(255,255,255,0.97)',
+                    borderRadius: 12, border: `1px solid ${corPrimariaAlpha(0.2)}`,
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.12)', fontSize: 12
+                  }}
+                />
+                <Legend verticalAlign="top" height={32} wrapperStyle={{ fontSize: 11, fontWeight: 600 }} />
                 <Bar yAxisId="left" dataKey="estimativa" name="Mensal Estimado" fill={corPrimaria} radius={[6, 6, 0, 0]} opacity={0.85} />
                 <Area yAxisId="right" type="monotone" dataKey="acumulado" name="Acumulado" stroke="#10b981" strokeWidth={2.5} fill="url(#gradAcum)" dot={{ fill: '#10b981', r: 4 }} />
               </ComposedChart>

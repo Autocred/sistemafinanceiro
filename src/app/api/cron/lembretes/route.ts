@@ -13,14 +13,9 @@ export async function GET(request: Request) {
     console.log('[CRON] Iniciando rotina de Lembretes Diários (Contas a Pagar e Receber)...');
 
     const db = adminDb!;
-    // Garantir data no fuso de São Paulo
-    const hojeStr = new Intl.DateTimeFormat('pt-BR', {
-      timeZone: 'America/Sao_Paulo',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    }).format(new Date()).split('/').reverse().join('-'); // YYYY-MM-DD
-    const displayData = hojeStr.split('-').reverse().join('/');
+    const hojeData = new Date();
+    const hojeStr = format(hojeData, 'yyyy-MM-dd');
+    const displayData = format(hojeData, 'dd/MM/yyyy');
 
     // Suporte a chamada parametrizada por licença (Multi-tenant SaaS)
     const { searchParams } = new URL(request.url);
@@ -152,22 +147,6 @@ export async function GET(request: Request) {
     // 5. Enviar via WhatsApp com as credenciais da Evolution API
     console.log(`[CRON LEMBRETES] Enviando notificação para ${telefoneMaster}...`);
     const resultado = await enviarMensagemWhatsApp(telefoneMaster, texto, apiUrl, apiToken);
-
-    if (!resultado.sucesso) {
-      return NextResponse.json({
-        success: false,
-        error: resultado.erro || 'Falha ao entregar no gateway WhatsApp (Evolution API)',
-        telefone: telefoneMaster,
-        resultadoZap: resultado,
-        totais: {
-          pagarHoje: { qtd: pagarHoje.length, valor: totalPagarHoje },
-          receberHoje: { qtd: receberHoje.length, valor: totalReceberHoje },
-          pagarAtrasadas: { qtd: pagarAtrasadas.length, valor: totalPagarAtrasadas },
-          receberAtrasadas: { qtd: receberAtrasadas.length, valor: totalReceberAtrasadas },
-        },
-        mensagemPreview: texto
-      }, { status: 502 });
-    }
 
     return NextResponse.json({
       success: true,

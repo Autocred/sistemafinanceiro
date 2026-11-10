@@ -503,12 +503,10 @@ export default function Home() {
   // ATALHO GLOBAL: Alt + N para Novo Lançamento
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Alt+N ou Ctrl+0 → Novo Lançamento
-      const isAltN = e.altKey && e.key.toLowerCase() === 'n';
-      const isCtrl0 = (e.ctrlKey || e.metaKey) && e.key === '0';
-      if (isAltN || isCtrl0) {
+      if (e.altKey && e.key.toLowerCase() === 'n') {
         e.preventDefault();
-        if (!bloqueadoBiometria && !bloqueadoInatividade) {
+        // Verifica se não está bloqueado e o modal não está aberto
+        if (!bloqueadoBiometria && !bloqueadoInatividade && !modalAberto) {
           setTransacaoEditar(null);
           setModalAberto(true);
         }
@@ -894,10 +892,6 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
   if (!autenticado) {
     return (
       <>
-        <DailyReminderPopup 
-          isDeslogado={true} 
-          tenantId={typeof window !== 'undefined' ? (localStorage.getItem('last_logged_tenantId') || localStorage.getItem('suporte_impersonate_tenant')) : null} 
-        />
         <Login configuracoes={cfg || { nomeSistema: 'FinanceAI' } as any} onLogin={async (profile) => {
           sessionStorage.setItem('active_session_auth', 'true');
           sessionStorage.setItem('active_session_profile', JSON.stringify(profile));
@@ -1274,7 +1268,7 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
         )}
 
         {userProfile?.uid && !bloqueadoBiometria && !bloqueadoInatividade && !tenantBloqueadoData && (
-          <DailyReminderPopup userId={userProfile.uid} tenantId={userProfile.tenantId} setActiveTab={tab => setPaginaAtual(tab as Pagina)} />
+          <DailyReminderPopup userId={userProfile.uid} setActiveTab={tab => setPaginaAtual(tab as Pagina)} />
         )}
 
         {/* HEADER BANCÁRIO NUBANK/INTER (RED #cc0000) */}
@@ -1300,21 +1294,14 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
               alignItems: 'center',
               justifyContent: sidebarCompacta ? 'center' : 'space-between',
               marginBottom: 10,
-              padding: sidebarCompacta ? '6px 0' : '6px 10px',
-              background: 'rgba(255, 255, 255, 0.08)',
+              padding: sidebarCompacta ? '4px 0' : '6px 8px',
+              background: 'rgba(255,255,255,0.08)',
               borderRadius: 10,
-              border: '1px solid rgba(255, 255, 255, 0.14)'
+              border: '1px solid rgba(255,255,255,0.15)'
             }}>
               {!sidebarCompacta && (
-                <span style={{
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  color: '#FFFFFF',
-                  letterSpacing: '0.4px',
-                  fontFamily: "'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif",
-                  textTransform: 'uppercase'
-                }}>
-                  Menu Principal
+                <span style={{ fontSize: '11px', fontWeight: 600, color: '#ffffff', letterSpacing: '0.3px', fontFamily: "'Open Sans', sans-serif" }}>
+                  MENU PRINCIPAL
                 </span>
               )}
               <button
@@ -1324,82 +1311,76 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: 5,
-                  background: 'rgba(255, 255, 255, 0.15)',
-                  border: '1px solid rgba(255, 255, 255, 0.25)',
-                  color: '#FFFFFF',
+                  background: 'rgba(255,255,255,0.2)',
+                  border: '1px solid rgba(255,255,255,0.3)',
+                  color: '#ffffff',
                   borderRadius: 8,
                   padding: sidebarCompacta ? '6px' : '4px 8px',
                   fontSize: '11px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-                  transition: 'all 0.15s ease'
+                  fontWeight: 700,
+                  cursor: 'pointer'
                 }}
               >
                 {sidebarCompacta ? <ChevronsRight size={15} /> : <><ChevronsLeft size={14} /> <span>Recolher</span></>}
               </button>
             </div>
-
-            {/* BOTÃO NOVO LANÇAMENTO (PADRÃO BANCÁRIO ELEGANTE) */}
             <button 
-              className="flex items-center justify-center gap-2 w-full mb-2.5 py-3 px-3 transition-all"
-              title="Novo Lançamento (Ctrl+0)"
+              className="flex items-center justify-center gap-2 w-full mb-6 py-3.5 px-4 transition-all"
               style={{
-                background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                background: (!userProfile || !userProfile.tenantId || userProfile.tenantId === 'master' || userProfile.uid === 'clovis-master-bypass') ? 'linear-gradient(180deg, #10b981 0%, #059669 100%)' : 'linear-gradient(180deg, var(--primary) 0%, var(--primary-dark) 100%)',
                 color: '#ffffff',
-                border: '1px solid rgba(255, 255, 255, 0.35)',
+                border: 'none',
                 borderRadius: '12px',
-                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.3)',
-                fontSize: '13.5px',
-                fontWeight: 600,
+                borderBottom: (!userProfile || !userProfile.tenantId || userProfile.tenantId === 'master' || userProfile.uid === 'clovis-master-bypass') ? '5px solid #047857' : '5px solid color-mix(in srgb, var(--primary-dark) 80%, black)',
+                boxShadow: (!userProfile || !userProfile.tenantId || userProfile.tenantId === 'master' || userProfile.uid === 'clovis-master-bypass') ? '0 4px 20px rgba(16, 185, 129, 0.4)' : '0 4px 20px var(--primary-light)',
+                fontSize: '15px',
+                fontWeight: 900,
                 cursor: 'pointer',
-                letterSpacing: '0.2px',
-                fontFamily: "'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif",
-                transition: 'all 0.2s ease',
+                letterSpacing: '0.5px',
+                textShadow: '0 1px 2px rgba(0,0,0,0.2)',
+                transform: 'translateY(0)',
               }}
               onMouseOver={e => {
-                e.currentTarget.style.transform = 'translateY(-1px)';
-                e.currentTarget.style.filter = 'brightness(1.08)';
+                e.currentTarget.style.filter = 'brightness(1.1)';
               }}
               onMouseOut={e => {
-                e.currentTarget.style.transform = 'translateY(0)';
                 e.currentTarget.style.filter = 'brightness(1)';
+                e.currentTarget.style.borderBottomWidth = '5px';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = (!userProfile || !userProfile.tenantId || userProfile.tenantId === 'master' || userProfile.uid === 'clovis-master-bypass') ? '0 4px 20px rgba(16, 185, 129, 0.4)' : '0 4px 20px var(--primary-light)';
+              }}
+              onMouseDown={e => {
+                e.currentTarget.style.borderBottomWidth = '0px';
+                e.currentTarget.style.transform = 'translateY(5px)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+              onMouseUp={e => {
+                e.currentTarget.style.borderBottomWidth = '5px';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = (!userProfile || !userProfile.tenantId || userProfile.tenantId === 'master' || userProfile.uid === 'clovis-master-bypass') ? '0 4px 20px rgba(16, 185, 129, 0.4)' : '0 4px 20px var(--primary-light)';
               }}
               onClick={() => { setMobileMenuAberto(false); setTransacaoEditar(null); setModalAberto(true); }}
             >
-              <PlusCircle size={18} strokeWidth={2.2} />
-              {!sidebarCompacta && <span>Novo Lançamento</span>}
+              <PlusCircle size={20} strokeWidth={2.5} />
+              <span>Novo Lançamento</span>
             </button>
-
-            {/* BOTÃO LER BOLETO/NF COM IA */}
             <button
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                padding: '8px 12px', borderRadius: '12px',
-                background: 'linear-gradient(135deg, rgba(147, 51, 234, 0.25) 0%, rgba(126, 34, 206, 0.15) 100%)',
-                border: '1px solid rgba(192, 132, 252, 0.4)',
-                color: '#F3E8FF',
-                fontWeight: 600, fontSize: '12.5px', cursor: 'pointer',
-                marginBottom: '10px', transition: 'all 0.2s ease', width: '100%',
-                boxShadow: '0 2px 10px rgba(147, 51, 234, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.15)',
-                fontFamily: "'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif"
-              }}
-              onMouseOver={e => {
-                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(147, 51, 234, 0.35) 0%, rgba(126, 34, 206, 0.25) 100%)';
-                e.currentTarget.style.borderColor = 'rgba(192, 132, 252, 0.6)';
-              }}
-              onMouseOut={e => {
-                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(147, 51, 234, 0.25) 0%, rgba(126, 34, 206, 0.15) 100%)';
-                e.currentTarget.style.borderColor = 'rgba(192, 132, 252, 0.4)';
+                padding: '10px 14px', borderRadius: '14px',
+                background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(168, 85, 247, 0.2))',
+                border: '1px solid rgba(168, 85, 247, 0.4)',
+                color: '#e9d5ff',
+                fontWeight: 700, fontSize: '13px', cursor: 'pointer',
+                marginBottom: '14px', transition: 'all 0.2s', width: '100%',
+                boxShadow: '0 4px 12px rgba(168, 85, 247, 0.2)'
               }}
               onClick={() => { setMobileMenuAberto(false); setModalImportarDocAberto(true); }}
               title="Importar Boleto, Nota Fiscal ou Recibo com OCR e IA"
             >
-              <Sparkles size={15} color="#c084fc" />
-              {!sidebarCompacta && <span>Ler Boleto/NF com IA</span>}
+              <Sparkles size={16} color="#c084fc" />
+              <span>Ler Boleto/NF com IA</span>
             </button>
-
-            {/* ITENS DE NAVEGAÇÃO */}
             <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 0, overflowY: 'auto', paddingRight: 2 }}>
               {(() => {
                 const grupos = navItemsFiltrados.reduce((acc, item) => {
@@ -1428,25 +1409,22 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
                         onClick={() => toggleGrupo(nomeGrupo)}
                         style={{
                           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                          padding: '7px 8px', cursor: 'pointer',
-                          color: 'rgba(255, 255, 255, 0.75)',
-                          fontSize: '11px', fontWeight: 700,
-                          fontFamily: "'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
-                          letterSpacing: '0.4px',
+                          padding: '7px 10px', cursor: 'pointer',
+                          color: 'rgba(255,255,255,0.85)',
+                          fontSize: '11px', fontWeight: 500,
+                          fontFamily: "'Open Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+                          letterSpacing: '0.5px',
                           textTransform: 'uppercase',
                           borderRadius: 8,
-                          marginTop: grupIdx > 0 ? 8 : 0,
-                          borderTop: grupIdx > 0 ? '1px solid rgba(255, 255, 255, 0.1)' : 'none',
+                          marginTop: grupIdx > 0 ? 6 : 0,
+                          borderTop: grupIdx > 0 ? '1px solid rgba(255,255,255,0.07)' : 'none',
                           paddingTop: grupIdx > 0 ? 10 : 7,
-                          userSelect: 'none',
-                          transition: 'background 0.15s ease'
+                          userSelect: 'none'
                         }}
                         className="transition-colors hover:bg-white/5"
                       >
-                        {!sidebarCompacta && <span>{nomeGrupo}</span>}
-                        {!sidebarCompacta && (
-                          <span style={{ color: 'rgba(255, 255, 255, 0.6)' }}>{isOpen ? <ChevronDown size={13} strokeWidth={2} /> : <ChevronRight size={13} strokeWidth={2} />}</span>
-                        )}
+                        <span>{nomeGrupo}</span>
+                        <span style={{ color: 'rgba(255,255,255,0.85)' }}>{isOpen ? <ChevronDown size={13} strokeWidth={1.8} /> : <ChevronRight size={13} strokeWidth={1.8} />}</span>
                       </div>
 
                       {/* Itens do grupo */}
@@ -1470,68 +1448,53 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
                                   setMobileMenuAberto(false);
                                 }
                               }}
-                              title={sidebarCompacta ? item.label : undefined}
                               style={{
                                 display: 'flex', alignItems: 'center', gap: 10,
-                                padding: sidebarCompacta ? '8px 0' : '8px 10px',
-                                justifyContent: sidebarCompacta ? 'center' : 'flex-start',
+                                padding: '9px 10px',
                                 borderRadius: 10,
                                 cursor: 'pointer',
-                                border: isActive ? '1px solid rgba(255, 255, 255, 0.28)' : '1px solid transparent',
+                                border: 'none',
                                 width: '100%', textAlign: 'left',
                                 background: isActive
-                                  ? 'linear-gradient(90deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.14) 100%)'
+                                  ? 'rgba(255,255,255,0.18)'
                                   : 'transparent',
-                                boxShadow: isActive ? '0 2px 12px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255, 255, 255, 0.2)' : 'none',
+                                boxShadow: isActive ? 'inset 0 0 0 1px rgba(255,255,255,0.15)' : 'none',
                                 transition: 'all 0.15s ease',
-                                color: '#FFFFFF',
+                                color: '#ffffff',
                               }}
-                              onMouseOver={e => {
-                                if (!isActive) {
-                                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
-                                }
-                              }}
-                              onMouseOut={e => {
-                                if (!isActive) {
-                                  e.currentTarget.style.background = 'transparent';
-                                }
-                              }}
+                              className={isActive ? '' : 'hover:bg-white/8'}
                             >
                               <span style={{
                                 width: 32, height: 32, borderRadius: 8, flexShrink: 0,
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                background: isActive ? '#FFFFFF' : 'rgba(255, 255, 255, 0.1)',
-                                color: isActive ? 'var(--primary, #1e3a8a)' : '#FFFFFF',
-                                boxShadow: isActive ? '0 2px 8px rgba(0, 0, 0, 0.2)' : 'none',
+                                background: isActive ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.08)',
+                                color: '#ffffff',
                                 transition: 'all 0.15s'
                               }}>
-                                <Icon size={15} strokeWidth={isActive ? 2.2 : 1.8} />
+                                <Icon size={15} />
                               </span>
-                              {!sidebarCompacta && (
-                                <span style={{ flex: 1, minWidth: 0 }}>
+                              <span style={{ flex: 1, minWidth: 0 }}>
+                                <span style={{
+                                  display: 'block', fontSize: '13.5px', fontWeight: isActive ? 500 : 400,
+                                  color: '#ffffff',
+                                  fontFamily: "'Open Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+                                  lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                                  letterSpacing: '0px'
+                                }}>{item.label}</span>
+                                {sub && (
                                   <span style={{
-                                    display: 'block', fontSize: '13px', fontWeight: isActive ? 600 : 500,
-                                    color: '#FFFFFF',
-                                    fontFamily: "'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
-                                    lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                                    letterSpacing: '-0.1px'
-                                  }}>{item.label}</span>
-                                  {sub && (
-                                    <span style={{
-                                      display: 'block', fontSize: '11px', 
-                                      color: isActive ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.7)',
-                                      fontFamily: "'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
-                                      lineHeight: 1.2, marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                                      fontWeight: 400
-                                    }}>{sub}</span>
-                                  )}
-                                </span>
-                              )}
-                              {!sidebarCompacta && item.id === 'licencas' && (
+                                    display: 'block', fontSize: '11px', color: 'rgba(255,255,255,0.75)',
+                                    fontFamily: "'Open Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+                                    lineHeight: 1.2, marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                                    fontWeight: 300
+                                  }}>{sub}</span>
+                                )}
+                              </span>
+                              {item.id === 'licencas' && (
                                 <span style={{ background: '#ef4444', color: '#fff', fontSize: 9, padding: '2px 5px', borderRadius: 8, fontWeight: 800, flexShrink: 0 }}>MASTER</span>
                               )}
-                              {!sidebarCompacta && isActive && (
-                                <span style={{ width: 3, height: 18, borderRadius: 2, background: '#FFFFFF', flexShrink: 0 }} />
+                              {isActive && (
+                                <span style={{ width: 3, height: 18, borderRadius: 2, background: '#ffffff', flexShrink: 0 }} />
                               )}
                             </button>
                           );
@@ -1543,32 +1506,27 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
               })()}
             </nav>
 
-            {/* RODAPÉ DA SIDEBAR */}
-            <div style={{ marginTop: 'auto', paddingTop: 10, borderTop: '1px solid rgba(255, 255, 255, 0.14)', display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
+
+            <div style={{ marginTop: 'auto', paddingTop: 12, borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
               <button
                 style={{ 
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                  padding: '10px 14px',
-                  background: 'rgba(239, 68, 68, 0.2)',
-                  color: '#FEE2E2',
-                  borderRadius: '12px',
-                  border: '1px solid rgba(248, 113, 113, 0.35)',
-                  fontWeight: 600, fontSize: '13px', cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                  marginTop: '2px',
-                  fontFamily: "'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif"
+                  padding: '12px', background: 'rgba(255,255,255,0.2)', color: '#fff', borderRadius: '12px',
+                  fontWeight: 700, fontSize: '13px', cursor: 'pointer', border: 'none',
+                  boxShadow: '0 4px 0 rgba(0,0,0,0.2), 0 4px 10px rgba(0,0,0,0.1)',
+                  transition: 'all 0.1s ease',
+                  marginTop: '4px'
                 }}
-                onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.3)'; e.currentTarget.style.borderColor = 'rgba(248, 113, 113, 0.5)'; }}
-                onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'; e.currentTarget.style.borderColor = 'rgba(248, 113, 113, 0.35)'; }}
+                onMouseDown={(e) => { e.currentTarget.style.transform = 'translateY(4px)'; e.currentTarget.style.boxShadow = '0 0px 0 rgba(0,0,0,0.2), 0 2px 4px rgba(0,0,0,0.1)'; }}
+                onMouseUp={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 0 rgba(0,0,0,0.2), 0 4px 10px rgba(0,0,0,0.1)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 0 rgba(0,0,0,0.2), 0 4px 10px rgba(0,0,0,0.1)'; }}
                 onClick={handleLogout}>
-                <LogOut size={16} color="#FCA5A5" strokeWidth={2} />
-                {!sidebarCompacta && <span>Sair do Sistema</span>}
+                <LogOut size={17} color="#fff" />
+                Sair do Sistema
               </button>
-              {!sidebarCompacta && (
-                <div style={{ textAlign: 'center', marginTop: 8, fontSize: '10.5px', color: 'rgba(255, 255, 255, 0.5)', fontWeight: 500, fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif" }}>
-                  FinanceAI v2.0 Ultra &bull; Firebase &bull; Vercel
-                </div>
-              )}
+              <div style={{ textAlign: 'center', marginTop: 12, fontSize: 10, color: 'rgba(255,255,255,0.5)' }}>
+                FinanceAI v2.0 Ultra &bull; Firebase &bull; Vercel
+              </div>
             </div>
           </aside>
 
@@ -1608,7 +1566,7 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
         </nav>
 
       {/* MOBILE FAB */}
-      <button className="mobile-fab" title="Novo Lançamento (Ctrl+0)" onClick={() => { setTransacaoEditar(null); setModalAberto(true); }}>
+      <button className="mobile-fab" onClick={() => { setTransacaoEditar(null); setModalAberto(true); }}>
         <PlusCircle size={24} />
       </button>
 

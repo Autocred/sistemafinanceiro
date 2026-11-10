@@ -222,7 +222,6 @@ const openSafeAttachment = (url: string) => {
   const [filtroCategoria, setFiltroCategoria] = useState('');
   const [filtroCC, setFiltroCC] = useState('');
   const [filtroContato, setFiltroContato] = useState('');
-  const [filtroComportamento, setFiltroComportamento] = useState('');
 
   // Filtros de Status/Tipo unificados em array (múltipla escolha)
   const [filtrosAtivos, setFiltrosAtivos] = useState<string[]>(['todos']);
@@ -257,12 +256,9 @@ const openSafeAttachment = (url: string) => {
     return () => { if (unsubT) unsubT(); if (unsubF) unsubF(); if (unsubC) unsubC(); };
   }, []);
 
-  const autoHealedRef = React.useRef(false);
   useEffect(() => {
-    if (autoHealedRef.current) return;
     // Auto-heal faturas with incorrect totals caused by previous bugs
     if (faturas.length > 0 && transacoes.length > 0) {
-      autoHealedRef.current = true;
       faturas.forEach(fatura => {
         // Encontra todas as transações que pertencem a esta fatura
         const txs = transacoes.filter(t => t.faturaId === fatura.id);
@@ -358,8 +354,6 @@ const openSafeAttachment = (url: string) => {
     return isCartaoPendente(t, faturas);
   };
 
-  const deferredBusca = React.useDeferredValue(busca);
-
   // Filtrar base (todos, o filtro refinado cuida do resto). Esconde Juros da Fatura para não poluir a tela.
   const filtradas = React.useMemo(() => {
     const filtradasBase = transacoes.filter(t => !(t.faturaId && t.descricao.startsWith('Juros/Multa')));
@@ -401,11 +395,10 @@ const openSafeAttachment = (url: string) => {
           }
         }
     
-        // Pesquisa Inteligente Unificada (Otimizada com deferred value)
-        const termoBusca = deferredBusca.trim().toLowerCase();
-        const matchBusca = !termoBusca || [
+        // Pesquisa Inteligente Unificada
+        const matchBusca = !busca || [
           t.descricao, t.fornecedorNome, t.clienteNome, t.categoriaNome, t.contaNome, t.observacoes, String(t.valor)
-        ].some(v => v?.toLowerCase()?.includes(termoBusca));
+        ].some(v => v?.toLowerCase()?.includes(busca.toLowerCase()));
         
         // Múltipla escolha:
         const showAll = filtrosAtivos.includes('todos');
@@ -452,27 +445,14 @@ const openSafeAttachment = (url: string) => {
         const matchCat = !filtroCategoria || t.categoriaNome === filtroCategoria;
         const matchCC = !filtroCC || t.centroCustoNome === filtroCC;
         const matchCont = !filtroContato || t.fornecedorNome === filtroContato || t.clienteNome === filtroContato;
-        const compItem = t.comportamento || (t.recorrente ? 'fixa' : 'variavel');
-        const matchComp = !filtroComportamento || compItem === filtroComportamento;
-        return naoPeriodo && matchBusca && matchTipo && matchStatus && matchRecorrente && matchCat && matchCC && matchCont && matchComp;
+        return naoPeriodo && matchBusca && matchTipo && matchStatus && matchRecorrente && matchCat && matchCC && matchCont;
       });
     
       const filtradasTemp = filtroData === 'vencimento' 
         ? ordenarVencimentosAsc(filtradasSemOrdem)
         : ordenarMovimentacoesDesc(filtradasSemOrdem);
     return filtradasTemp;
-  }, [transacoes, filtroData, periodoFiltro, deferredBusca, filtrosAtivos, filtroCategoria, filtroCC, filtroContato, filtroComportamento, dataEspecificaInicio, dataEspecificaFim, faturas]);
-
-  // Paginação / Renderização progressiva (desempenho 100x mais rápido)
-  const [limiteExibicao, setLimiteExibicao] = React.useState(60);
-
-  React.useEffect(() => {
-    setLimiteExibicao(60);
-  }, [periodoFiltro, deferredBusca, filtrosAtivos, filtroCategoria, filtroCC, filtroContato, filtroComportamento, dataEspecificaInicio, dataEspecificaFim]);
-
-  const transacoesExibidas = React.useMemo(() => {
-    return filtradas.slice(0, limiteExibicao);
-  }, [filtradas, limiteExibicao]);
+  }, [transacoes, filtroData, periodoFiltro, busca, filtrosAtivos, filtroCategoria, filtroCC, filtroContato, dataEspecificaInicio, dataEspecificaFim, faturas]);
 
   const {
     totalReceitas, receitasPagas, receitasPendentes,
@@ -967,11 +947,6 @@ const openSafeAttachment = (url: string) => {
         {/* Linha 4: Filtros Específicos */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', paddingTop: 16, borderTop: '1px solid var(--border)', marginTop: 8 }}>
             <span style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', minWidth: 60 }}>Filtros</span>
-            <select value={filtroComportamento} onChange={e => setFiltroComportamento(e.target.value)} style={{ padding: '4px 8px', fontSize: 10.5, fontWeight: 600, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg-body)', color: 'var(--text-primary)', outline: 'none', minWidth: 170 }}>
-                <option value="">Fixo ou Variável (Todos)</option>
-                <option value="fixa">🔒 Fixa (Custos Fixos)</option>
-                <option value="variavel">⚡ Variável (Custos Variáveis)</option>
-            </select>
             <select value={filtroCategoria} onChange={e => setFiltroCategoria(e.target.value)} style={{ padding: '4px 6px', fontSize: 10.5, fontWeight: 600, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg-body)', color: 'var(--text-primary)', outline: 'none', minWidth: 180 }}>
                 <option value="">Todas as Categorias</option>
                 {categoriasDropdown.map(c => <option key={c} value={c}>{c}</option>)}
@@ -1146,7 +1121,7 @@ const openSafeAttachment = (url: string) => {
                 </tr>
               </thead>
               <tbody>
-                {transacoesExibidas.map((t, idx) => {
+                {filtradas.map((t, idx) => {
                   const hoje = new Date();
                   const dateToDisplay = filtroData === 'vencimento' ? (t.dataVencimento || t.data) : (t.dataPagamento || t.dataLancamento || t.data);
                   const isReceita = t.tipo === 'receita';
@@ -1217,14 +1192,6 @@ const openSafeAttachment = (url: string) => {
                             style={{ fontWeight: 700, fontSize: '12.5px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer' }}
                           >
                             <span style={{ borderBottom: '1px dashed transparent' }} className="hover:border-white/30">{t.descricao}</span>
-                            {(() => {
-                              const comp = t.comportamento || (t.recorrente ? 'fixa' : 'variavel');
-                              return comp ? (
-                                <span style={{ fontSize: '9.5px', padding: '1px 5px', borderRadius: '4px', fontWeight: 700, background: comp === 'fixa' ? 'rgba(59,130,246,0.15)' : 'rgba(245,158,11,0.15)', color: comp === 'fixa' ? '#3b82f6' : '#f59e0b', border: `1px solid ${comp === 'fixa' ? 'rgba(59,130,246,0.3)' : 'rgba(245,158,11,0.3)'}` }}>
-                                  {comp === 'fixa' ? '🔒 Fixa' : '⚡ Variável'}
-                                </span>
-                              ) : null;
-                            })()}
                             {t.conciliado && <span title="Conciliado"><CheckCircle2 size={12} color="#10b981" /></span>}
                           </div>
                         )}
@@ -1401,7 +1368,7 @@ const openSafeAttachment = (url: string) => {
         ) : (
           /* ── MODO CARDS VISUAIS ── */
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {transacoesExibidas.map(t => {
+            {filtradas.map(t => {
               const hoje = new Date();
               const dateToDisplay = filtroData === 'vencimento' ? (t.dataVencimento || t.data) : (t.dataPagamento || t.dataLancamento || t.data);
                 const dataVenc = t.dataVencimento || t.data;
@@ -1482,14 +1449,11 @@ const openSafeAttachment = (url: string) => {
                            <span style={{ background: 'var(--bg-active)', padding: '3px 6px', fontSize: 10.5, borderRadius: 8, fontWeight: 500, whiteSpace: 'nowrap', flexShrink: 0 }}>{FORMAS_PAGAMENTO_LABELS[t.formaPagamento] || t.formaPagamento}</span>
                          </>
                        )}
-                       {(() => {
-                         const comp = t.comportamento || (t.recorrente ? 'fixa' : 'variavel');
-                         return comp ? (
-                           <span style={{ background: comp === 'fixa' ? 'rgba(59,130,246,0.12)' : 'rgba(245,158,11,0.12)', color: comp === 'fixa' ? '#2563eb' : '#d97706', border: `1px solid ${comp === 'fixa' ? 'rgba(59,130,246,0.3)' : 'rgba(245,158,11,0.3)'}`, padding: '2px 7px', fontSize: 10.5, borderRadius: 8, fontWeight: 600 }}>
-                             {comp === 'fixa' ? '🔒 Fixa' : '⚡ Variável'}
-                           </span>
-                         ) : null;
-                       })()}
+                       {['master', '9yxuafoC0AV9BrIKem05ponbmgn2', 'autocred-promotora-de-credito'].includes(getTenantId()) && t.comportamento && (
+                         <span style={{ background: t.comportamento === 'fixa' ? 'rgba(139,92,246,0.15)' : 'rgba(245,158,11,0.15)', color: t.comportamento === 'fixa' ? '#6d28d9' : '#b45309', border: `1px solid ${t.comportamento === 'fixa' ? 'var(--primary)' : '#f59e0b'}`, padding: '3px 6px', fontSize: 10.5 }}>
+                           {t.comportamento === 'fixa' ? 'Fixa' : 'Variável'}
+                         </span>
+                       )}
                        {(t.fornecedorNome || t.clienteNome) && (
                           <span title={t.fornecedorNome || t.clienteNome} style={{ background: 'var(--bg-active)', padding: '3px 7px', fontSize: 10.5, borderRadius: 6, fontWeight: 600, whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>👤 {t.fornecedorNome || t.clienteNome}</span>
                        )}
@@ -1571,57 +1535,6 @@ const openSafeAttachment = (url: string) => {
           </div>
         )}
       </div>
-
-      {filtradas.length > limiteExibicao && (
-        <div style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 12,
-          padding: '16px',
-          margin: '16px 0',
-          background: 'var(--bg-card)',
-          borderRadius: 12,
-          border: '1px solid var(--border)',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.04)'
-        }}>
-          <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-            Exibindo <strong>{transacoesExibidas.length}</strong> de <strong>{filtradas.length}</strong> lançamentos
-          </span>
-          <button
-            onClick={() => setLimiteExibicao(prev => prev + 60)}
-            style={{
-              padding: '8px 18px',
-              borderRadius: 8,
-              background: 'var(--primary)',
-              color: '#ffffff',
-              border: 'none',
-              fontWeight: 600,
-              fontSize: 12.5,
-              cursor: 'pointer',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-            }}
-          >
-            + Carregar mais 60
-          </button>
-          <button
-            onClick={() => setLimiteExibicao(filtradas.length)}
-            style={{
-              padding: '8px 14px',
-              borderRadius: 8,
-              background: 'transparent',
-              border: '1px solid var(--border)',
-              color: 'var(--text-secondary)',
-              fontWeight: 500,
-              fontSize: 12,
-              cursor: 'pointer'
-            }}
-          >
-            Mostrar todos ({filtradas.length})
-          </button>
-        </div>
-      )}
 
       {/* Total rodapé */}
       <div style={{ marginTop: 12, textAlign: 'right', color: 'var(--text-muted)', fontSize: 13 }}>

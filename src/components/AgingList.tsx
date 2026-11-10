@@ -322,17 +322,15 @@ export function AgingList({ transacoes: transacoesProp }: { transacoes?: Transac
                 </Pie>
                 <Tooltip
                   formatter={(value: any) => [formatarMoeda(value), 'Valor']}
-                  labelStyle={{ color: '#ffffff', fontWeight: 800 }}
-                  itemStyle={{ color: '#f1f5f9' }}
                   contentStyle={{
-                    background: '#0f172a',
-                    border: '1px solid rgba(255,255,255,0.2)',
-                    borderRadius: 10,
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 8,
                     fontSize: 12,
-                    color: '#ffffff',
+                    color: 'var(--text-primary)',
                   }}
                 />
-                <Legend iconType="circle" iconSize={9} wrapperStyle={{ fontSize: 11, color: 'var(--text-primary)' }} />
+                <Legend iconType="circle" iconSize={9} wrapperStyle={{ fontSize: 11, color: 'var(--text-muted)' }} />
               </PieChart>
             </ResponsiveContainer>
           </div>

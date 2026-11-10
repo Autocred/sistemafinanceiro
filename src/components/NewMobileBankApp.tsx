@@ -77,7 +77,7 @@ export function DashboardHeader({ cfg, userProfile, dataAcesso, onLogout, sideba
             Voltar ao Master
           </button>
         )}
-        <NotificationCenter userId={userProfile?.uid || ''} tenantId={userProfile?.tenantId || null} />
+        <NotificationCenter userId={userProfile?.uid || ''} />
         <div className="bank-header-user-badge">
           <span className="bank-header-user-name">
             Olá, {(userProfile?.nome && userProfile.nome !== 'Usuário') ? userProfile.nome.split(' ')[0] : (cfg?.nomeUsuario && cfg.nomeUsuario !== 'Usuário' ? cfg.nomeUsuario.split(' ')[0] : 'Usuário')}

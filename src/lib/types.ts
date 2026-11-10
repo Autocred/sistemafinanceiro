@@ -1,4 +1,4 @@
-﻿// Tipos de dados do sistema financeiro
+// Tipos de dados do sistema financeiro
 
 export type TipoTransacao = 'despesa' | 'receita' | 'transferencia';
 export type StatusTransacao = 'pago' | 'pendente' | 'atrasado' | 'agendado';
@@ -35,9 +35,7 @@ export interface Fornecedor {
   categoriaId?: string;
   centroCustoId?: string;
   contaId?: string;
-  cartaoId?: string;
   formaPagamento?: FormaPagamento;
-  comportamento?: 'fixa' | 'variavel';
   telefone?: string;
   email?: string;
   totalGasto?: number;
@@ -47,12 +45,6 @@ export interface Fornecedor {
 export interface Cliente {
   id: string;
   nome: string;
-  categoriaId?: string;
-  centroCustoId?: string;
-  contaId?: string;
-  cartaoId?: string;
-  formaPagamento?: FormaPagamento;
-  comportamento?: 'fixa' | 'variavel';
   telefone?: string;
   email?: string;
   totalRecebido?: number;
@@ -187,15 +179,11 @@ export interface PadraoCategoriaIA {
 
 export interface HistoricoIA {
   texto: string;
-  descricao?: string;
   categoriaId: string;
   centroCustoId?: string;
   fornecedorId?: string;
-  clienteId?: string;
   contaId?: string;
-  cartaoId?: string;
   formaPagamento?: FormaPagamento;
-  comportamento?: 'fixa' | 'variavel';
   timestamp: string;
   count: number;
 }
@@ -315,7 +303,6 @@ export interface ConfiguracaoApp {
   lembretesPopupHorarios?: string[]; // ["09:00", "15:00"]
   lembretesSinao?: boolean;
   whatsappAtivo?: boolean;
-  whatsappDias?: string[];
   whatsappNumeros?: string; // separados por vírgula
   whatsappNumeroMaster?: string;
   whatsappHorario?: string;
