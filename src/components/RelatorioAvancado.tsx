@@ -154,11 +154,12 @@ export default function RelatorioAvancado() {
                 <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} dy={10} />
                 <YAxis stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `R$${val/1000}k`} />
                 <Tooltip 
-                  contentStyle={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.2)' }}
-                  itemStyle={{ color: 'var(--text-primary)', fontWeight: 'bold' }}
+                  labelStyle={{ color: '#ffffff', fontWeight: 800 }}
+                  itemStyle={{ color: '#f1f5f9', fontWeight: 'bold' }}
+                  contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.2)', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)', color: '#ffffff' }}
                   formatter={(value: any) => [`R$ ${Number(value).toLocaleString('pt-BR')}`, undefined]}
                 />
-                <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
+                <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px', color: 'var(--text-primary)' }} />
                 <Area type="monotone" dataKey="receitas" name="Receitas" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorReceitas)" activeDot={{ r: 6, strokeWidth: 0, fill: '#10b981' }} />
                 <Area type="monotone" dataKey="despesas" name="Despesas" stroke="#ef4444" strokeWidth={3} fillOpacity={1} fill="url(#colorDespesas)" activeDot={{ r: 6, strokeWidth: 0, fill: '#ef4444' }} />
               </AreaChart>

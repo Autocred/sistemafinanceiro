@@ -13,12 +13,13 @@ import { calcularTotais, normalizeDate } from '@/lib/financialEngine';
 import { FORMAS_PAGAMENTO_LABELS, MESES } from '@/lib/defaults';
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Download, BarChart3, TrendingUp, PieChartIcon, RefreshCw, Calendar, Filter, FileText, FileSpreadsheet, ChevronDown, ChevronUp } from 'lucide-react';
+import { Download, BarChart3, TrendingUp, PieChartIcon, RefreshCw, Calendar, Filter, FileText, FileSpreadsheet, ChevronDown, ChevronUp, ArrowUpCircle, ArrowDownCircle, User, Target } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { DREGerencial } from './DREGerencial';
 import { RelatorioComissoes } from './RelatorioComissoes';
+import { gerarPDFRelatorioGerencial } from '@/lib/pdf-generator';
 
 export type TipoRelatorio = 'mensal' | 'comissoes' | 'dre' | 'categorias' | 'fornecedores' | 'formas-pgto' | 'fluxo' | 'comparativo' | 'diario' | 'centros-custo';
 
@@ -197,36 +198,12 @@ export default function Relatorios({ defaultTab }: { defaultTab?: TipoRelatorio 
   };
 
   const exportarPDF = () => {
-    const dados = getTabelaExportacao();
-    if (dados.length === 0) return alert('Nenhum dado para exportar.');
-    
-    const doc = new jsPDF('landscape');
-    
-    doc.setFontSize(18);
-    doc.text('Relatório Financeiro', 14, 22);
-    
-    doc.setFontSize(11);
-    doc.setTextColor(100);
-    doc.text(`Período: ${filtros.dataInicio.split('-').reverse().join('/')} a ${filtros.dataFim.split('-').reverse().join('/')}`, 14, 30);
-    
-    // Resumo
-    doc.text(`Receitas: R$ ${totalReceitas.toFixed(2)} | Despesas: R$ ${totalDespesas.toFixed(2)} | Saldo: R$ ${saldo.toFixed(2)}`, 14, 36);
-
-    const head = [['Data', 'Tipo', 'Descrição', 'Valor (R$)', 'Categoria', 'C.Custo', 'Conta', 'Pgto', 'Contato', 'Status']];
-    const body = dados.map(d => [
-      d.Data, d.Tipo, d.Descricao, d.Valor.toFixed(2), d.Categoria, d.CentroCusto, d.Conta, d.Pagamento, d.Contato, d.Status
-    ]);
-
-    autoTable(doc, {
-      startY: 45,
-      head: head,
-      body: body,
-      theme: 'grid',
-      headStyles: { fillColor: [204, 0, 0] },
-      styles: { fontSize: 8 },
+    if (transacoesFiltradas.length === 0) return alert('Nenhum dado para exportar.');
+    gerarPDFRelatorioGerencial(transacoesFiltradas, filtros, {
+      receitas: totalReceitas,
+      despesas: totalDespesas,
+      saldo: saldo
     });
-
-    doc.save('relatorio-financeiro.pdf');
   };
 
   const TIPOS_RELATORIO = [
@@ -583,67 +560,200 @@ export default function Relatorios({ defaultTab }: { defaultTab?: TipoRelatorio 
           </div>
         )}
 
-        {(getTenantId() === 'autocred-promotora-de-credito' || getTenantId() === 'master' || getTenantId() === '9yxuafoC0AV9BrIKem05ponbmgn2') && (
-          <div style={{ marginTop: 40, padding: 24, background: '#fff', borderRadius: 16, border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
-            <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 16, color: '#1e293b' }}>Relatório Detalhado de Lançamentos</h3>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
-                <thead>
-                  <tr style={{ borderBottom: '2px solid #e2e8f0', color: '#64748b' }}>
-                    <th style={{ padding: '12px 8px', fontWeight: 700 }}>Data</th>
-                    <th style={{ padding: '12px 8px', fontWeight: 700 }}>Descrição</th>
-                    <th style={{ padding: '12px 8px', fontWeight: 700 }}>Categoria</th>
-                    <th style={{ padding: '12px 8px', fontWeight: 700 }}>Conta</th>
-                    <th style={{ padding: '12px 8px', fontWeight: 700, textAlign: 'right' }}>Valor</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {transacoesFiltradas.sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime()).map(t => (
-                    <tr key={t.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                      <td style={{ padding: '12px 8px', color: '#475569' }}>{t.data.split('-').reverse().join('/')}</td>
-                      <td style={{ padding: '12px 8px' }}>
-                        <div style={{ fontWeight: 600, color: '#1e293b' }}>{t.descricao}</div>
-                        {t.fornecedorNome && <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>{t.fornecedorNome}</div>}
-                      </td>
-                      <td style={{ padding: '12px 8px', color: '#475569' }}>{t.categoriaNome || '-'}</td>
-                      <td style={{ padding: '12px 8px', color: '#475569' }}>{t.tipo === 'transferencia' ? `${t.contaNome || '?'} → ${t.contaDestinãoNome || '?'}` : (t.contaNome || '-')}</td>
-                      <td style={{ padding: '12px 8px', textAlign: 'right', fontWeight: 700, color: t.tipo === 'receita' ? '#16a34a' : t.tipo === 'transferencia' ? '#3b82f6' : '#dc2626' }}>
-                        {t.tipo === 'receita' ? '+' : t.tipo === 'transferencia' ? '' : '-'}{fmt(getValorFinal(t))}
-                      </td>
-                    </tr>
-                  ))}
-                  {transacoesFiltradas.length === 0 && (
-                    <tr>
-                      <td colSpan={5} style={{ padding: '24px 8px', textAlign: 'center', color: '#94a3b8' }}>
-                        Nenhum lançamento no período filtrado.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-                <tfoot>
-                  <tr style={{ background: '#f8fafc' }}>
-                    <td colSpan={4} style={{ padding: '12px 8px', textAlign: 'right', fontWeight: 700, color: '#475569' }}>TOTAL RECEITAS:</td>
-                    <td style={{ padding: '12px 8px', textAlign: 'right', fontWeight: 800, color: '#16a34a' }}>{fmt(totalReceitas)}</td>
-                  </tr>
-                  <tr style={{ background: '#f8fafc' }}>
-                    <td colSpan={4} style={{ padding: '12px 8px', textAlign: 'right', fontWeight: 700, color: '#475569' }}>TOTAL DESPESAS:</td>
-                    <td style={{ padding: '12px 8px', textAlign: 'right', fontWeight: 800, color: '#dc2626' }}>{fmt(totalDespesas)}</td>
-                  </tr>
-                  {(filtros.tipo === 'transferencia' || totalTransferencias > 0) && (
-                    <tr style={{ background: '#f8fafc' }}>
-                      <td colSpan={4} style={{ padding: '12px 8px', textAlign: 'right', fontWeight: 700, color: '#475569' }}>TOTAL TRANSFERÊNCIAS:</td>
-                      <td style={{ padding: '12px 8px', textAlign: 'right', fontWeight: 800, color: '#3b82f6' }}>{fmt(totalTransferencias)}</td>
-                    </tr>
-                  )}
-                  <tr style={{ background: '#f1f5f9' }}>
-                    <td colSpan={4} style={{ padding: '16px 8px', textAlign: 'right', fontWeight: 800, color: '#1e293b', fontSize: 14 }}>SALDO LÍQUIDO DO PERÍODO:</td>
-                    <td style={{ padding: '16px 8px', textAlign: 'right', fontWeight: 900, color: saldo >= 0 ? '#16a34a' : '#dc2626', fontSize: 15 }}>{fmt(saldo)}</td>
-                  </tr>
-                </tfoot>
-              </table>
+        <div style={{ marginTop: 40, padding: 24, background: 'var(--bg-card, #fff)', borderRadius: 16, border: '1px solid var(--border, #e2e8f0)', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
+            <div>
+              <h3 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-primary, #1e293b)', margin: 0 }}>Relatório Detalhado de Lançamentos</h3>
+              <p style={{ fontSize: 12, color: 'var(--text-secondary, #64748b)', margin: '4px 0 0' }}>Visão analítica completa com Cliente / Fornecedor, Centro de Custo, Conta, Forma e badges Fixa/Variável</p>
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={exportarExcel} className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, padding: '6px 12px', borderRadius: 8, background: '#10b98115', color: '#10b981', border: '1px solid #10b98140', cursor: 'pointer', fontWeight: 700 }}>
+                <FileSpreadsheet size={14} /> Excel
+              </button>
+              <button onClick={exportarPDF} className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, padding: '6px 12px', borderRadius: 8, background: '#ef444415', color: '#ef4444', border: '1px solid #ef444440', cursor: 'pointer', fontWeight: 700 }}>
+                <FileText size={14} /> PDF
+              </button>
             </div>
           </div>
-        )}
+
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
+              <thead>
+                <tr style={{ background: 'var(--bg-active, #f8fafc)', borderBottom: '2px solid var(--border, #e2e8f0)' }}>
+                  <th style={{ padding: '14px 12px', fontSize: 12, color: 'var(--primary, #cc0000)', textTransform: 'uppercase', fontWeight: 700 }}>Data</th>
+                  <th style={{ padding: '14px 12px', fontSize: 12, color: 'var(--primary, #cc0000)', textTransform: 'uppercase', fontWeight: 700 }}>Descrição / Histórico</th>
+                  <th style={{ padding: '14px 12px', fontSize: 12, color: 'var(--primary, #cc0000)', textTransform: 'uppercase', fontWeight: 700 }}>Categoria</th>
+                  <th style={{ padding: '14px 12px', fontSize: 12, color: 'var(--primary, #cc0000)', textTransform: 'uppercase', fontWeight: 700 }}>Conta / Canal</th>
+                  <th style={{ padding: '14px 12px', fontSize: 12, color: 'var(--primary, #cc0000)', textTransform: 'uppercase', fontWeight: 700, textAlign: 'right' }}>Valor (R$)</th>
+                  <th style={{ padding: '14px 12px', fontSize: 12, color: 'var(--primary, #cc0000)', textTransform: 'uppercase', fontWeight: 700, textAlign: 'right' }}>Saldo Acumulado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(() => {
+                  let acumulado = 0;
+                  const sorted = [...transacoesFiltradas].sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
+                  
+                  if (sorted.length === 0) {
+                    return (
+                      <tr>
+                        <td colSpan={6} style={{ padding: '32px 12px', textAlign: 'center', color: 'var(--text-muted, #94a3b8)', fontSize: 14 }}>
+                          Nenhum lançamento no período filtrado.
+                        </td>
+                      </tr>
+                    );
+                  }
+
+                  return sorted.map((t, idx) => {
+                    const valorNum = Math.abs(getValorFinal(t));
+                    const isReceita = t.tipo === 'receita';
+                    const isTransferencia = t.tipo === 'transferencia';
+                    const isDespesa = t.tipo === 'despesa';
+
+                    if (isReceita) acumulado += valorNum;
+                    else if (isDespesa) acumulado -= valorNum;
+
+                    const comp = t.comportamento || 'variavel';
+                    const contatoNome = t.clienteNome || t.fornecedorNome;
+                    const ccNome = t.centroCustoNome;
+                    const formaLabel = FORMAS_PAGAMENTO_LABELS[t.formaPagamento] || t.formaPagamento || '';
+
+                    return (
+                      <tr key={t.id || idx} style={{ borderBottom: '1px solid var(--border, #f1f5f9)', background: idx % 2 === 0 ? 'transparent' : 'rgba(0,0,0,0.015)' }}>
+                        {/* DATA */}
+                        <td style={{ padding: '14px 12px', fontSize: 13, fontWeight: 600, color: 'var(--text-secondary, #475569)', whiteSpace: 'nowrap' }}>
+                          {t.data ? t.data.split('-').reverse().join('/') : '-'}
+                        </td>
+
+                        {/* DESCRIÇÃO / HISTÓRICO COM CLIENTE/FORNECEDOR E CENTRO DE CUSTO */}
+                        <td style={{ padding: '14px 12px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <div style={{ width: 28, height: 28, borderRadius: '50%', background: isReceita ? 'rgba(21,128,61,0.12)' : isTransferencia ? 'rgba(2,132,199,0.12)' : 'rgba(220,38,38,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                              {isTransferencia ? <RefreshCw size={14} color="#0284c7" /> : isReceita ? <ArrowUpCircle size={14} color="#15803d" /> : <ArrowDownCircle size={14} color="#dc2626" />}
+                            </div>
+
+                            <div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary, #1e293b)' }}>{t.descricao}</span>
+                                
+                                {/* BADGE FIXA / VARIÁVEL */}
+                                <span style={{
+                                  fontSize: 10,
+                                  fontWeight: 700,
+                                  padding: '1px 6px',
+                                  borderRadius: 6,
+                                  background: comp === 'fixa' ? 'rgba(139,92,246,0.15)' : 'rgba(245,158,11,0.15)',
+                                  color: comp === 'fixa' ? '#6d28d9' : '#b45309',
+                                  border: `1px solid ${comp === 'fixa' ? 'rgba(139,92,246,0.3)' : 'rgba(245,158,11,0.3)'}`
+                                }}>
+                                  {comp === 'fixa' ? 'Fixa' : 'Variável'}
+                                </span>
+
+                                {/* SUB-CATEGORIA */}
+                                {(t as any).subcategoria && (
+                                  <span style={{
+                                    fontSize: 10,
+                                    fontWeight: 700,
+                                    padding: '1px 6px',
+                                    borderRadius: 6,
+                                    background: 'rgba(59,130,246,0.12)',
+                                    color: '#2563eb',
+                                    border: '1px solid rgba(59,130,246,0.25)'
+                                  }}>
+                                    {(t as any).subcategoria}
+                                  </span>
+                                )}
+
+                                {/* STATUS */}
+                                {t.status !== 'pago' && (
+                                  <span style={{
+                                    fontSize: 10,
+                                    fontWeight: 700,
+                                    padding: '1px 6px',
+                                    borderRadius: 6,
+                                    background: t.status === 'atrasado' ? 'rgba(239,68,68,0.15)' : 'rgba(234,179,8,0.15)',
+                                    color: t.status === 'atrasado' ? '#dc2626' : '#d97706',
+                                    border: `1px solid ${t.status === 'atrasado' ? 'rgba(239,68,68,0.3)' : 'rgba(234,179,8,0.3)'}`
+                                  }}>
+                                    {t.status === 'atrasado' ? 'Atrasado' : 'Pendente'}
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* LINHA COM FORNECEDOR / CLIENTE E CENTRO DE CUSTO */}
+                              <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginTop: 4, flexWrap: 'wrap', fontSize: 11 }}>
+                                {contatoNome && (
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--text-secondary, #64748b)', fontWeight: 600 }}>
+                                    <User size={12} color="#64748b" /> {contatoNome}
+                                  </span>
+                                )}
+                                {ccNome && (
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#0284c7', fontWeight: 600 }}>
+                                    <Target size={12} color="#0284c7" /> {ccNome}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* CATEGORIA */}
+                        <td style={{ padding: '14px 12px', fontSize: 13, color: 'var(--text-secondary, #475569)' }}>
+                          {t.categoriaNome || '-'}
+                        </td>
+
+                        {/* CONTA / CANAL */}
+                        <td style={{ padding: '14px 12px' }}>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary, #1e293b)' }}>
+                            {isTransferencia ? `${t.contaNome || '?'} → ${t.contaDestinãoNome || '?'}` : (t.contaNome || '-')}
+                          </div>
+                          {formaLabel && (
+                            <div style={{ fontSize: 11, color: 'var(--text-muted, #94a3b8)', marginTop: 2 }}>
+                              {formaLabel}
+                            </div>
+                          )}
+                        </td>
+
+                        {/* VALOR */}
+                        <td style={{ padding: '14px 12px', textAlign: 'right', fontWeight: 700, fontSize: 13, color: isReceita ? '#16a34a' : isTransferencia ? '#3b82f6' : '#dc2626', whiteSpace: 'nowrap' }}>
+                          {isReceita ? '+' : isTransferencia ? '' : '-'}{fmt(valorNum)}
+                        </td>
+
+                        {/* SALDO ACUMULADO */}
+                        <td style={{ padding: '14px 12px', textAlign: 'right', fontWeight: 800, fontSize: 13, color: acumulado >= 0 ? 'var(--text-primary, #0f172a)' : '#dc2626', whiteSpace: 'nowrap' }}>
+                          {fmt(acumulado)}
+                        </td>
+                      </tr>
+                    );
+                  });
+                })()}
+              </tbody>
+              <tfoot>
+                <tr style={{ background: 'var(--bg-active, #f8fafc)', borderTop: '2px solid var(--border, #e2e8f0)' }}>
+                  <td colSpan={4} style={{ padding: '12px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--text-secondary, #475569)' }}>TOTAL RECEITAS:</td>
+                  <td style={{ padding: '12px 12px', textAlign: 'right', fontWeight: 800, color: '#16a34a' }}>{fmt(totalReceitas)}</td>
+                  <td></td>
+                </tr>
+                <tr style={{ background: 'var(--bg-active, #f8fafc)' }}>
+                  <td colSpan={4} style={{ padding: '12px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--text-secondary, #475569)' }}>TOTAL DESPESAS:</td>
+                  <td style={{ padding: '12px 12px', textAlign: 'right', fontWeight: 800, color: '#dc2626' }}>{fmt(totalDespesas)}</td>
+                  <td></td>
+                </tr>
+                {(filtros.tipo === 'transferencia' || totalTransferencias > 0) && (
+                  <tr style={{ background: 'var(--bg-active, #f8fafc)' }}>
+                    <td colSpan={4} style={{ padding: '12px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--text-secondary, #475569)' }}>TOTAL TRANSFERÊNCIAS:</td>
+                    <td style={{ padding: '12px 12px', textAlign: 'right', fontWeight: 800, color: '#3b82f6' }}>{fmt(totalTransferencias)}</td>
+                    <td></td>
+                  </tr>
+                )}
+                <tr style={{ background: 'var(--bg-active, #f1f5f9)', borderTop: '2px solid var(--border, #cbd5e1)' }}>
+                  <td colSpan={4} style={{ padding: '16px 12px', textAlign: 'right', fontWeight: 800, color: 'var(--text-primary, #1e293b)', fontSize: 14 }}>SALDO LÍQUIDO DO PERÍODO:</td>
+                  <td style={{ padding: '16px 12px', textAlign: 'right', fontWeight: 900, color: saldo >= 0 ? '#16a34a' : '#dc2626', fontSize: 15 }}>{fmt(saldo)}</td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   );

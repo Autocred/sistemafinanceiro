@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&display=swap');
 @import "tailwindcss";
 
@@ -682,33 +682,35 @@ select:-webkit-autofill:focus {
   box-shadow: 0 32px 64px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
 }
 
-/* Sidebar */
+/* Sidebar - Gradiente Azul Primário da Paleta (Padrão Banco Bradesco) */
 .sidebar {
   width: 240px;
   position: fixed;
   left: 0;
   top: 60px;
-  bottom: 24px;
+  bottom: 0px;
   border-radius: 0;
-  background: var(--primary) !important; border-right: none;
-  backdrop-filter: blur(48px) saturate(200%);
-  -webkit-backdrop-filter: blur(48px) saturate(200%);
-  border: 1px solid rgba(255,255,255,0.9);
-  padding: 24px 16px;
+  background: linear-gradient(175deg, var(--primary) 0%, color-mix(in srgb, var(--primary) 85%, #0f172a) 40%, color-mix(in srgb, var(--primary) 60%, #020617) 100%) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-left: none !important;
+  border-top: none !important;
+  border-bottom: none !important;
+  padding: 16px 12px;
   z-index: 100;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   overflow-y: auto !important;
   overflow-x: hidden;
-  box-shadow: 4px 0 24px rgba(0,0,0,0.02);
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.25) !important;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
 }
 
 [data-theme='dark'] .sidebar {
-  background: #0F172A;
-  border-right: 1px solid rgba(255,255,255,0.05);
-  box-shadow: 4px 0 24px rgba(0,0,0,0.2);
+  background: linear-gradient(175deg, color-mix(in srgb, var(--primary) 70%, #020617) 0%, #0b1528 50%, #020617 100%) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 4px 0 28px rgba(0, 0, 0, 0.4) !important;
 }
 
 .sidebar-link {
@@ -983,9 +985,76 @@ select:-webkit-autofill:focus {
   font-size: 12px !important;
 }
 .recharts-tooltip-wrapper .recharts-default-tooltip {
-  background: #1f2937 !important;
-  border: 1px solid rgba(255,255,255,0.1) !important;
-  border-radius: 10px !important;
+  background: #0f172a !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 12px !important;
+  padding: 10px 14px !important;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5) !important;
+  color: #ffffff !important;
+}
+
+.recharts-tooltip-wrapper .recharts-default-tooltip .recharts-tooltip-label,
+.recharts-default-tooltip .recharts-tooltip-label,
+.recharts-tooltip-label {
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  font-size: 13px !important;
+  margin-bottom: 6px !important;
+  letter-spacing: -0.01em !important;
+  opacity: 1 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6) !important;
+}
+
+.recharts-tooltip-wrapper .recharts-default-tooltip .recharts-tooltip-item-list,
+.recharts-default-tooltip .recharts-tooltip-item-list,
+.recharts-tooltip-item-list {
+  padding: 0 !important;
+  margin: 0 !important;
+  list-style: none !important;
+}
+
+.recharts-tooltip-wrapper .recharts-default-tooltip .recharts-tooltip-item,
+.recharts-default-tooltip .recharts-tooltip-item,
+.recharts-tooltip-item {
+  color: #f1f5f9 !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  padding: 3px 0 !important;
+}
+
+.recharts-tooltip-wrapper .recharts-default-tooltip .recharts-tooltip-item-name,
+.recharts-default-tooltip .recharts-tooltip-item-name,
+.recharts-tooltip-item-name {
+  color: #e2e8f0 !important;
+}
+
+.recharts-tooltip-wrapper .recharts-default-tooltip .recharts-tooltip-item-separator,
+.recharts-default-tooltip .recharts-tooltip-item-separator,
+.recharts-tooltip-item-separator {
+  color: #94a3b8 !important;
+  margin: 0 4px !important;
+}
+
+.recharts-tooltip-wrapper .recharts-default-tooltip .recharts-tooltip-item-value,
+.recharts-default-tooltip .recharts-tooltip-item-value,
+.recharts-tooltip-item-value {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+/* Legendas de TODOS os Gráficos (Recharts Legend) */
+.recharts-legend-wrapper {
+  padding-top: 6px !important;
+}
+
+.recharts-legend-wrapper .recharts-legend-item-text,
+.recharts-default-legend .recharts-legend-item-text,
+.recharts-legend-item-text {
+  color: var(--text-primary, #ffffff) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  margin-left: 5px !important;
+  vertical-align: middle !important;
 }
 
 /* Voice button */
@@ -2377,9 +2446,9 @@ body.modo-privacidade .valor-sensivel:hover {
   }
 }
 
-/* Tipografia Estilo Banco Santander na Sidebar */
+/* Tipografia Estilo Banco Bradesco na Sidebar */
 .sidebar, .sidebar * {
-  font-family: 'Open Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

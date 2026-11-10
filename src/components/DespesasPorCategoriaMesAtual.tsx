@@ -66,7 +66,9 @@ export function DespesasPorCategoriaMesAtual({ transacoes }: Props) {
             <YAxis type="category" dataKey="nome" stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} width={120} interval={0} />
             <Tooltip 
               cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-              contentStyle={{ background: 'var(--bg-glass-strong)', border: '1px solid var(--border)', borderRadius: 8 }}
+              labelStyle={{ color: '#ffffff', fontWeight: 800 }}
+              itemStyle={{ color: '#f1f5f9' }}
+              contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 10, color: '#ffffff' }}
               formatter={(value: any) => formatarMoeda(value)}
             />
             <Bar dataKey="valor" radius={[0, 4, 4, 0]}>

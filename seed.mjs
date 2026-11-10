@@ -11,21 +11,22 @@ const db = getFirestore(app);
 
 async function run() {
   await addDoc(collection(db, 'saas_releases'), {
-    versao: 'v3.6.56',
-    titulo: 'Limpeza Total de Campos (100%) para Novos Lançamentos',
-    descricao: 'Ao salvar cada lançamento, todos os campos (Fornecedor, Cliente, Comportamento, Conta Bancária, Categoria, Centro de Custo, Meio de Pagamento, Valor, Observações e Anexos) são 100% resetados para o estado limpo inicial, posicionando o cursor na Descrição.',
+    versao: 'v3.6.81',
+    titulo: 'Correção e Otimização dos Disparos Automáticos de Relatórios no WhatsApp',
+    descricao: 'Correção completa dos disparos automáticos via WhatsApp de acordo com os dias da semana e horários configurados: inclusão de seletor visual de dias da semana no WhatsApp, eliminação do bloqueio por minuto exato no cron dispatcher (garantindo execução mesmo com atraso do servidor), busca de transações por dataPagamento e data em São Paulo e envio garantido do fechamento diário mesmo em dias sem movimentação financeira.',
     dataLancamento: new Date().toISOString(),
     status: 'publicado',
     destaque: true,
     notificarTenants: false,
     alvos: 'todos',
     changes: [
-      { tipo: 'correcao', texto: 'Limpeza 100% de Campos: Fornecedor, Comportamento, Conta, Categoria e demais campos agora são completamente desmarcados e limpos após salvar.' },
-      { tipo: 'melhoria', texto: 'Sincronização Direta e Pré-visualização: Tanto no salvamento direto em 1 clique quanto via pré-visualização, todos os campos retornam zerados e prontos para o próximo registro.' },
-      { tipo: 'melhoria', texto: 'Foco no Campo Descrição: Mantém o cursor pronto para a digitação imediata da nova despesa ou receita.' }
+      { tipo: 'correcao', texto: 'Janela de Disparo Robusta no Dispatcher: Substituída a comparação de minuto exato por verificação segura a partir do horário programado, impedindo que pequenos atrasos de servidor cancelem o envio do dia.' },
+      { tipo: 'funcionalidade', texto: 'Seletor de Dias da Semana no WhatsApp: Configuração de quais dias da semana receber relatórios e fechamentos (ex: Seg a Sex ou Todos os dias).' },
+      { tipo: 'correcao', texto: 'Fechamento Diário Confiável: Busca de transações corrigida para cobrir dataPagamento e envio garantido de extrato informativo mesmo em dias sem novas baixas.' },
+      { tipo: 'correcao', texto: 'Fuso Horário de São Paulo: Todas as rotinas de data ajustadas para o fuso de Brasília, eliminando envio com data do dia seguinte.' }
     ]
   });
-  console.log('Release notes v3.6.56 added!');
+  console.log('Release notes v3.6.81 added!');
   process.exit(0);
 }
 

@@ -1678,6 +1678,53 @@ document.cookie = 'app_pin_code=' + encodeURIComponent(novoPin) + '; max-age=315
                 <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>Informe o número com DDD que receberá as mensagens (somente números ou formato internacional).</p>
               </div>
 
+              {/* Dias da Semana para Disparos do WhatsApp */}
+              <div>
+                <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', display: 'block', marginBottom: 8 }}>
+                  📅 Dias da Semana para Envio dos Relatórios no WhatsApp
+                </label>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((dia, i) => {
+                    const diasAtivos = cfg.whatsappDias || cfg.pushDias || ['1', '2', '3', '4', '5'];
+                    const ativo = diasAtivos.includes(i.toString());
+                    return (
+                      <button
+                        key={dia}
+                        type="button"
+                        onClick={() => {
+                          const novos = [...diasAtivos];
+                          if (ativo) {
+                            const idx = novos.indexOf(i.toString());
+                            if (idx > -1) novos.splice(idx, 1);
+                          } else {
+                            novos.push(i.toString());
+                          }
+                          const upd = { ...cfg, whatsappDias: novos };
+                          setCfg(upd);
+                          salvar(upd);
+                        }}
+                        style={{
+                          padding: '6px 14px',
+                          borderRadius: 16,
+                          fontSize: 12,
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          border: `1px solid ${ativo ? '#10b981' : 'var(--border)'}`,
+                          background: ativo ? '#10b981' : 'var(--bg-glass)',
+                          color: ativo ? '#ffffff' : 'var(--text-secondary)',
+                          transition: 'all 0.15s'
+                        }}
+                      >
+                        {dia}
+                      </button>
+                    );
+                  })}
+                </div>
+                <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', marginTop: 4 }}>
+                  Escolha em quais dias o robô enviará os lembretes e relatórios no seu WhatsApp.
+                </span>
+              </div>
+
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
                 <div>
                   <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>

@@ -26,6 +26,9 @@ export async function GET(request: Request) {
     const diaDoMesSp = Number(hojeSp.split('-')[2]);
     const mesAtualSp = hojeSp.substring(0, 7);
 
+    // Dia da semana em São Paulo: 0 = Domingo, 1 = Segunda, ..., 6 = Sábado
+    const diaSemanaSp = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" })).getDay().toString();
+
     // Suporte a ?force=true para testes manuais (ignora check de horário)
     const urlParams = new URL(request.url);
     const forceAll = urlParams.searchParams.get('force') === 'true';
@@ -95,6 +98,8 @@ export async function GET(request: Request) {
 
       const ativo = configData?.whatsappAtivo !== false;
       const numero = configData?.whatsappNumeros || configData?.whatsappNumeroMaster || configData?.telefoneWhatsApp;
+      const diasPermitidos = configData?.whatsappDias || configData?.pushDias;
+      const diaPermitido = !diasPermitidos || !Array.isArray(diasPermitidos) || diasPermitidos.length === 0 || diasPermitidos.includes(diaSemanaSp);
       const horarioLembretes = configData?.whatsappHorarioLembretes || '08:00';
       const horarioFechamento = configData?.whatsappHorarioFechamento || configData?.whatsappHorario || '17:00';
       
@@ -146,16 +151,23 @@ export async function GET(request: Request) {
         }
       };
 
+      // Helper para checar se o horário programado já foi alcançado
+      const atingiuHorario = (hConfig: string) => {
+        if (!hConfig) return false;
+        return agoraSp >= hConfig;
+      };
+
       // ─── LEMBRETE MATINAL (Contas a Pagar/Receber) ───
-      // Dispara quando a hora atual === horário configurado E ainda não enviou hoje
-      const deveEnviarLembrete = (forceAll || forceTipo === 'lembretes' || agoraSp === horarioLembretes) && ultimoEnvioLembretes !== hojeSp;
+      const deveEnviarLembrete = (forceAll || forceTipo === 'lembretes' || (diaPermitido && atingiuHorario(horarioLembretes))) && ultimoEnvioLembretes !== hojeSp;
       if (deveEnviarLembrete) {
         console.log(`[DISPATCHER] ✅ Disparando Lembrete para ${tenant.nome} (${numero}) | Horário config: ${horarioLembretes} | Hora atual: ${agoraSp}`);
         try {
           const url = `${protocol}://${host}/api/cron/lembretes?tenantId=${tenant.id}&numero=${numero}&nome=${encodeURIComponent(tenant.nome)}`;
           const res = await fetch(url);
           const json = await res.json();
-          await salvarFlag('ultimoEnvioLembretes', hojeSp);
+          if (json && json.success !== false) {
+            await salvarFlag('ultimoEnvioLembretes', hojeSp);
+          }
           acoesDisparadas.push({ tipo: 'lembretes', tenant: tenant.id, numero, horarioConfig: horarioLembretes, sucesso: true, retorno: json });
         } catch (err: any) {
           console.error(`[DISPATCHER] ❌ Erro lembrete ${tenant.id}:`, err);
@@ -164,14 +176,16 @@ export async function GET(request: Request) {
       }
 
       // ─── METAS - HORÁRIO 1 (Meio-Dia) ───
-      const deveEnviarMetas1 = metasAtivo && (forceAll || forceTipo === 'metas1' || agoraSp === horarioMetas1) && ultimoEnvioMetas1 !== hojeSp;
+      const deveEnviarMetas1 = metasAtivo && (forceAll || forceTipo === 'metas1' || (diaPermitido && atingiuHorario(horarioMetas1))) && ultimoEnvioMetas1 !== hojeSp;
       if (deveEnviarMetas1) {
         console.log(`[DISPATCHER] ✅ Disparando Metas 1 para ${tenant.nome} (${numero}) | Horário config: ${horarioMetas1} | Hora atual: ${agoraSp}`);
         try {
           const url = `${protocol}://${host}/api/cron/resumo-metas?tenantId=${tenant.id}&numero=${numero}&nome=${encodeURIComponent(tenant.nome)}&slot=12h`;
           const res = await fetch(url);
           const json = await res.json();
-          await salvarFlag('ultimoEnvioMetas1', hojeSp);
+          if (json && json.success !== false) {
+            await salvarFlag('ultimoEnvioMetas1', hojeSp);
+          }
           acoesDisparadas.push({ tipo: 'metas_1', tenant: tenant.id, numero, horarioConfig: horarioMetas1, sucesso: true, retorno: json });
         } catch (err: any) {
           console.error(`[DISPATCHER] ❌ Erro metas 1 ${tenant.id}:`, err);
@@ -180,14 +194,16 @@ export async function GET(request: Request) {
       }
 
       // ─── FECHAMENTO DIÁRIO ───
-      const deveEnviarFechamento = (forceAll || forceTipo === 'fechamento' || agoraSp === horarioFechamento) && ultimoEnvioFechamento !== hojeSp;
+      const deveEnviarFechamento = (forceAll || forceTipo === 'fechamento' || (diaPermitido && atingiuHorario(horarioFechamento))) && ultimoEnvioFechamento !== hojeSp;
       if (deveEnviarFechamento) {
         console.log(`[DISPATCHER] ✅ Disparando Fechamento para ${tenant.nome} (${numero}) | Horário config: ${horarioFechamento} | Hora atual: ${agoraSp}`);
         try {
           const url = `${protocol}://${host}/api/cron/fechamento-diario?tenantId=${tenant.id}&numero=${numero}&nome=${encodeURIComponent(tenant.nome)}`;
           const res = await fetch(url);
           const json = await res.json();
-          await salvarFlag('ultimoEnvioFechamento', hojeSp);
+          if (json && json.success !== false) {
+            await salvarFlag('ultimoEnvioFechamento', hojeSp);
+          }
           acoesDisparadas.push({ tipo: 'fechamento', tenant: tenant.id, numero, horarioConfig: horarioFechamento, sucesso: true, retorno: json });
         } catch (err: any) {
           console.error(`[DISPATCHER] ❌ Erro fechamento ${tenant.id}:`, err);
@@ -196,7 +212,7 @@ export async function GET(request: Request) {
       }
 
       // ─── METAS - HORÁRIO 2 (Fechamento do Expediente) ───
-      const deveEnviarMetas2 = metasAtivo && (forceAll || forceTipo === 'metas2' || agoraSp === horarioMetas2) && ultimoEnvioMetas2 !== hojeSp;
+      const deveEnviarMetas2 = metasAtivo && (forceAll || forceTipo === 'metas2' || (diaPermitido && atingiuHorario(horarioMetas2))) && ultimoEnvioMetas2 !== hojeSp;
       if (deveEnviarMetas2) {
         console.log(`[DISPATCHER] ✅ Disparando Metas 2 para ${tenant.nome} (${numero}) | Horário config: ${horarioMetas2} | Hora atual: ${agoraSp}`);
         try {
@@ -213,14 +229,16 @@ export async function GET(request: Request) {
 
       // ─── FECHAMENTO MENSAL EXECUTIVO ───
       const deveEnviarMensal = fechamentoMensalAtivo && diaDoMesSp === diaFechamentoMensal && ultimoEnvioFechamentoMensal !== mesAtualSp &&
-        (forceAll || forceTipo === 'mensal' || agoraSp === horarioFechamentoMensal);
+        (forceAll || forceTipo === 'mensal' || atingiuHorario(horarioFechamentoMensal));
       if (deveEnviarMensal) {
         console.log(`[DISPATCHER] ✅ Disparando Fechamento Mensal para ${tenant.nome} (${numero}) | Horário config: ${horarioFechamentoMensal} | Hora atual: ${agoraSp}`);
         try {
           const url = `${protocol}://${host}/api/cron/fechamento-mensal?tenantId=${tenant.id}&numero=${numero}&nome=${encodeURIComponent(tenant.nome)}`;
           const res = await fetch(url);
           const json = await res.json();
-          await salvarFlag('ultimoEnvioFechamentoMensal', mesAtualSp);
+          if (json && json.success !== false) {
+            await salvarFlag('ultimoEnvioFechamentoMensal', mesAtualSp);
+          }
           acoesDisparadas.push({ tipo: 'fechamento_mensal', tenant: tenant.id, numero, horarioConfig: horarioFechamentoMensal, sucesso: true, retorno: json });
         } catch (err: any) {
           console.error(`[DISPATCHER] ❌ Erro fechamento mensal ${tenant.id}:`, err);

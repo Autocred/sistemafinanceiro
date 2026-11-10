@@ -456,7 +456,7 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
       </div>
 
       {/* ================= GRÃFICOS AUTOCRED (apenas tenant autocrédito) ================= */}
-      <GraficosAutocred transacoes={todasTransacoes} faturas={faturas} contas={contas} />
+      <GraficosAutocred transacoes={todasTransacoes} faturas={faturas} contas={contas} mesSelecionado={mesSelecionado} />
 
       {/* ================= ALERTA DE FATURAS DE CARTÃO FECHADAS (PISCANDO) ================= */}
       {faturas.filter(f => f.status !== 'paga' && ((f.dataFechamento && f.dataFechamento <= hojeStr) || (f.dataVencimento && f.dataVencimento <= hojeStr) || (f.dataVencimento && (new Date(f.dataVencimento + 'T12:00:00').getTime() - hojeDate.getTime()) / (1000 * 3600 * 24) <= 7))).map(f => {
@@ -1187,7 +1187,7 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
               <Tooltip 
                 formatter={(value) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value) || 0)}
                 contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', fontWeight: 'bold' }}
-                labelStyle={{ color: '#64748b', marginBottom: 5 }}
+                labelStyle={{ color: '#ffffff', fontWeight: 800, marginBottom: 5 }}
               />
               <Area type="monotone" dataKey="saldo" name="Saldo Projetado" stroke="var(--primary)" strokeWidth={3} fillOpacity={1} fill="url(#colorSaldo)" />
             </AreaChart>
@@ -1277,7 +1277,7 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
                     align="right" 
                     verticalAlign="middle"
                     formatter={(value, entry: any) => (
-                      <span style={{ fontSize: 11, color: '#475569', fontWeight: 600 }}>
+                      <span style={{ fontSize: 11, color: 'var(--text-primary)', fontWeight: 600 }}>
                         {value} (<span className="valor-sensivel">{fmt(entry.payload.value)}</span>)
                       </span>
                     )}

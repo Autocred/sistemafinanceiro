@@ -181,8 +181,13 @@ export function subscribeMetasConfig(callback: (data: { orcamentos: any[], orcam
 // ─── TRANSAÇÕES ───────────────────────────────────────────────────────────────
 export async function getTransacoes(): Promise<Transacao[]> {
   if (!isBrowser()) return [];
+  const key = _cacheKey('transacoes');
+  const entry = _cache.get(key);
+  if (entry && Date.now() < entry.expiresAt) return entry.data as Transacao[];
   const snap = await getDocs(query(collection(getDb(), getCollectionPath('transacoes')), orderBy('data', 'desc')));
-  return snap.docs.map(d => docToObj<Transacao>(d));
+  const data = snap.docs.map(d => docToObj<Transacao>(d));
+  _cache.set(key, { data, expiresAt: Date.now() + 60 * 1000 });
+  return data;
 }
 
 export async function getTransacoesByPeriodo(dataInicio: string, dataFim: string): Promise<Transacao[]> {
@@ -645,6 +650,9 @@ export async function deletarTransacao(id: string): Promise<void> {
       resultado: 'SUCESSO'
     });
   } catch (e) {}
+
+  invalidateCache('transacoes');
+  invalidateCache('contas');
 }
 
 // ─── PARCELAMENTOS ────────────────────────────────────────────────────────────

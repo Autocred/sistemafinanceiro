@@ -13,9 +13,14 @@ export async function GET(request: Request) {
     console.log('[CRON] Iniciando rotina de Lembretes Diários (Contas a Pagar e Receber)...');
 
     const db = adminDb!;
-    const hojeData = new Date();
-    const hojeStr = format(hojeData, 'yyyy-MM-dd');
-    const displayData = format(hojeData, 'dd/MM/yyyy');
+    // Garantir data no fuso de São Paulo
+    const hojeStr = new Intl.DateTimeFormat('pt-BR', {
+      timeZone: 'America/Sao_Paulo',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(new Date()).split('/').reverse().join('-'); // YYYY-MM-DD
+    const displayData = hojeStr.split('-').reverse().join('/');
 
     // Suporte a chamada parametrizada por licença (Multi-tenant SaaS)
     const { searchParams } = new URL(request.url);
