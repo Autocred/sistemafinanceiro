@@ -12,7 +12,7 @@ import {
 import { format, parseISO, isSameMonth, isSameYear, getMonth, getYear } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { subscribeTransacoes, formatarMoeda } from '@/lib/storage';
-import { normalizeDate } from '@/lib/financialEngine';
+import { normalizeDate, getValorFinal } from '@/lib/financialEngine';
 import { Transacao } from '@/lib/types';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -84,7 +84,7 @@ export default function DashboardMensal() {
       if (!normalizeDate(t.dataPagamento || t.dataVencimento || t.data || '').startsWith(mesStr)) return false;
       
       if (statusFiltro !== 'Todos') {
-        if (statusFiltro === 'pago' && t.status !== 'pago') return false;
+        if (statusFiltro === 'pago' && (t.status as string) !== 'pago' && (t.status as string) !== 'recebido') return false;
         if (statusFiltro === 'pendente' && t.status !== 'pendente') return false;
       }
       
@@ -106,19 +106,19 @@ export default function DashboardMensal() {
   }, [transacoes, ano, mes]);
 
   // Cálculos Básicos
-  const despesas = txMes.filter(t => t.tipo === 'despesa' && t.status === 'pago' && t.categoriaNome !== 'Pagamento de Fatura' && t.formaPagamento !== 'cartao_credito');
-  const receitas = txMes.filter(t => t.tipo === 'receita' && t.status === 'pago');
+  const despesas = txMes.filter(t => t.tipo === 'despesa' && ((t.status as string) === 'pago' || (t.status as string) === 'recebido') && t.formaPagamento !== 'cartao_credito');
+  const receitas = txMes.filter(t => t.tipo === 'receita' && ((t.status as string) === 'pago' || (t.status as string) === 'recebido'));
   
-  const totalDespesas = despesas.reduce((acc, t) => acc + (Number(t.valor) || 0), 0);
-  const totalReceitas = receitas.reduce((acc, t) => acc + (Number(t.valor) || 0), 0);
+  const totalDespesas = despesas.reduce((acc, t) => acc + Math.abs(getValorFinal(t)), 0);
+  const totalReceitas = receitas.reduce((acc, t) => acc + Math.abs(getValorFinal(t)), 0);
   const saldoMes = totalReceitas - totalDespesas;
 
   // --- NOVAS MÉTRICAS ---
   // Receitas fixas e variáveis
   const receitasFixas = receitas.filter(t => t.comportamento === 'fixa');
   const receitasVariaveis = receitas.filter(t => t.comportamento === 'variavel' || !t.comportamento);
-  const totalReceitasFixas = receitasFixas.reduce((acc, t) => acc + (Number(t.valor) || 0), 0);
-  const totalReceitasVariaveis = receitasVariaveis.reduce((acc, t) => acc + (Number(t.valor) || 0), 0);
+  const totalReceitasFixas = receitasFixas.reduce((acc, t) => acc + Math.abs(getValorFinal(t)), 0);
+  const totalReceitasVariaveis = receitasVariaveis.reduce((acc, t) => acc + Math.abs(getValorFinal(t)), 0);
 
   // Juros e multas nas despesas pagas no mês
   const totalJurosMes = despesas.reduce((acc, t) => acc + (Number(t.juros) || 0), 0);
@@ -128,8 +128,8 @@ export default function DashboardMensal() {
   // Despesas fixas e variáveis
   const despesasFixas = despesas.filter(t => t.comportamento === 'fixa');
   const despesasVariaveis = despesas.filter(t => t.comportamento === 'variavel' || !t.comportamento);
-  const totalDespesasFixas = despesasFixas.reduce((acc, t) => acc + (Number(t.valor) || 0), 0);
-  const totalDespesasVariaveis = despesasVariaveis.reduce((acc, t) => acc + (Number(t.valor) || 0), 0);
+  const totalDespesasFixas = despesasFixas.reduce((acc, t) => acc + Math.abs(getValorFinal(t)), 0);
+  const totalDespesasVariaveis = despesasVariaveis.reduce((acc, t) => acc + Math.abs(getValorFinal(t)), 0);
   
   const qtdDespesas = despesas.length;
   
@@ -138,7 +138,7 @@ export default function DashboardMensal() {
     despesas.forEach(d => {
       const cc = d.centroCustoNome || d.centroCustoId || 'Não Informado';
       const atual = mapa.get(cc) || { total: 0, qtd: 0 };
-      mapa.set(cc, { total: atual.total + (Number(d.valor) || 0), qtd: atual.qtd + 1 });
+      mapa.set(cc, { total: atual.total + Math.abs(getValorFinal(d)), qtd: atual.qtd + 1 });
     });
     return Array.from(mapa.entries()).map(([nome, dados]) => ({
       nome, valor: dados.total, qtd: dados.qtd, percentual: totalDespesas > 0 ? (dados.total / totalDespesas) * 100 : 0
@@ -151,7 +151,7 @@ export default function DashboardMensal() {
     receitas.forEach(r => {
       const cliente = r.clienteNome || r.clienteId || 'Sem Cliente';
       const atual = mapa.get(cliente) || { fixa: 0, variavel: 0, total: 0 };
-      const valor = Number(r.valor) || 0;
+      const valor = Math.abs(getValorFinal(r));
       if (r.comportamento === 'fixa') {
         mapa.set(cliente, { ...atual, fixa: atual.fixa + valor, total: atual.total + valor });
       } else {
@@ -171,7 +171,7 @@ export default function DashboardMensal() {
     despesas.forEach(d => {
       const cat = d.categoriaNome || d.categoriaId || 'Outros';
       const atual = mapa.get(cat) || { fixa: 0, variavel: 0, total: 0, qtd: 0 };
-      const val = Number(d.valor) || 0;
+      const val = Math.abs(getValorFinal(d));
       if (d.comportamento === 'fixa') {
         mapa.set(cat, { ...atual, fixa: atual.fixa + val, total: atual.total + val, qtd: atual.qtd + 1 });
       } else {
@@ -201,10 +201,11 @@ export default function DashboardMensal() {
       const mesStr = `${ano}-${String(idx + 1).padStart(2, '0')}`;
       
       const txMesAtual = txAno.filter(t => {
-        const d = normalizeDate(t.dataCompetencia || t.dataPagamento || t.dataVencimento || t.data || '');
+        // SEMPRE data de pagamento/recebimento com fallback para vencimento/data, NUNCA dataCompetencia
+        const d = normalizeDate(t.dataPagamento || t.dataVencimento || t.data || '');
         if (!d.startsWith(mesStr)) return false;
         if (statusFiltro !== 'Todos') {
-          if (statusFiltro === 'pago' && t.status !== 'pago') return false;
+          if (statusFiltro === 'pago' && (t.status as string) !== 'pago' && (t.status as string) !== 'recebido') return false;
           if (statusFiltro === 'pendente' && t.status !== 'pendente') return false;
         }
         const cat = t.categoriaNome || t.categoriaId || 'Outros';
@@ -215,12 +216,12 @@ export default function DashboardMensal() {
       });
 
       const tDespesas = txMesAtual
-        .filter(t => t.tipo === 'despesa' && t.formaPagamento !== 'cartao_credito' && t.categoriaNome !== 'Pagamento de Fatura')
-        .reduce((acc, t) => acc + (Number(t.valor) || 0), 0);
+        .filter(t => t.tipo === 'despesa' && ((t.status as string) === 'pago' || (t.status as string) === 'recebido') && t.formaPagamento !== 'cartao_credito')
+        .reduce((acc, t) => acc + Math.abs(getValorFinal(t)), 0);
         
       const tReceitas = txMesAtual
-        .filter(t => t.tipo === 'receita')
-        .reduce((acc, t) => acc + (Number(t.valor) || 0), 0);
+        .filter(t => t.tipo === 'receita' && ((t.status as string) === 'pago' || (t.status as string) === 'recebido'))
+        .reduce((acc, t) => acc + Math.abs(getValorFinal(t)), 0);
 
       return {
         mes: mesesAbrev[idx],
@@ -243,7 +244,7 @@ export default function DashboardMensal() {
   }, [totalReceitas, totalDespesas, saldoMes]);
 
   const resumoInteligente = useMemo(() => {
-    const totalDespPrev = txMesPassado.filter(t => t.tipo === 'despesa').reduce((acc, t) => acc + (Number(t.valor) || 0), 0);
+    const totalDespPrev = txMesPassado.filter(t => t.tipo === 'despesa' && ((t.status as string) === 'pago' || (t.status as string) === 'recebido') && t.formaPagamento !== 'cartao_credito').reduce((acc, t) => acc + Math.abs(getValorFinal(t)), 0);
     let diffPercentual = 0;
     if (totalDespPrev > 0) {
       diffPercentual = ((totalDespesas - totalDespPrev) / totalDespPrev) * 100;
@@ -277,7 +278,7 @@ export default function DashboardMensal() {
   let maiorLcto = 0;
   let menorLcto = Infinity;
   despesas.forEach(d => {
-    const v = Number(d.valor) || 0;
+    const v = Math.abs(getValorFinal(d));
     if (v > maiorLcto) maiorLcto = v;
     if (v > 0 && v < menorLcto) menorLcto = v;
   });
