@@ -20,9 +20,9 @@ export default function SearchableSelect({
   options,
   placeholder = 'Buscar...',
   emptyLabel = 'Todos Fornecedores/Clientes',
-  minWidth = 200,
-  maxWidth = 260,
-  height = 32,
+  minWidth = 240,
+  maxWidth = 280,
+  height = 34,
 }: SearchableSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -90,7 +90,7 @@ export default function SearchableSelect({
         zIndex: isOpen ? 50 : 1,
       }}
     >
-      {/* Botão Gatilho Moderno com Efeito 3D e Sombra de Contorno */}
+      {/* Botão Gatilho Moderno 3D mais amplo e confortável */}
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
@@ -100,7 +100,7 @@ export default function SearchableSelect({
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: 6,
-          padding: '4px 10px',
+          padding: '4px 12px',
           fontSize: '11.5px',
           fontWeight: value ? 700 : 600,
           borderRadius: 8,
@@ -120,8 +120,8 @@ export default function SearchableSelect({
         }}
         title={value || emptyLabel}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          <Users size={12} style={{ flexShrink: 0, opacity: value ? 1 : 0.65 }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <Users size={13} style={{ flexShrink: 0, opacity: value ? 1 : 0.65 }} />
           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {value || emptyLabel}
           </span>
@@ -136,8 +136,8 @@ export default function SearchableSelect({
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                width: 14,
-                height: 14,
+                width: 15,
+                height: 15,
                 borderRadius: '50%',
                 background: 'rgba(239, 68, 68, 0.18)',
                 color: '#ef4444',
@@ -166,7 +166,7 @@ export default function SearchableSelect({
             top: 'calc(100% + 4px)',
             left: 0,
             zIndex: 9999,
-            width: '280px',
+            width: '300px',
             background: 'var(--bg-card)',
             border: '1px solid var(--border)',
             borderRadius: 10,
@@ -182,14 +182,14 @@ export default function SearchableSelect({
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 6,
-              padding: '7px 10px',
+              gap: 7,
+              padding: '8px 12px',
               borderBottom: '1px solid var(--border)',
               background: 'var(--bg-body)',
               boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.05)',
             }}
           >
-            <Search size={13} color="var(--text-muted)" style={{ flexShrink: 0 }} />
+            <Search size={14} color="var(--text-muted)" style={{ flexShrink: 0 }} />
             <input
               ref={inputSearchRef}
               type="text"
@@ -201,7 +201,7 @@ export default function SearchableSelect({
                 background: 'transparent',
                 outline: 'none',
                 width: '100%',
-                fontSize: '11.5px',
+                fontSize: '12px',
                 color: 'var(--text-primary)',
                 fontWeight: 500,
               }}
@@ -227,7 +227,7 @@ export default function SearchableSelect({
           {/* Lista de Opções com Rolagem Suave */}
           <div
             style={{
-              maxHeight: '220px',
+              maxHeight: '230px',
               overflowY: 'auto',
               padding: '4px',
             }}
@@ -239,9 +239,9 @@ export default function SearchableSelect({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                padding: '6px 8px',
+                padding: '7px 10px',
                 borderRadius: 6,
-                fontSize: '11px',
+                fontSize: '11.5px',
                 fontWeight: !value ? 700 : 500,
                 color: !value ? 'var(--primary)' : 'var(--text-secondary)',
                 background: !value ? 'rgba(var(--primary-rgb, 59, 130, 246), 0.12)' : 'transparent',
@@ -262,9 +262,9 @@ export default function SearchableSelect({
             {filteredOptions.length === 0 ? (
               <div
                 style={{
-                  padding: '16px 8px',
+                  padding: '16px 10px',
                   textAlign: 'center',
-                  fontSize: '11px',
+                  fontSize: '11.5px',
                   color: 'var(--text-muted)',
                 }}
               >
@@ -282,9 +282,9 @@ export default function SearchableSelect({
                       alignItems: 'center',
                       justifyContent: 'space-between',
                       gap: 6,
-                      padding: '6px 8px',
+                      padding: '7px 10px',
                       borderRadius: 6,
-                      fontSize: '11px',
+                      fontSize: '11.5px',
                       fontWeight: isSelected ? 700 : 500,
                       color: isSelected ? 'var(--primary)' : 'var(--text-primary)',
                       background: isSelected ? 'rgba(var(--primary-rgb, 59, 130, 246), 0.12)' : 'transparent',
@@ -318,8 +318,8 @@ export default function SearchableSelect({
           {/* Rodapé com Total Encontrado */}
           <div
             style={{
-              padding: '5px 8px',
-              fontSize: '9.5px',
+              padding: '6px 10px',
+              fontSize: '10px',
               color: 'var(--text-muted)',
               borderTop: '1px solid var(--border)',
               background: 'var(--bg-body)',

@@ -949,10 +949,10 @@ const openSafeAttachment = (url: string) => {
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 8,
+          gap: 10,
           flexWrap: 'nowrap',
           overflow: 'visible',
-          paddingTop: 12,
+          paddingTop: 14,
           borderTop: '1px solid var(--border)',
           marginTop: 6,
           position: 'relative',
@@ -960,7 +960,7 @@ const openSafeAttachment = (url: string) => {
           width: '100%'
         }}>
             <span style={{ 
-              fontSize: '11px', 
+              fontSize: '11.5px', 
               fontWeight: 800, 
               color: 'var(--text-muted)', 
               textTransform: 'uppercase', 
@@ -978,8 +978,8 @@ const openSafeAttachment = (url: string) => {
               value={filtroComportamento} 
               onChange={e => setFiltroComportamento(e.target.value)} 
               style={{ 
-                padding: '4px 10px', 
-                fontSize: '11px', 
+                padding: '4px 12px', 
+                fontSize: '11.5px', 
                 fontWeight: filtroComportamento ? 700 : 600, 
                 borderRadius: 8, 
                 border: `1px solid ${filtroComportamento ? 'var(--primary)' : 'var(--border)'}`, 
@@ -988,9 +988,9 @@ const openSafeAttachment = (url: string) => {
                   : 'linear-gradient(180deg, var(--bg-card) 0%, var(--bg-body) 100%)', 
                 color: filtroComportamento ? 'var(--primary)' : 'var(--text-primary)', 
                 outline: 'none', 
-                width: 175,
-                minWidth: 175, 
-                height: 32, 
+                width: 190,
+                minWidth: 190, 
+                height: 34, 
                 cursor: 'pointer',
                 flexShrink: 0,
                 boxShadow: '0 2px 4px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.15)',
@@ -1007,8 +1007,8 @@ const openSafeAttachment = (url: string) => {
               value={filtroCategoria} 
               onChange={e => setFiltroCategoria(e.target.value)} 
               style={{ 
-                padding: '4px 10px', 
-                fontSize: '11px', 
+                padding: '4px 12px', 
+                fontSize: '11.5px', 
                 fontWeight: filtroCategoria ? 700 : 600, 
                 borderRadius: 8, 
                 border: `1px solid ${filtroCategoria ? 'var(--primary)' : 'var(--border)'}`, 
@@ -1017,9 +1017,9 @@ const openSafeAttachment = (url: string) => {
                   : 'linear-gradient(180deg, var(--bg-card) 0%, var(--bg-body) 100%)', 
                 color: filtroCategoria ? 'var(--primary)' : 'var(--text-primary)', 
                 outline: 'none', 
-                width: 170,
-                minWidth: 170, 
-                height: 32, 
+                width: 185,
+                minWidth: 185, 
+                height: 34, 
                 cursor: 'pointer',
                 flexShrink: 0,
                 boxShadow: '0 2px 4px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.15)',
@@ -1035,8 +1035,8 @@ const openSafeAttachment = (url: string) => {
               value={filtroCC} 
               onChange={e => setFiltroCC(e.target.value)} 
               style={{ 
-                padding: '4px 10px', 
-                fontSize: '11px', 
+                padding: '4px 12px', 
+                fontSize: '11.5px', 
                 fontWeight: filtroCC ? 700 : 600, 
                 borderRadius: 8, 
                 border: `1px solid ${filtroCC ? 'var(--primary)' : 'var(--border)'}`, 
@@ -1045,9 +1045,9 @@ const openSafeAttachment = (url: string) => {
                   : 'linear-gradient(180deg, var(--bg-card) 0%, var(--bg-body) 100%)', 
                 color: filtroCC ? 'var(--primary)' : 'var(--text-primary)', 
                 outline: 'none', 
-                width: 160,
-                minWidth: 160, 
-                height: 32, 
+                width: 175,
+                minWidth: 175, 
+                height: 34, 
                 cursor: 'pointer',
                 flexShrink: 0,
                 boxShadow: '0 2px 4px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.15)',
@@ -1065,9 +1065,9 @@ const openSafeAttachment = (url: string) => {
               options={contatosDropdown}
               placeholder="Digite o nome..."
               emptyLabel="👥 Fornecedores / Clientes"
-              minWidth={220}
-              maxWidth={240}
-              height={32}
+              minWidth={240}
+              maxWidth={270}
+              height={34}
             />
 
             {/* Botão Limpar Filtros se algum estiver ativo */}
@@ -1081,7 +1081,7 @@ const openSafeAttachment = (url: string) => {
                   setFiltroContato('');
                 }}
                 style={{
-                  padding: '4px 10px',
+                  padding: '4px 12px',
                   borderRadius: 8,
                   border: '1px solid rgba(239, 68, 68, 0.4)',
                   background: 'linear-gradient(180deg, rgba(239, 68, 68, 0.16) 0%, rgba(239, 68, 68, 0.08) 100%)',
@@ -1089,7 +1089,7 @@ const openSafeAttachment = (url: string) => {
                   fontSize: '11px',
                   fontWeight: 800,
                   cursor: 'pointer',
-                  height: 32,
+                  height: 34,
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: 4,

@@ -11,21 +11,21 @@ const db = getFirestore(app);
 
 async function run() {
   await addDoc(collection(db, 'saas_releases'), {
-    versao: 'v3.6.96',
-    titulo: 'Barra de Filtros em Linha Única Estrita com Campos Ampliados (v3.6.96)',
-    descricao: 'Alinhamento horizontal estrito de todos os filtros em uma linha única (nowrap) com larguras ampliadas suficientes para exibir todos os textos sem corte e abertura livre do seletor de contatos.',
+    versao: 'v3.6.97',
+    titulo: 'Campos de Filtros Ampliados em Linha Única Estrita (v3.6.97)',
+    descricao: 'Ampliação proporcional das larguras e alturas (34px) de todos os campos de filtros mantendo o layout rigorosamente em uma única linha reta horizontal sem quebra, com leitura limpa e abertura livre do popover.',
     dataLancamento: new Date().toISOString(),
     status: 'publicado',
     destaque: true,
     notificarTenants: false,
     alvos: 'todos',
     changes: [
-      { tipo: 'melhoria', texto: 'Linha Única Estrita (nowrap): Todos os campos de filtro fixados lado a lado em uma única linha reta horizontal.' },
-      { tipo: 'melhoria', texto: 'Larguras Ampliadas: Espaço suficiente para leitura integral de todas as opções (Fixo/Variável 175px, Categorias 170px, C. Custo 160px, Fornecedores/Clientes 220px).' },
-      { tipo: 'correcao', texto: 'Abertura para Baixo: Dropdown flutuante abre livremente para baixo com zIndex alto mantendo a tela estável.' }
+      { tipo: 'melhoria', texto: 'Campos Ampliados Confortáveis: Fixo/Variável 190px, Categorias 185px, C. Custo 175px e Contatos 240px com altura 34px.' },
+      { tipo: 'melhoria', texto: 'Linha Única Estrita: Preservação do alinhamento horizontal contínuo lado a lado sem quebra de linha.' },
+      { tipo: 'melhoria', texto: 'Dropdown Mais Amplo: Popover de pesquisa de Fornecedores/Clientes expandido para 300px com busca suave ao digitar.' }
     ]
   });
-  console.log('Release notes v3.6.96 added!');
+  console.log('Release notes v3.6.97 added!');
   process.exit(0);
 }
 
