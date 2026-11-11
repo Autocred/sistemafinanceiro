@@ -1129,7 +1129,11 @@ const openSafeAttachment = (url: string) => {
                   const [yV, mV, dV] = (vIso || hojeIso).split('-').map(Number);
                   const dVenc = new Date(yV, (mV || 1) - 1, dV || 1);
                   const diffDias = Math.round((dVenc.getTime() - dHoje.getTime()) / (1000 * 60 * 60 * 24));
-                  const atrasado = t.tipo === 'despesa' && t.status !== 'pago' && diffDias < 0;
+                  const isPago = t.status === 'pago';
+                  const isAtrasado = !isPago && diffDias < 0;
+                  const isHoje = !isPago && diffDias === 0;
+                  const isFuturo = !isPago && diffDias > 0;
+                  const atrasado = isAtrasado;
                   const dateToDisplay = filtroData === 'vencimento' ? (t.dataVencimento || t.data) : (t.dataPagamento || t.dataLancamento || t.data);
                   const isReceita = t.tipo === 'receita';
                   const isTransf = t.tipo === 'transferencia';
@@ -1199,65 +1203,65 @@ const openSafeAttachment = (url: string) => {
                               {String(t.dataVencimento || t.data || '').split('-').reverse().join('/')}
                             </span>
                             <div style={{ marginTop: 4 }}>
-                              {t.status === 'pago' ? (
+                              {isPago ? (
                                 <span style={{
                                   display: 'inline-flex',
                                   alignItems: 'center',
-                                  gap: 3,
-                                  background: 'rgba(16, 185, 129, 0.12)',
+                                  gap: 4,
+                                  background: 'rgba(16, 185, 129, 0.15)',
                                   color: '#10b981',
-                                  border: '1px solid rgba(16, 185, 129, 0.3)',
-                                  padding: '1px 6px',
-                                  borderRadius: '4px',
-                                  fontSize: '9.5px',
+                                  border: '1px solid rgba(16, 185, 129, 0.35)',
+                                  padding: '2px 7px',
+                                  borderRadius: '5px',
+                                  fontSize: '10px',
                                   fontWeight: 800
                                 }}>
-                                  ● Pago
+                                  🟢 Pago
                                 </span>
-                              ) : atrasado ? (
+                              ) : isAtrasado ? (
                                 <span style={{
                                   display: 'inline-flex',
                                   alignItems: 'center',
-                                  gap: 3,
-                                  background: 'rgba(239, 68, 68, 0.15)',
+                                  gap: 4,
+                                  background: 'rgba(239, 68, 68, 0.18)',
                                   color: '#ef4444',
-                                  border: '1px solid rgba(239, 68, 68, 0.35)',
-                                  padding: '1px 6px',
-                                  borderRadius: '4px',
-                                  fontSize: '9.5px',
+                                  border: '1px solid rgba(239, 68, 68, 0.4)',
+                                  padding: '2px 7px',
+                                  borderRadius: '5px',
+                                  fontSize: '10px',
                                   fontWeight: 800
                                 }}>
-                                  ● Atrasado ({Math.abs(diffDias)}d)
+                                  🔴 Atrasado ({Math.abs(diffDias)}d)
                                 </span>
-                              ) : diffDias === 0 ? (
+                              ) : isHoje ? (
                                 <span style={{
                                   display: 'inline-flex',
                                   alignItems: 'center',
-                                  gap: 3,
-                                  background: 'rgba(245, 158, 11, 0.15)',
+                                  gap: 4,
+                                  background: 'rgba(245, 158, 11, 0.18)',
                                   color: '#f59e0b',
-                                  border: '1px solid rgba(245, 158, 11, 0.35)',
-                                  padding: '1px 6px',
-                                  borderRadius: '4px',
-                                  fontSize: '9.5px',
+                                  border: '1px solid rgba(245, 158, 11, 0.4)',
+                                  padding: '2px 7px',
+                                  borderRadius: '5px',
+                                  fontSize: '10px',
                                   fontWeight: 800
                                 }}>
-                                  ● Vence Hoje
+                                  🟠 Vence Hoje
                                 </span>
                               ) : (
                                 <span style={{
                                   display: 'inline-flex',
                                   alignItems: 'center',
-                                  gap: 3,
-                                  background: 'rgba(59, 130, 246, 0.12)',
+                                  gap: 4,
+                                  background: 'rgba(59, 130, 246, 0.15)',
                                   color: '#3b82f6',
-                                  border: '1px solid rgba(59, 130, 246, 0.3)',
-                                  padding: '1px 6px',
-                                  borderRadius: '4px',
-                                  fontSize: '9.5px',
+                                  border: '1px solid rgba(59, 130, 246, 0.35)',
+                                  padding: '2px 7px',
+                                  borderRadius: '5px',
+                                  fontSize: '10px',
                                   fontWeight: 800
                                 }}>
-                                  ● Em {diffDias}d
+                                  🔵 Em {diffDias}d
                                 </span>
                               )}
                             </div>
@@ -1364,10 +1368,14 @@ const openSafeAttachment = (url: string) => {
                       <td style={{ padding: '6px 10px', textAlign: 'center' }}>
                         {checkCartaoPendente(t) ? (
                           <span className="badge badge-yellow" style={{ fontSize: '9.5px', padding: '2px 6px' }}>Fatura Aberta</span>
+                        ) : isPago ? (
+                          <span className="badge badge-green" style={{ fontSize: '10px', padding: '3px 7px', fontWeight: 800 }}>✅ Pago</span>
+                        ) : isAtrasado ? (
+                          <span className="badge badge-red" style={{ fontSize: '10px', padding: '3px 7px', fontWeight: 800 }}>🔴 Atrasado ({Math.abs(diffDias)}d)</span>
+                        ) : isHoje ? (
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, background: 'rgba(245, 158, 11, 0.2)', color: '#d97706', border: '1px solid rgba(245, 158, 11, 0.45)', padding: '3px 7px', borderRadius: '4px', fontSize: '10px', fontWeight: 800 }}>🟠 Vence Hoje</span>
                         ) : (
-                          <span className={`badge ${t.status === 'pago' ? 'badge-green' : t.status === 'atrasado' || atrasado ? 'badge-red' : 'badge-yellow'}`} style={{ fontSize: '9.5px', padding: '2px 6px' }}>
-                            {STATUS_LABELS[t.tipo]?.[t.status] || t.status}
-                          </span>
+                          <span className="badge badge-yellow" style={{ fontSize: '10px', padding: '3px 7px', fontWeight: 700 }}>{isReceita ? '⏳ A Receber' : '⏳ A Pagar'}</span>
                         )}
                       </td>
 
@@ -1471,7 +1479,11 @@ const openSafeAttachment = (url: string) => {
                   const [yV, mV, dV] = (vIso || hojeIso).split('-').map(Number);
                   const dVenc = new Date(yV, (mV || 1) - 1, dV || 1);
                   const diffDias = Math.round((dVenc.getTime() - dHoje.getTime()) / (1000 * 60 * 60 * 24));
-                  const atrasado = t.tipo === 'despesa' && t.status !== 'pago' && diffDias < 0;
+                  const isPago = t.status === 'pago';
+                  const isAtrasado = !isPago && diffDias < 0;
+                  const isHoje = !isPago && diffDias === 0;
+                  const isFuturo = !isPago && diffDias > 0;
+                  const atrasado = isAtrasado;
                   const diff = diffDias;
                   const dateToDisplay = filtroData === 'vencimento' ? (t.dataVencimento || t.data) : (t.dataPagamento || t.dataLancamento || t.data);
               let alertaCss = '';
@@ -1512,14 +1524,14 @@ const openSafeAttachment = (url: string) => {
                           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                             <span>Lanc: {String(t.dataLancamento || t.data || '').split('-').reverse().join('/')}</span>
                             <span style={{ fontWeight: 600 }}>• Venc: {String(t.dataVencimento || t.data || '').split('-').reverse().join('/')}</span>
-                            {t.status === 'pago' ? (
-                              <span style={{ background: 'rgba(16, 185, 129, 0.12)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '1px 5px', borderRadius: 4, fontSize: '9px', fontWeight: 800 }}>● Pago</span>
-                            ) : atrasado ? (
-                              <span style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.35)', padding: '1px 5px', borderRadius: 4, fontSize: '9px', fontWeight: 800 }}>● Atrasado ({Math.abs(diffDias)}d)</span>
-                            ) : diffDias === 0 ? (
-                              <span style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.35)', padding: '1px 5px', borderRadius: 4, fontSize: '9px', fontWeight: 800 }}>● Vence Hoje</span>
+                            {isPago ? (
+                              <span style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.35)', padding: '2px 6px', borderRadius: 4, fontSize: '9.5px', fontWeight: 800 }}>🟢 Pago</span>
+                            ) : isAtrasado ? (
+                              <span style={{ background: 'rgba(239, 68, 68, 0.18)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.4)', padding: '2px 6px', borderRadius: 4, fontSize: '9.5px', fontWeight: 800 }}>🔴 Atrasado ({Math.abs(diffDias)}d)</span>
+                            ) : isHoje ? (
+                              <span style={{ background: 'rgba(245, 158, 11, 0.18)', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.4)', padding: '2px 6px', borderRadius: 4, fontSize: '9.5px', fontWeight: 800 }}>🟠 Vence Hoje</span>
                             ) : (
-                              <span style={{ background: 'rgba(59, 130, 246, 0.12)', color: '#3b82f6', border: '1px solid rgba(59, 130, 246, 0.3)', padding: '1px 5px', borderRadius: 4, fontSize: '9px', fontWeight: 800 }}>● Em {diffDias}d</span>
+                              <span style={{ background: 'rgba(59, 130, 246, 0.15)', color: '#3b82f6', border: '1px solid rgba(59, 130, 246, 0.35)', padding: '2px 6px', borderRadius: 4, fontSize: '9.5px', fontWeight: 800 }}>🔵 Em {diffDias}d</span>
                             )}
                           </span>
                           
@@ -1594,10 +1606,14 @@ const openSafeAttachment = (url: string) => {
 
                           {checkCartaoPendente(t) ? (
                             <span className="badge badge-yellow" style={{ fontSize: 10.5 }}>Fatura Aberta</span>
+                          ) : isPago ? (
+                            <span className="badge badge-green" style={{ fontSize: 10.5, fontWeight: 800 }}>✅ Pago</span>
+                          ) : isAtrasado ? (
+                            <span className="badge badge-red" style={{ fontSize: 10.5, fontWeight: 800 }}>🔴 Atrasado ({Math.abs(diffDias)}d)</span>
+                          ) : isHoje ? (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, background: 'rgba(245, 158, 11, 0.2)', color: '#d97706', border: '1px solid rgba(245, 158, 11, 0.45)', padding: '2px 7px', borderRadius: 5, fontSize: 10.5, fontWeight: 800 }}>🟠 Vence Hoje</span>
                           ) : (
-                            <span className={`badge ${t.status === 'pago' ? 'badge-green' : t.status === 'atrasado' ? 'badge-red' : 'badge-yellow'}`} style={{ fontSize: 10.5 }}>
-                              {STATUS_LABELS[t.tipo]?.[t.status] || t.status}
-                            </span>
+                            <span className="badge badge-yellow" style={{ fontSize: 10.5, fontWeight: 700 }}>{STATUS_LABELS[t.tipo]?.[t.status] || t.status}</span>
                           )}
                        </div>
                      </div>

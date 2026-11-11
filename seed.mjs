@@ -11,20 +11,21 @@ const db = getFirestore(app);
 
 async function run() {
   await addDoc(collection(db, 'saas_releases'), {
-    versao: 'v3.6.91',
-    titulo: 'Indicadores Visuais Inteligentes de Vencimento na Tabela e Cards de Lançamentos',
-    descricao: 'Adição dos badges coloridos em cada lançamento: Pago (verde), Atrasado com dias (vermelho), Vence Hoje (laranja) e Em X dias (azul) sob a coluna de Vencimento com cálculo atômico sem interferência de fuso horário.',
+    versao: 'v3.6.92',
+    titulo: 'Indicadores Visuais Inteligentes de Vencimento e Status Integrados (v3.6.92)',
+    descricao: 'Exibição completa e sincronizada dos 4 indicadores inteligentes (Pago verde, Atrasado com contagem de dias vermelho, Vence Hoje laranja e Em X dias azul) tanto sob a coluna de Vencimento quanto na coluna de Status e na visualização de Cards, com purga de cache PWA.',
     dataLancamento: new Date().toISOString(),
     status: 'publicado',
     destaque: true,
     notificarTenants: false,
     alvos: 'todos',
     changes: [
-      { tipo: 'melhoria', texto: 'Badges Coloridos de Vencimento: Exibição visual de status sob o vencimento em todas as linhas da tabela (Pago, Atrasado, Vence Hoje, Em X dias).' },
-      { tipo: 'correcao', texto: 'Cálculo de Diferença de Dias: Normalização estrita de datas para cálculo exato de atrasos e dias restantes sem distorção de timezone.' }
+      { tipo: 'melhoria', texto: 'Badges Visuais Inteligentes: Exibição visual padronizada de status e vencimento em todas as colunas de lançamentos (Pago 🟢, Atrasado 🔴 com dias, Vence Hoje 🟠 e Em X dias 🔵).' },
+      { tipo: 'correcao', texto: 'Coluna Status Dinâmica: Alinhamento da coluna Status para refletir atrasos e prazos de vencimento em tempo real além do status bruto.' },
+      { tipo: 'melhoria', texto: 'Purga e Atualização de Cache PWA: Bump para pwa-cache-v6 garantindo carregamento imediato da versão nova sem retenção em disco.' }
     ]
   });
-  console.log('Release notes v3.6.91 added!');
+  console.log('Release notes v3.6.92 added!');
   process.exit(0);
 }
 
