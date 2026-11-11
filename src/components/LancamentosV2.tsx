@@ -947,18 +947,19 @@ const openSafeAttachment = (url: string) => {
           </div>
         </div>
 
-        {/* Linha 4: Filtros Específicos Mais Espaçosos e com Abertura Livre */}
+        {/* Linha 4: Filtros Específicos em Linha Única sem quebra */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 10,
-          flexWrap: 'wrap',
+          gap: 8,
+          flexWrap: 'nowrap',
           overflow: 'visible',
-          paddingTop: 14,
+          paddingTop: 12,
           borderTop: '1px solid var(--border)',
           marginTop: 6,
           position: 'relative',
-          zIndex: 30
+          zIndex: 30,
+          width: '100%'
         }}>
             <span style={{ 
               fontSize: '11px', 
@@ -969,19 +970,18 @@ const openSafeAttachment = (url: string) => {
               flexShrink: 0,
               display: 'inline-flex',
               alignItems: 'center',
-              gap: 4,
-              marginRight: 4
+              gap: 4
             }}>
               Filtros:
             </span>
             
-            {/* Filtro Fixa / Variável em 3D mais largo */}
+            {/* Filtro Fixa / Variável */}
             <select 
               value={filtroComportamento} 
               onChange={e => setFiltroComportamento(e.target.value)} 
               style={{ 
                 padding: '4px 10px', 
-                fontSize: '11.5px', 
+                fontSize: '11px', 
                 fontWeight: filtroComportamento ? 700 : 600, 
                 borderRadius: 8, 
                 border: `1px solid ${filtroComportamento ? 'var(--primary)' : 'var(--border)'}`, 
@@ -990,7 +990,8 @@ const openSafeAttachment = (url: string) => {
                   : 'linear-gradient(180deg, var(--bg-card) 0%, var(--bg-body) 100%)', 
                 color: filtroComportamento ? 'var(--primary)' : 'var(--text-primary)', 
                 outline: 'none', 
-                minWidth: 170, 
+                width: 175,
+                minWidth: 175, 
                 height: 32, 
                 cursor: 'pointer',
                 flexShrink: 0,
@@ -998,18 +999,18 @@ const openSafeAttachment = (url: string) => {
                 transition: 'all 0.18s ease'
               }}
             >
-                <option value="">🔒/⚡ Fixo ou Variável (Todos)</option>
+                <option value="">🔒/⚡ Fixo ou Variável</option>
                 <option value="fixa">🔒 Fixa (Custos Fixos)</option>
                 <option value="variavel">⚡ Variável (Custos Variáveis)</option>
             </select>
 
-            {/* Filtro Categorias em 3D mais largo */}
+            {/* Filtro Categorias */}
             <select 
               value={filtroCategoria} 
               onChange={e => setFiltroCategoria(e.target.value)} 
               style={{ 
                 padding: '4px 10px', 
-                fontSize: '11.5px', 
+                fontSize: '11px', 
                 fontWeight: filtroCategoria ? 700 : 600, 
                 borderRadius: 8, 
                 border: `1px solid ${filtroCategoria ? 'var(--primary)' : 'var(--border)'}`, 
@@ -1018,7 +1019,8 @@ const openSafeAttachment = (url: string) => {
                   : 'linear-gradient(180deg, var(--bg-card) 0%, var(--bg-body) 100%)', 
                 color: filtroCategoria ? 'var(--primary)' : 'var(--text-primary)', 
                 outline: 'none', 
-                minWidth: 165, 
+                width: 170,
+                minWidth: 170, 
                 height: 32, 
                 cursor: 'pointer',
                 flexShrink: 0,
@@ -1026,17 +1028,17 @@ const openSafeAttachment = (url: string) => {
                 transition: 'all 0.18s ease'
               }}
             >
-                <option value="">📁 Categorias (Todas)</option>
+                <option value="">📁 Todas Categorias</option>
                 {categoriasDropdown.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
 
-            {/* Filtro Centro de Custo em 3D mais largo */}
+            {/* Filtro Centro de Custo */}
             <select 
               value={filtroCC} 
               onChange={e => setFiltroCC(e.target.value)} 
               style={{ 
                 padding: '4px 10px', 
-                fontSize: '11.5px', 
+                fontSize: '11px', 
                 fontWeight: filtroCC ? 700 : 600, 
                 borderRadius: 8, 
                 border: `1px solid ${filtroCC ? 'var(--primary)' : 'var(--border)'}`, 
@@ -1045,7 +1047,8 @@ const openSafeAttachment = (url: string) => {
                   : 'linear-gradient(180deg, var(--bg-card) 0%, var(--bg-body) 100%)', 
                 color: filtroCC ? 'var(--primary)' : 'var(--text-primary)', 
                 outline: 'none', 
-                minWidth: 155, 
+                width: 160,
+                minWidth: 160, 
                 height: 32, 
                 cursor: 'pointer',
                 flexShrink: 0,
@@ -1053,11 +1056,11 @@ const openSafeAttachment = (url: string) => {
                 transition: 'all 0.18s ease'
               }}
             >
-                <option value="">🏢 C. de Custo (Todos)</option>
+                <option value="">🏢 Todos C. de Custo</option>
                 {ccDropdown.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
 
-            {/* Filtro Fornecedores/Clientes mais largo com Busca Moderna ao Digitar */}
+            {/* Filtro Fornecedores/Clientes com Busca Moderna ao Digitar */}
             <SearchableSelect
               value={filtroContato}
               onChange={setFiltroContato}
@@ -1065,11 +1068,11 @@ const openSafeAttachment = (url: string) => {
               placeholder="Digite o nome..."
               emptyLabel="👥 Fornecedores / Clientes"
               minWidth={220}
-              maxWidth={300}
+              maxWidth={240}
               height={32}
             />
 
-            {/* Botão Limpar Filtros Específicos se algum estiver ativo */}
+            {/* Botão Limpar Filtros se algum estiver ativo */}
             {(filtroComportamento || filtroCategoria || filtroCC || filtroContato) && (
               <button
                 type="button"

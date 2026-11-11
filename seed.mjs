@@ -11,21 +11,21 @@ const db = getFirestore(app);
 
 async function run() {
   await addDoc(collection(db, 'saas_releases'), {
-    versao: 'v3.6.95',
-    titulo: 'Campos de Filtros Ampliados sem Cortes e Dropdown com Abertura Livre (v3.6.95)',
-    descricao: 'Ajuste de larguras e alturas dos filtros para exibição integral dos textos sem truncamento, correção de overflow para abertura livre para baixo do menu flutuante de Fornecedores/Clientes e bloqueio de movimentação ou salto de página ao focar.',
+    versao: 'v3.6.96',
+    titulo: 'Barra de Filtros em Linha Única Estrita com Campos Ampliados (v3.6.96)',
+    descricao: 'Alinhamento horizontal estrito de todos os filtros em uma linha única (nowrap) com larguras ampliadas suficientes para exibir todos os textos sem corte e abertura livre do seletor de contatos.',
     dataLancamento: new Date().toISOString(),
     status: 'publicado',
     destaque: true,
     notificarTenants: false,
     alvos: 'todos',
     changes: [
-      { tipo: 'melhoria', texto: 'Campos Ampliados sem Corte: Largura e altura ajustadas (32px) para leitura total dos títulos (Fixo/Variável, Categorias, C. Custo e Fornecedores/Clientes).' },
-      { tipo: 'correcao', texto: 'Abertura Livre do Dropdown: Remoção de restrição de overflow, permitindo que a lista de busca abra suavemente para baixo sem ser cortada pelas bordas.' },
-      { tipo: 'correcao', texto: 'Página Estável sem Pulos: Adicionado preventScroll no foco da barra de pesquisa de contatos para manter a viewport e a tela 100% estáticas.' }
+      { tipo: 'melhoria', texto: 'Linha Única Estrita (nowrap): Todos os campos de filtro fixados lado a lado em uma única linha reta horizontal.' },
+      { tipo: 'melhoria', texto: 'Larguras Ampliadas: Espaço suficiente para leitura integral de todas as opções (Fixo/Variável 175px, Categorias 170px, C. Custo 160px, Fornecedores/Clientes 220px).' },
+      { tipo: 'correcao', texto: 'Abertura para Baixo: Dropdown flutuante abre livremente para baixo com zIndex alto mantendo a tela estável.' }
     ]
   });
-  console.log('Release notes v3.6.95 added!');
+  console.log('Release notes v3.6.96 added!');
   process.exit(0);
 }
 
