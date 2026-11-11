@@ -11,6 +11,7 @@ interface SearchableSelectProps {
   emptyLabel?: string;
   minWidth?: number | string;
   maxWidth?: number | string;
+  height?: number | string;
 }
 
 export default function SearchableSelect({
@@ -20,7 +21,8 @@ export default function SearchableSelect({
   placeholder = 'Buscar...',
   emptyLabel = 'Todos',
   minWidth = 140,
-  maxWidth = 200,
+  maxWidth = 180,
+  height = 26,
 }: SearchableSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -82,9 +84,10 @@ export default function SearchableSelect({
         display: 'inline-block',
         minWidth: minWidth,
         maxWidth: maxWidth,
+        flexShrink: 0,
       }}
     >
-      {/* Botão Gatilho Compacto e Moderno */}
+      {/* Botão Gatilho Compacto com Efeito 3D e Sombra de Contorno */}
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
@@ -93,25 +96,42 @@ export default function SearchableSelect({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          gap: 6,
-          padding: '4px 8px',
-          fontSize: '11px',
-          fontWeight: value ? 700 : 500,
+          gap: 5,
+          padding: '2px 8px',
+          fontSize: '10.5px',
+          fontWeight: value ? 700 : 600,
           borderRadius: 8,
           border: `1px solid ${isOpen ? 'var(--primary)' : value ? 'var(--primary)' : 'var(--border)'}`,
-          background: value ? 'rgba(var(--primary-rgb, 59, 130, 246), 0.08)' : 'var(--bg-body)',
+          background: value
+            ? 'linear-gradient(180deg, rgba(var(--primary-rgb, 59, 130, 246), 0.12) 0%, rgba(var(--primary-rgb, 59, 130, 246), 0.05) 100%)'
+            : 'linear-gradient(180deg, var(--bg-card) 0%, var(--bg-body) 100%)',
           color: value ? 'var(--primary)' : 'var(--text-primary)',
           cursor: 'pointer',
           outline: 'none',
-          transition: 'all 0.15s ease',
-          height: '28px',
+          height: `${height}px`,
           boxSizing: 'border-box',
+          boxShadow: isOpen
+            ? '0 0 0 2px rgba(var(--primary-rgb, 59, 130, 246), 0.3), 0 3px 8px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.2)'
+            : '0 2px 4px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.15)',
+          transition: 'all 0.18s ease',
+        }}
+        onMouseEnter={(e) => {
+          if (!isOpen) {
+            e.currentTarget.style.boxShadow = '0 3px 6px rgba(0,0,0,0.12), 0 1px 3px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.25)';
+            e.currentTarget.style.transform = 'translateY(-0.5px)';
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!isOpen) {
+            e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.15)';
+            e.currentTarget.style.transform = 'translateY(0)';
+          }
         }}
         title={value || emptyLabel}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          <Users size={12} style={{ flexShrink: 0, opacity: value ? 1 : 0.6 }} />
-          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: typeof maxWidth === 'number' ? maxWidth - 46 : 140 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <Users size={11} style={{ flexShrink: 0, opacity: value ? 1 : 0.65 }} />
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {value || emptyLabel}
           </span>
         </div>
@@ -125,19 +145,19 @@ export default function SearchableSelect({
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                width: 14,
-                height: 14,
+                width: 13,
+                height: 13,
                 borderRadius: '50%',
-                background: 'rgba(239, 68, 68, 0.15)',
+                background: 'rgba(239, 68, 68, 0.18)',
                 color: '#ef4444',
                 cursor: 'pointer',
               }}
             >
-              <X size={10} />
+              <X size={9} />
             </span>
           )}
           <ChevronDown
-            size={12}
+            size={11}
             style={{
               transition: 'transform 0.2s ease',
               transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
@@ -147,7 +167,7 @@ export default function SearchableSelect({
         </div>
       </button>
 
-      {/* Dropdown Flutuante Moderno com Campo de Busca ao Digitar */}
+      {/* Dropdown Flutuante Moderno 3D com Barra de Busca ao Digitar */}
       {isOpen && (
         <div
           style={{
@@ -159,7 +179,7 @@ export default function SearchableSelect({
             background: 'var(--bg-card)',
             border: '1px solid var(--border)',
             borderRadius: 10,
-            boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
+            boxShadow: '0 12px 28px rgba(0,0,0,0.22), 0 3px 8px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.15)',
             overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
@@ -175,9 +195,10 @@ export default function SearchableSelect({
               padding: '6px 10px',
               borderBottom: '1px solid var(--border)',
               background: 'var(--bg-body)',
+              boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.05)',
             }}
           >
-            <Search size={13} color="var(--text-muted)" style={{ flexShrink: 0 }} />
+            <Search size={12} color="var(--text-muted)" style={{ flexShrink: 0 }} />
             <input
               ref={inputSearchRef}
               type="text"
@@ -189,7 +210,7 @@ export default function SearchableSelect({
                 background: 'transparent',
                 outline: 'none',
                 width: '100%',
-                fontSize: '11.5px',
+                fontSize: '11px',
                 color: 'var(--text-primary)',
                 fontWeight: 500,
               }}
@@ -207,7 +228,7 @@ export default function SearchableSelect({
                   display: 'flex',
                 }}
               >
-                <X size={12} />
+                <X size={11} />
               </button>
             )}
           </div>
@@ -215,7 +236,7 @@ export default function SearchableSelect({
           {/* Lista de Opções com Rolagem Suave */}
           <div
             style={{
-              maxHeight: '220px',
+              maxHeight: '210px',
               overflowY: 'auto',
               padding: '4px',
             }}
@@ -227,12 +248,12 @@ export default function SearchableSelect({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                padding: '6px 8px',
+                padding: '5px 8px',
                 borderRadius: 6,
-                fontSize: '11px',
+                fontSize: '10.5px',
                 fontWeight: !value ? 700 : 500,
                 color: !value ? 'var(--primary)' : 'var(--text-secondary)',
-                background: !value ? 'rgba(var(--primary-rgb, 59, 130, 246), 0.1)' : 'transparent',
+                background: !value ? 'rgba(var(--primary-rgb, 59, 130, 246), 0.12)' : 'transparent',
                 cursor: 'pointer',
                 transition: 'background 0.15s ease',
               }}
@@ -244,15 +265,15 @@ export default function SearchableSelect({
               }}
             >
               <span>{emptyLabel}</span>
-              {!value && <Check size={12} color="var(--primary)" />}
+              {!value && <Check size={11} color="var(--primary)" />}
             </div>
 
             {filteredOptions.length === 0 ? (
               <div
                 style={{
-                  padding: '16px 8px',
+                  padding: '14px 8px',
                   textAlign: 'center',
-                  fontSize: '11px',
+                  fontSize: '10.5px',
                   color: 'var(--text-muted)',
                 }}
               >
@@ -270,12 +291,12 @@ export default function SearchableSelect({
                       alignItems: 'center',
                       justifyContent: 'space-between',
                       gap: 6,
-                      padding: '6px 8px',
+                      padding: '5px 8px',
                       borderRadius: 6,
-                      fontSize: '11px',
+                      fontSize: '10.5px',
                       fontWeight: isSelected ? 700 : 500,
                       color: isSelected ? 'var(--primary)' : 'var(--text-primary)',
-                      background: isSelected ? 'rgba(var(--primary-rgb, 59, 130, 246), 0.1)' : 'transparent',
+                      background: isSelected ? 'rgba(var(--primary-rgb, 59, 130, 246), 0.12)' : 'transparent',
                       cursor: 'pointer',
                       transition: 'background 0.15s ease',
                     }}
@@ -296,7 +317,7 @@ export default function SearchableSelect({
                     >
                       {opt}
                     </span>
-                    {isSelected && <Check size={12} color="var(--primary)" style={{ flexShrink: 0 }} />}
+                    {isSelected && <Check size={11} color="var(--primary)" style={{ flexShrink: 0 }} />}
                   </div>
                 );
               })
@@ -307,7 +328,7 @@ export default function SearchableSelect({
           <div
             style={{
               padding: '4px 8px',
-              fontSize: '9.5px',
+              fontSize: '9px',
               color: 'var(--text-muted)',
               borderTop: '1px solid var(--border)',
               background: 'var(--bg-body)',
@@ -320,7 +341,7 @@ export default function SearchableSelect({
             {value && (
               <span
                 onClick={handleClear}
-                style={{ cursor: 'pointer', color: '#ef4444', fontWeight: 600 }}
+                style={{ cursor: 'pointer', color: '#ef4444', fontWeight: 700 }}
               >
                 Limpar
               </span>

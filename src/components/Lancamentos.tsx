@@ -945,68 +945,129 @@ const openSafeAttachment = (url: string) => {
           </div>
         </div>
 
-        {/* Linha 4: Filtros Específicos */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', paddingTop: 12, borderTop: '1px solid var(--border)', marginTop: 6 }}>
-            <span style={{ fontSize: 10, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Filtros:</span>
+        {/* Linha 4: Filtros Específicos em 3D numa linha só */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          flexWrap: 'nowrap',
+          overflowX: 'auto',
+          paddingTop: 10,
+          borderTop: '1px solid var(--border)',
+          marginTop: 4,
+          paddingBottom: 2,
+          WebkitOverflowScrolling: 'touch',
+        }}>
+            <span style={{ 
+              fontSize: '9.5px', 
+              fontWeight: 800, 
+              color: 'var(--text-muted)', 
+              textTransform: 'uppercase', 
+              letterSpacing: '0.5px',
+              flexShrink: 0,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 3,
+              marginRight: 2
+            }}>
+              Filtros:
+            </span>
             
-            {/* Filtro Fixa / Variável */}
+            {/* Filtro Fixa / Variável em 3D */}
             <select 
               value={filtroComportamento} 
               onChange={e => setFiltroComportamento(e.target.value)} 
               style={{ 
-                padding: '4px 8px', fontSize: 10.5, fontWeight: filtroComportamento ? 700 : 500, 
-                borderRadius: 8, border: `1px solid ${filtroComportamento ? 'var(--primary)' : 'var(--border)'}`, 
-                background: filtroComportamento ? 'rgba(var(--primary-rgb, 59, 130, 246), 0.08)' : 'var(--bg-body)', 
+                padding: '2px 8px', 
+                fontSize: '10.5px', 
+                fontWeight: filtroComportamento ? 700 : 600, 
+                borderRadius: 8, 
+                border: `1px solid ${filtroComportamento ? 'var(--primary)' : 'var(--border)'}`, 
+                background: filtroComportamento 
+                  ? 'linear-gradient(180deg, rgba(var(--primary-rgb, 59, 130, 246), 0.12) 0%, rgba(var(--primary-rgb, 59, 130, 246), 0.05) 100%)' 
+                  : 'linear-gradient(180deg, var(--bg-card) 0%, var(--bg-body) 100%)', 
                 color: filtroComportamento ? 'var(--primary)' : 'var(--text-primary)', 
-                outline: 'none', minWidth: 135, height: 28, cursor: 'pointer' 
+                outline: 'none', 
+                minWidth: 125, 
+                maxWidth: 135,
+                height: 26, 
+                cursor: 'pointer',
+                flexShrink: 0,
+                boxShadow: '0 2px 4px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.15)',
+                transition: 'all 0.18s ease'
               }}
             >
-                <option value="">Fixo ou Variável (Todos)</option>
-                <option value="fixa">🔒 Fixa (Custos Fixos)</option>
-                <option value="variavel">⚡ Variável (Custos Variáveis)</option>
+                <option value="">🔒/⚡ Fixo ou Variável</option>
+                <option value="fixa">🔒 Fixa (Fixos)</option>
+                <option value="variavel">⚡ Variável (Variáveis)</option>
             </select>
 
-            {/* Filtro Categorias */}
+            {/* Filtro Categorias em 3D */}
             <select 
               value={filtroCategoria} 
               onChange={e => setFiltroCategoria(e.target.value)} 
               style={{ 
-                padding: '4px 8px', fontSize: 10.5, fontWeight: filtroCategoria ? 700 : 500, 
-                borderRadius: 8, border: `1px solid ${filtroCategoria ? 'var(--primary)' : 'var(--border)'}`, 
-                background: filtroCategoria ? 'rgba(var(--primary-rgb, 59, 130, 246), 0.08)' : 'var(--bg-body)', 
+                padding: '2px 8px', 
+                fontSize: '10.5px', 
+                fontWeight: filtroCategoria ? 700 : 600, 
+                borderRadius: 8, 
+                border: `1px solid ${filtroCategoria ? 'var(--primary)' : 'var(--border)'}`, 
+                background: filtroCategoria 
+                  ? 'linear-gradient(180deg, rgba(var(--primary-rgb, 59, 130, 246), 0.12) 0%, rgba(var(--primary-rgb, 59, 130, 246), 0.05) 100%)' 
+                  : 'linear-gradient(180deg, var(--bg-card) 0%, var(--bg-body) 100%)', 
                 color: filtroCategoria ? 'var(--primary)' : 'var(--text-primary)', 
-                outline: 'none', minWidth: 130, height: 28, cursor: 'pointer' 
+                outline: 'none', 
+                minWidth: 115, 
+                maxWidth: 130,
+                height: 26, 
+                cursor: 'pointer',
+                flexShrink: 0,
+                boxShadow: '0 2px 4px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.15)',
+                transition: 'all 0.18s ease'
               }}
             >
-                <option value="">Todas Categorias</option>
+                <option value="">📁 Categorias (Todas)</option>
                 {categoriasDropdown.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
 
-            {/* Filtro Centro de Custo */}
+            {/* Filtro Centro de Custo em 3D */}
             <select 
               value={filtroCC} 
               onChange={e => setFiltroCC(e.target.value)} 
               style={{ 
-                padding: '4px 8px', fontSize: 10.5, fontWeight: filtroCC ? 700 : 500, 
-                borderRadius: 8, border: `1px solid ${filtroCC ? 'var(--primary)' : 'var(--border)'}`, 
-                background: filtroCC ? 'rgba(var(--primary-rgb, 59, 130, 246), 0.08)' : 'var(--bg-body)', 
+                padding: '2px 8px', 
+                fontSize: '10.5px', 
+                fontWeight: filtroCC ? 700 : 600, 
+                borderRadius: 8, 
+                border: `1px solid ${filtroCC ? 'var(--primary)' : 'var(--border)'}`, 
+                background: filtroCC 
+                  ? 'linear-gradient(180deg, rgba(var(--primary-rgb, 59, 130, 246), 0.12) 0%, rgba(var(--primary-rgb, 59, 130, 246), 0.05) 100%)' 
+                  : 'linear-gradient(180deg, var(--bg-card) 0%, var(--bg-body) 100%)', 
                 color: filtroCC ? 'var(--primary)' : 'var(--text-primary)', 
-                outline: 'none', minWidth: 120, height: 28, cursor: 'pointer' 
+                outline: 'none', 
+                minWidth: 110, 
+                maxWidth: 125,
+                height: 26, 
+                cursor: 'pointer',
+                flexShrink: 0,
+                boxShadow: '0 2px 4px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.15)',
+                transition: 'all 0.18s ease'
               }}
             >
-                <option value="">Todos C. Custo</option>
+                <option value="">🏢 C. Custo (Todos)</option>
                 {ccDropdown.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
 
-            {/* Filtro Fornecedores/Clientes com Busca Moderna ao Digitar */}
+            {/* Filtro Fornecedores/Clientes com Busca Moderna em Tempo Real e 3D */}
             <SearchableSelect
               value={filtroContato}
               onChange={setFiltroContato}
               options={contatosDropdown}
               placeholder="Digite o nome..."
-              emptyLabel="Todos Fornecedores/Clientes"
-              minWidth={175}
-              maxWidth={220}
+              emptyLabel="👥 Fornecedores/Clientes"
+              minWidth={150}
+              maxWidth={185}
+              height={26}
             />
 
             {/* Botão Limpar Filtros Específicos se algum estiver ativo */}
@@ -1020,21 +1081,25 @@ const openSafeAttachment = (url: string) => {
                   setFiltroContato('');
                 }}
                 style={{
-                  padding: '3px 8px',
-                  borderRadius: 6,
-                  border: '1px solid rgba(239, 68, 68, 0.3)',
-                  background: 'rgba(239, 68, 68, 0.1)',
+                  padding: '2px 8px',
+                  borderRadius: 8,
+                  border: '1px solid rgba(239, 68, 68, 0.4)',
+                  background: 'linear-gradient(180deg, rgba(239, 68, 68, 0.16) 0%, rgba(239, 68, 68, 0.08) 100%)',
                   color: '#ef4444',
-                  fontSize: '10px',
-                  fontWeight: 700,
+                  fontSize: '9.5px',
+                  fontWeight: 800,
                   cursor: 'pointer',
-                  height: 28,
+                  height: 26,
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: 4
+                  gap: 3,
+                  flexShrink: 0,
+                  boxShadow: '0 2px 4px rgba(239, 68, 68, 0.15), inset 0 1px 0 rgba(255,255,255,0.2)',
+                  transition: 'all 0.18s ease'
                 }}
+                title="Limpar todos os filtros específicos"
               >
-                ✕ Limpar Filtros
+                ✕ Limpar
               </button>
             )}
         </div>

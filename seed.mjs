@@ -11,21 +11,21 @@ const db = getFirestore(app);
 
 async function run() {
   await addDoc(collection(db, 'saas_releases'), {
-    versao: 'v3.6.93',
-    titulo: 'Restauração do Filtro Fixa/Variável e Novo Seletor com Busca em Tempo Real (v3.6.93)',
-    descricao: 'Restauração completa do filtro e badges de Despesas/Receitas Fixas e Variáveis (Custos Fixos vs Variáveis), novo componente de busca instantânea ao digitar para Fornecedores e Clientes (SearchableSelect) e compactação visual moderna de todos os campos de filtros.',
+    versao: 'v3.6.94',
+    titulo: 'Barra de Filtros em Linha Única com Design 3D e Sombras de Contorno (v3.6.94)',
+    descricao: 'Redesenho completo da barra de filtros específicos para linha única compacta, com acabamento moderno em 3D, relevo táctil, sombras de contorno suaves e elevação ao passar o mouse em todos os seletores.',
     dataLancamento: new Date().toISOString(),
     status: 'publicado',
     destaque: true,
     notificarTenants: false,
     alvos: 'todos',
     changes: [
-      { tipo: 'correcao', texto: 'Restauração Filtro Fixa/Variável: Reativado o filtro de Custos Fixos (🔒 Fixa) e Variáveis (⚡ Variável) junto com as badges visuais nas descrições da tabela e cards.' },
-      { tipo: 'melhoria', texto: 'Busca Inteligente ao Digitar: Novo seletor flutuante para Fornecedores/Clientes com campo de pesquisa em tempo real, contador de resultados e limpeza em um clique.' },
-      { tipo: 'melhoria', texto: 'Filtros Mais Compactos e Elegantes: Redução proporcional do tamanho dos campos de filtro na barra superior para um layout mais limpo e profissional.' }
+      { tipo: 'melhoria', texto: 'Layout em Linha Única: Todos os campos de filtro (Fixo/Variável, Categorias, C. Custo e Fornecedor/Cliente) organizados harmoniosamente em uma única linha horizontal.' },
+      { tipo: 'melhoria', texto: 'Design Moderno 3D: Efeito de relevo com sombras em camadas (box-shadow suave, contorno interno e gradiente de profundidade).' },
+      { tipo: 'melhoria', texto: 'Dimensões Compactas: Redução calibrada de altura (26px) e paddings sem comprometer legibilidade ou usabilidade.' }
     ]
   });
-  console.log('Release notes v3.6.93 added!');
+  console.log('Release notes v3.6.94 added!');
   process.exit(0);
 }
 
