@@ -11,21 +11,22 @@ const db = getFirestore(app);
 
 async function run() {
   await addDoc(collection(db, 'saas_releases'), {
-    versao: 'v3.6.97',
-    titulo: 'Campos de Filtros Ampliados em Linha Única Estrita (v3.6.97)',
-    descricao: 'Ampliação proporcional das larguras e alturas (34px) de todos os campos de filtros mantendo o layout rigorosamente em uma única linha reta horizontal sem quebra, com leitura limpa e abertura livre do popover.',
+    versao: 'v3.6.98',
+    titulo: 'Lançamento Exclusivo: Radar Forense de Desperdícios & Gastos Fantasma (Estilo Ramp / Brex)',
+    descricao: 'Motor de inteligência analítica autônoma que varre continuamente os lançamentos em busca de cobranças duplicadas, reajustes silenciosos de fornecedores e anomalias de custos, calculando a economia mensal e anual imediata do negócio.',
     dataLancamento: new Date().toISOString(),
     status: 'publicado',
     destaque: true,
     notificarTenants: false,
     alvos: 'todos',
     changes: [
-      { tipo: 'melhoria', texto: 'Campos Ampliados Confortáveis: Fixo/Variável 190px, Categorias 185px, C. Custo 175px e Contatos 240px com altura 34px.' },
-      { tipo: 'melhoria', texto: 'Linha Única Estrita: Preservação do alinhamento horizontal contínuo lado a lado sem quebra de linha.' },
-      { tipo: 'melhoria', texto: 'Dropdown Mais Amplo: Popover de pesquisa de Fornecedores/Clientes expandido para 300px com busca suave ao digitar.' }
+      { tipo: 'novidade', texto: 'Radar Forense de Desperdícios: Nova tela completa com cálculo de Economia Imediata Mensal/Anual e Score de Proteção de Caixa.' },
+      { tipo: 'novidade', texto: 'Detector de Reajustes Silenciosos: Identifica aumentos acima da média histórica recente em contas recorrentes e contratos de fornecedores.' },
+      { tipo: 'novidade', texto: 'Detector de Cobranças Duplicadas: Cruza valores idênticos e datas próximas para evitar pagamentos duplos acidentais.' },
+      { tipo: 'novidade', texto: 'Atalho Executivo no Dashboard & Menu: Acesso instantâneo de 1 clique ao Radar através do Dashboard e da barra lateral de Inteligência.' }
     ]
   });
-  console.log('Release notes v3.6.97 added!');
+  console.log('Release notes v3.6.98 added!');
   process.exit(0);
 }
 

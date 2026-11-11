@@ -12,7 +12,7 @@ import { format, subDays, startOfWeek, endOfWeek } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ordenarMovimentacoesDesc } from '@/lib/sorting';
 import { 
-  PlusCircle, TrendingUp, TrendingDown, DollarSign, Activity, 
+  PlusCircle, ShieldAlert, TrendingUp, TrendingDown, DollarSign, Activity, 
   ArrowUpCircle, ArrowDownCircle, RefreshCw, Wallet, AlertTriangle, 
   ChevronLeft, ChevronRight, PieChart as PieIcon, BarChart3, 
   Clock, Zap, Bell, Volume2, VolumeX, AlertCircle, Calendar, ArrowDownRight, ArrowUpRight
@@ -28,11 +28,12 @@ interface Props {
   onNavigateToLancamentos?: (filtro?: string) => void;
   onEditarLancamento?: (t: Transacao) => void;
   onNavigateToCartoes?: (faturaId?: string) => void;
+  onNavigateToRadar?: () => void;
 }
 
 const CORES_CATEGORIAS = ['var(--primary)', '#16a34a', '#ef4444', '#f59e0b', 'var(--primary)', '#ec4899', '#06b6d4', '#10b981', '#64748b'];
 
-export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, onEditarLancamento, onNavigateToCartoes }: Props) {
+export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, onEditarLancamento, onNavigateToCartoes, onNavigateToRadar }: Props) {
   const [mesSelecionado, setMesSelecionado] = useState<Date>(new Date());
   const [transacoesMes, setTransacoesMes] = useState<Transacao[]>([]);
   const [todasTransacoes, setTodasTransacoes] = useState<Transacao[]>([]);
@@ -445,6 +446,29 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
 
         {/* BOTÃO NOVO LANÇAMENTO */}
         <div style={{ display: 'flex', gap: 8 }}>
+          {onNavigateToRadar && (
+            <button 
+              onClick={onNavigateToRadar}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                background: 'linear-gradient(180deg, rgba(239, 68, 68, 0.12) 0%, rgba(239, 68, 68, 0.04) 100%)',
+                color: '#ef4444',
+                border: '1px solid rgba(239, 68, 68, 0.35)',
+                borderRadius: 12,
+                padding: '12px 18px',
+                fontSize: 13,
+                fontWeight: 800,
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(239, 68, 68, 0.1), inset 0 1px 0 rgba(255,255,255,0.2)',
+                transition: 'all 0.15s ease'
+              }}
+              title="Abrir Radar Forense de Desperdícios (Estilo Ramp)"
+            >
+              <ShieldAlert size={16} /> Radar de Desperdícios
+            </button>
+          )}
           <button className="hover-lift active-press" onClick={onNovoLancamento} style={{ display: 'flex', alignItems: 'center', gap: 6, background: (getTenantId() === 'master' || getTenantId() === '9yxuafoC0AV9BrIKem05ponbmgn2' || !getTenantId()) ? 'linear-gradient(180deg, #10b981 0%, #059669 100%)' : 'linear-gradient(180deg, var(--primary) 0%, var(--primary-dark) 100%)', color: '#fff', border: 'none', borderRadius: 12, padding: '12px 24px', fontSize: 14, fontWeight: 900, cursor: 'pointer', transition: 'all 0.15s ease', borderBottom: (getTenantId() === 'master' || getTenantId() === '9yxuafoC0AV9BrIKem05ponbmgn2' || !getTenantId()) ? '5px solid #047857' : '5px solid color-mix(in srgb, var(--primary-dark) 80%, black)', boxShadow: (getTenantId() === 'master' || getTenantId() === '9yxuafoC0AV9BrIKem05ponbmgn2' || !getTenantId()) ? '0 4px 15px rgba(16,185,129,0.4)' : '0 4px 15px var(--primary-light)', textShadow: '0 1px 2px rgba(0,0,0,0.2)', letterSpacing: '0.5px' }}
             onMouseDown={e => { e.currentTarget.style.borderBottomWidth = '0px'; e.currentTarget.style.transform = 'translateY(5px)'; e.currentTarget.style.boxShadow = 'none'; }}
             onMouseUp={e => { e.currentTarget.style.borderBottomWidth = '5px'; e.currentTarget.style.transform = 'translateY(0px)'; e.currentTarget.style.boxShadow = (getTenantId() === 'master' || getTenantId() === '9yxuafoC0AV9BrIKem05ponbmgn2' || !getTenantId()) ? '0 4px 15px rgba(16,185,129,0.4)' : '0 4px 15px var(--primary-light)'; }}
