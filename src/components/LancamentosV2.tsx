@@ -1416,6 +1416,7 @@ const openSafeAttachment = (url: string) => {
               const dateToDisplay = filtroData === 'vencimento' ? (t.dataVencimento || t.data) : (t.dataPagamento || t.dataLancamento || t.data);
                 const dataVenc = t.dataVencimento || t.data;
                 const diff = Math.ceil((new Date(dataVenc).getTime() - hoje.getTime()) / (1000 * 3600 * 24));
+                const atrasado = t.tipo === 'despesa' && t.status !== 'pago' && diff < 0;
               let alertaCss = '';
               if (t.tipo === 'despesa' && t.status !== 'pago') {
                 if (diff < 0) alertaCss = 'piscar-vermelho';
