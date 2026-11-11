@@ -945,21 +945,21 @@ const openSafeAttachment = (url: string) => {
           </div>
         </div>
 
-        {/* Linha 4: Filtros Específicos em 3D numa linha só */}
+        {/* Linha 4: Filtros Específicos Mais Espaçosos e com Abertura Livre */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 6,
-          flexWrap: 'nowrap',
-          overflowX: 'auto',
-          paddingTop: 10,
+          gap: 10,
+          flexWrap: 'wrap',
+          overflow: 'visible',
+          paddingTop: 14,
           borderTop: '1px solid var(--border)',
-          marginTop: 4,
-          paddingBottom: 2,
-          WebkitOverflowScrolling: 'touch',
+          marginTop: 6,
+          position: 'relative',
+          zIndex: 30
         }}>
             <span style={{ 
-              fontSize: '9.5px', 
+              fontSize: '11px', 
               fontWeight: 800, 
               color: 'var(--text-muted)', 
               textTransform: 'uppercase', 
@@ -967,19 +967,19 @@ const openSafeAttachment = (url: string) => {
               flexShrink: 0,
               display: 'inline-flex',
               alignItems: 'center',
-              gap: 3,
-              marginRight: 2
+              gap: 4,
+              marginRight: 4
             }}>
               Filtros:
             </span>
             
-            {/* Filtro Fixa / Variável em 3D */}
+            {/* Filtro Fixa / Variável em 3D mais largo */}
             <select 
               value={filtroComportamento} 
               onChange={e => setFiltroComportamento(e.target.value)} 
               style={{ 
-                padding: '2px 8px', 
-                fontSize: '10.5px', 
+                padding: '4px 10px', 
+                fontSize: '11.5px', 
                 fontWeight: filtroComportamento ? 700 : 600, 
                 borderRadius: 8, 
                 border: `1px solid ${filtroComportamento ? 'var(--primary)' : 'var(--border)'}`, 
@@ -988,27 +988,26 @@ const openSafeAttachment = (url: string) => {
                   : 'linear-gradient(180deg, var(--bg-card) 0%, var(--bg-body) 100%)', 
                 color: filtroComportamento ? 'var(--primary)' : 'var(--text-primary)', 
                 outline: 'none', 
-                minWidth: 125, 
-                maxWidth: 135,
-                height: 26, 
+                minWidth: 170, 
+                height: 32, 
                 cursor: 'pointer',
                 flexShrink: 0,
-                boxShadow: '0 2px 4px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.15)',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.15)',
                 transition: 'all 0.18s ease'
               }}
             >
-                <option value="">🔒/⚡ Fixo ou Variável</option>
-                <option value="fixa">🔒 Fixa (Fixos)</option>
-                <option value="variavel">⚡ Variável (Variáveis)</option>
+                <option value="">🔒/⚡ Fixo ou Variável (Todos)</option>
+                <option value="fixa">🔒 Fixa (Custos Fixos)</option>
+                <option value="variavel">⚡ Variável (Custos Variáveis)</option>
             </select>
 
-            {/* Filtro Categorias em 3D */}
+            {/* Filtro Categorias em 3D mais largo */}
             <select 
               value={filtroCategoria} 
               onChange={e => setFiltroCategoria(e.target.value)} 
               style={{ 
-                padding: '2px 8px', 
-                fontSize: '10.5px', 
+                padding: '4px 10px', 
+                fontSize: '11.5px', 
                 fontWeight: filtroCategoria ? 700 : 600, 
                 borderRadius: 8, 
                 border: `1px solid ${filtroCategoria ? 'var(--primary)' : 'var(--border)'}`, 
@@ -1017,12 +1016,11 @@ const openSafeAttachment = (url: string) => {
                   : 'linear-gradient(180deg, var(--bg-card) 0%, var(--bg-body) 100%)', 
                 color: filtroCategoria ? 'var(--primary)' : 'var(--text-primary)', 
                 outline: 'none', 
-                minWidth: 115, 
-                maxWidth: 130,
-                height: 26, 
+                minWidth: 165, 
+                height: 32, 
                 cursor: 'pointer',
                 flexShrink: 0,
-                boxShadow: '0 2px 4px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.15)',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.15)',
                 transition: 'all 0.18s ease'
               }}
             >
@@ -1030,13 +1028,13 @@ const openSafeAttachment = (url: string) => {
                 {categoriasDropdown.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
 
-            {/* Filtro Centro de Custo em 3D */}
+            {/* Filtro Centro de Custo em 3D mais largo */}
             <select 
               value={filtroCC} 
               onChange={e => setFiltroCC(e.target.value)} 
               style={{ 
-                padding: '2px 8px', 
-                fontSize: '10.5px', 
+                padding: '4px 10px', 
+                fontSize: '11.5px', 
                 fontWeight: filtroCC ? 700 : 600, 
                 borderRadius: 8, 
                 border: `1px solid ${filtroCC ? 'var(--primary)' : 'var(--border)'}`, 
@@ -1045,29 +1043,28 @@ const openSafeAttachment = (url: string) => {
                   : 'linear-gradient(180deg, var(--bg-card) 0%, var(--bg-body) 100%)', 
                 color: filtroCC ? 'var(--primary)' : 'var(--text-primary)', 
                 outline: 'none', 
-                minWidth: 110, 
-                maxWidth: 125,
-                height: 26, 
+                minWidth: 155, 
+                height: 32, 
                 cursor: 'pointer',
                 flexShrink: 0,
-                boxShadow: '0 2px 4px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.15)',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.15)',
                 transition: 'all 0.18s ease'
               }}
             >
-                <option value="">🏢 C. Custo (Todos)</option>
+                <option value="">🏢 C. de Custo (Todos)</option>
                 {ccDropdown.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
 
-            {/* Filtro Fornecedores/Clientes com Busca Moderna em Tempo Real e 3D */}
+            {/* Filtro Fornecedores/Clientes mais largo com Busca Moderna ao Digitar */}
             <SearchableSelect
               value={filtroContato}
               onChange={setFiltroContato}
               options={contatosDropdown}
               placeholder="Digite o nome..."
-              emptyLabel="👥 Fornecedores/Clientes"
-              minWidth={150}
-              maxWidth={185}
-              height={26}
+              emptyLabel="👥 Fornecedores / Clientes"
+              minWidth={220}
+              maxWidth={300}
+              height={32}
             />
 
             {/* Botão Limpar Filtros Específicos se algum estiver ativo */}
@@ -1081,18 +1078,18 @@ const openSafeAttachment = (url: string) => {
                   setFiltroContato('');
                 }}
                 style={{
-                  padding: '2px 8px',
+                  padding: '4px 10px',
                   borderRadius: 8,
                   border: '1px solid rgba(239, 68, 68, 0.4)',
                   background: 'linear-gradient(180deg, rgba(239, 68, 68, 0.16) 0%, rgba(239, 68, 68, 0.08) 100%)',
                   color: '#ef4444',
-                  fontSize: '9.5px',
+                  fontSize: '11px',
                   fontWeight: 800,
                   cursor: 'pointer',
-                  height: 26,
+                  height: 32,
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: 3,
+                  gap: 4,
                   flexShrink: 0,
                   boxShadow: '0 2px 4px rgba(239, 68, 68, 0.15), inset 0 1px 0 rgba(255,255,255,0.2)',
                   transition: 'all 0.18s ease'

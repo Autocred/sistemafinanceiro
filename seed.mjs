@@ -11,21 +11,21 @@ const db = getFirestore(app);
 
 async function run() {
   await addDoc(collection(db, 'saas_releases'), {
-    versao: 'v3.6.94',
-    titulo: 'Barra de Filtros em Linha Única com Design 3D e Sombras de Contorno (v3.6.94)',
-    descricao: 'Redesenho completo da barra de filtros específicos para linha única compacta, com acabamento moderno em 3D, relevo táctil, sombras de contorno suaves e elevação ao passar o mouse em todos os seletores.',
+    versao: 'v3.6.95',
+    titulo: 'Campos de Filtros Ampliados sem Cortes e Dropdown com Abertura Livre (v3.6.95)',
+    descricao: 'Ajuste de larguras e alturas dos filtros para exibição integral dos textos sem truncamento, correção de overflow para abertura livre para baixo do menu flutuante de Fornecedores/Clientes e bloqueio de movimentação ou salto de página ao focar.',
     dataLancamento: new Date().toISOString(),
     status: 'publicado',
     destaque: true,
     notificarTenants: false,
     alvos: 'todos',
     changes: [
-      { tipo: 'melhoria', texto: 'Layout em Linha Única: Todos os campos de filtro (Fixo/Variável, Categorias, C. Custo e Fornecedor/Cliente) organizados harmoniosamente em uma única linha horizontal.' },
-      { tipo: 'melhoria', texto: 'Design Moderno 3D: Efeito de relevo com sombras em camadas (box-shadow suave, contorno interno e gradiente de profundidade).' },
-      { tipo: 'melhoria', texto: 'Dimensões Compactas: Redução calibrada de altura (26px) e paddings sem comprometer legibilidade ou usabilidade.' }
+      { tipo: 'melhoria', texto: 'Campos Ampliados sem Corte: Largura e altura ajustadas (32px) para leitura total dos títulos (Fixo/Variável, Categorias, C. Custo e Fornecedores/Clientes).' },
+      { tipo: 'correcao', texto: 'Abertura Livre do Dropdown: Remoção de restrição de overflow, permitindo que a lista de busca abra suavemente para baixo sem ser cortada pelas bordas.' },
+      { tipo: 'correcao', texto: 'Página Estável sem Pulos: Adicionado preventScroll no foco da barra de pesquisa de contatos para manter a viewport e a tela 100% estáticas.' }
     ]
   });
-  console.log('Release notes v3.6.94 added!');
+  console.log('Release notes v3.6.95 added!');
   process.exit(0);
 }
 
