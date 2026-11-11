@@ -1120,13 +1120,17 @@ const openSafeAttachment = (url: string) => {
               </thead>
               <tbody>
                 {filtradas.map((t, idx) => {
-                  const hoje = new Date();
+                  const hojeIso = new Date().toISOString().split('T')[0];
+                  const [yH, mH, dH] = hojeIso.split('-').map(Number);
+                  const dHoje = new Date(yH, mH - 1, dH);
+                  const vIso = String(t.dataVencimento || t.data || '').substring(0, 10);
+                  const [yV, mV, dV] = (vIso || hojeIso).split('-').map(Number);
+                  const dVenc = new Date(yV, (mV || 1) - 1, dV || 1);
+                  const diffDias = Math.round((dVenc.getTime() - dHoje.getTime()) / (1000 * 60 * 60 * 24));
+                  const atrasado = t.tipo === 'despesa' && t.status !== 'pago' && diffDias < 0;
                   const dateToDisplay = filtroData === 'vencimento' ? (t.dataVencimento || t.data) : (t.dataPagamento || t.dataLancamento || t.data);
                   const isReceita = t.tipo === 'receita';
                   const isTransf = t.tipo === 'transferencia';
-                  const dataVenc = t.dataVencimento || t.data;
-                  const diff = Math.ceil((new Date(dataVenc).getTime() - hoje.getTime()) / (1000 * 3600 * 24));
-                  const atrasado = t.tipo === 'despesa' && t.status !== 'pago' && diff < 0;
                   const valorFinal = Math.max(0, (Number(t.valor) || 0) + (Number(t.juros) || 0) + (Number(t.multa) || 0) - (Number(t.desconto) || 0));
                   const rowBg = selecionados.has(t.id) ? 'rgba(239,68,68,0.08)' : (idx % 2 === 1 ? 'rgba(255,255,255,0.02)' : 'transparent');
 
@@ -1187,26 +1191,74 @@ const openSafeAttachment = (url: string) => {
                           <div>
                             <span style={{
                               fontWeight: 700,
-                              color: atrasado ? '#ef4444' : (t.status === 'pago' ? '#10b981' : '#f59e0b'),
+                              color: 'var(--text-primary)',
                               borderBottom: '1px dashed rgba(255,255,255,0.2)'
                             }}>
                               {String(t.dataVencimento || t.data || '').split('-').reverse().join('/')}
                             </span>
-                            {atrasado && (
-                              <span style={{ display: 'block', color: '#ef4444', fontSize: '9px', fontWeight: 800 }}>
-                                Atrasado ({Math.abs(diff)}d)
-                              </span>
-                            )}
-                            {!atrasado && t.status !== 'pago' && diff === 0 && (
-                              <span style={{ display: 'block', color: '#f59e0b', fontSize: '9px', fontWeight: 800 }}>
-                                Vence Hoje
-                              </span>
-                            )}
-                            {!atrasado && t.status !== 'pago' && diff > 0 && (
-                              <span style={{ display: 'block', color: 'var(--text-muted)', fontSize: '9px', fontWeight: 600 }}>
-                                Em {diff}d
-                              </span>
-                            )}
+                            <div style={{ marginTop: 4 }}>
+                              {t.status === 'pago' ? (
+                                <span style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 3,
+                                  background: 'rgba(16, 185, 129, 0.12)',
+                                  color: '#10b981',
+                                  border: '1px solid rgba(16, 185, 129, 0.3)',
+                                  padding: '1px 6px',
+                                  borderRadius: '4px',
+                                  fontSize: '9.5px',
+                                  fontWeight: 800
+                                }}>
+                                  ● Pago
+                                </span>
+                              ) : atrasado ? (
+                                <span style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 3,
+                                  background: 'rgba(239, 68, 68, 0.15)',
+                                  color: '#ef4444',
+                                  border: '1px solid rgba(239, 68, 68, 0.35)',
+                                  padding: '1px 6px',
+                                  borderRadius: '4px',
+                                  fontSize: '9.5px',
+                                  fontWeight: 800
+                                }}>
+                                  ● Atrasado ({Math.abs(diffDias)}d)
+                                </span>
+                              ) : diffDias === 0 ? (
+                                <span style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 3,
+                                  background: 'rgba(245, 158, 11, 0.15)',
+                                  color: '#f59e0b',
+                                  border: '1px solid rgba(245, 158, 11, 0.35)',
+                                  padding: '1px 6px',
+                                  borderRadius: '4px',
+                                  fontSize: '9.5px',
+                                  fontWeight: 800
+                                }}>
+                                  ● Vence Hoje
+                                </span>
+                              ) : (
+                                <span style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 3,
+                                  background: 'rgba(59, 130, 246, 0.12)',
+                                  color: '#3b82f6',
+                                  border: '1px solid rgba(59, 130, 246, 0.3)',
+                                  padding: '1px 6px',
+                                  borderRadius: '4px',
+                                  fontSize: '9.5px',
+                                  fontWeight: 800
+                                }}>
+                                  ● Em {diffDias}d
+                                </span>
+                              )}
+                            </div>
                           </div>
                         )}
                       </td>
@@ -1410,11 +1462,16 @@ const openSafeAttachment = (url: string) => {
           /* ── MODO CARDS VISUAIS ── */
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {filtradas.map(t => {
-              const hoje = new Date();
-              const dateToDisplay = filtroData === 'vencimento' ? (t.dataVencimento || t.data) : (t.dataPagamento || t.dataLancamento || t.data);
-                const dataVenc = t.dataVencimento || t.data;
-                const diff = Math.ceil((new Date(dataVenc).getTime() - hoje.getTime()) / (1000 * 3600 * 24));
-                const atrasado = t.tipo === 'despesa' && t.status !== 'pago' && diff < 0;
+              const hojeIso = new Date().toISOString().split('T')[0];
+                  const [yH, mH, dH] = hojeIso.split('-').map(Number);
+                  const dHoje = new Date(yH, mH - 1, dH);
+                  const vIso = String(t.dataVencimento || t.data || '').substring(0, 10);
+                  const [yV, mV, dV] = (vIso || hojeIso).split('-').map(Number);
+                  const dVenc = new Date(yV, (mV || 1) - 1, dV || 1);
+                  const diffDias = Math.round((dVenc.getTime() - dHoje.getTime()) / (1000 * 60 * 60 * 24));
+                  const atrasado = t.tipo === 'despesa' && t.status !== 'pago' && diffDias < 0;
+                  const diff = diffDias;
+                  const dateToDisplay = filtroData === 'vencimento' ? (t.dataVencimento || t.data) : (t.dataPagamento || t.dataLancamento || t.data);
               let alertaCss = '';
               if (t.tipo === 'despesa' && t.status !== 'pago') {
                 if (diff < 0) alertaCss = 'piscar-vermelho';
@@ -1452,15 +1509,16 @@ const openSafeAttachment = (url: string) => {
                         <p className="lancamento-subtitle" style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
                           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                             <span>Lanc: {String(t.dataLancamento || t.data || '').split('-').reverse().join('/')}</span>
-                            <span style={{
-                              fontWeight: 700,
-                              color: atrasado ? '#ef4444' : (t.status === 'pago' ? '#10b981' : '#f59e0b'),
-                              background: atrasado ? 'rgba(239,68,68,0.1)' : (t.status === 'pago' ? 'rgba(16,185,129,0.1)' : 'rgba(245,158,11,0.1)'),
-                              padding: '0 4px',
-                              borderRadius: 4
-                            }}>
-                              Venc: {String(t.dataVencimento || t.data || '').split('-').reverse().join('/')}
-                            </span>
+                            <span style={{ fontWeight: 600 }}>• Venc: {String(t.dataVencimento || t.data || '').split('-').reverse().join('/')}</span>
+                            {t.status === 'pago' ? (
+                              <span style={{ background: 'rgba(16, 185, 129, 0.12)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '1px 5px', borderRadius: 4, fontSize: '9px', fontWeight: 800 }}>● Pago</span>
+                            ) : atrasado ? (
+                              <span style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.35)', padding: '1px 5px', borderRadius: 4, fontSize: '9px', fontWeight: 800 }}>● Atrasado ({Math.abs(diffDias)}d)</span>
+                            ) : diffDias === 0 ? (
+                              <span style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.35)', padding: '1px 5px', borderRadius: 4, fontSize: '9px', fontWeight: 800 }}>● Vence Hoje</span>
+                            ) : (
+                              <span style={{ background: 'rgba(59, 130, 246, 0.12)', color: '#3b82f6', border: '1px solid rgba(59, 130, 246, 0.3)', padding: '1px 5px', borderRadius: 4, fontSize: '9px', fontWeight: 800 }}>● Em {diffDias}d</span>
+                            )}
                           </span>
                           
                           {/* Contador de Dias Modernão */}

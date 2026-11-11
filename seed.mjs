@@ -11,22 +11,20 @@ const db = getFirestore(app);
 
 async function run() {
   await addDoc(collection(db, 'saas_releases'), {
-    versao: 'v3.6.90',
-    titulo: 'Controle de Vencimentos Futuros e Recorrentes na Tabela de Lançamentos + Áudio com IA no WhatsApp',
-    descricao: 'Adição de coluna e controle exclusivo de Data de Vencimento na tela de lançamentos para total controle de recorrências e parcelas futuras, suporte a áudio por voz no bot do WhatsApp e modularização com ganho de performance na aplicação.',
+    versao: 'v3.6.91',
+    titulo: 'Indicadores Visuais Inteligentes de Vencimento na Tabela e Cards de Lançamentos',
+    descricao: 'Adição dos badges coloridos em cada lançamento: Pago (verde), Atrasado com dias (vermelho), Vence Hoje (laranja) e Em X dias (azul) sob a coluna de Vencimento com cálculo atômico sem interferência de fuso horário.',
     dataLancamento: new Date().toISOString(),
     status: 'publicado',
     destaque: true,
     notificarTenants: false,
     alvos: 'todos',
     changes: [
-      { tipo: 'melhoria', texto: 'Controle de Vencimentos na Tabela: Exibição lado a lado da Data de Lançamento e Data de Vencimento, facilitando o acompanhamento de despesas/receitas recorrentes e futuras com indicadores de atraso e vencimento.' },
-      { tipo: 'melhoria', texto: 'Edição Inline de Vencimento: Possibilidade de alterar a data de vencimento com duplo clique direto na linha da tabela.' },
-      { tipo: 'nova_funcionalidade', texto: 'Lançamento por Áudio no WhatsApp: O bot do WhatsApp agora aceita mensagens de voz, transcreve e extrai lançamentos automaticamente via IA Multimodal.' },
-      { tipo: 'melhoria', texto: 'Otimização e Modularização: Extração do CommandPalette e limpeza estrutural de código residual, proporcionando carregamento mais ágil.' }
+      { tipo: 'melhoria', texto: 'Badges Coloridos de Vencimento: Exibição visual de status sob o vencimento em todas as linhas da tabela (Pago, Atrasado, Vence Hoje, Em X dias).' },
+      { tipo: 'correcao', texto: 'Cálculo de Diferença de Dias: Normalização estrita de datas para cálculo exato de atrasos e dias restantes sem distorção de timezone.' }
     ]
   });
-  console.log('Release notes v3.6.90 added!');
+  console.log('Release notes v3.6.91 added!');
   process.exit(0);
 }
 
