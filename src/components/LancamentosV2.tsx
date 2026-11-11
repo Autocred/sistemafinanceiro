@@ -12,6 +12,7 @@ import { LayoutGrid, LayoutList, PlusCircle, Search, Filter, ChevronLeft, Chevro
 import { ordenarMovimentacoesDesc, ordenarVencimentosAsc } from '@/lib/sorting';
 import ModalCobrancaPix from '@/components/ModalCobrancaPix';
 import ModalImportarDocIA from '@/components/ModalImportarDocIA';
+import SearchableSelect from '@/components/SearchableSelect';
 
 interface LancamentosProps { onNovoLancamento: () => void; onEditarLancamento?: (t: Transacao) => void; onDuplicarLancamento?: (t: any) => void; filtroRapido?: string; }
 
@@ -218,6 +219,7 @@ const openSafeAttachment = (url: string) => {
     setModoVisualizacao(modo);
     try { localStorage.setItem('modo_visualizacao_lanc', modo); } catch(e) {}
   };
+  const [filtroComportamento, setFiltroComportamento] = useState('');
   const [filtroCategoria, setFiltroCategoria] = useState('');
   const [filtroCC, setFiltroCC] = useState('');
   const [filtroContato, setFiltroContato] = useState('');
@@ -444,14 +446,16 @@ const openSafeAttachment = (url: string) => {
         const matchCat = !filtroCategoria || t.categoriaNome === filtroCategoria;
         const matchCC = !filtroCC || t.centroCustoNome === filtroCC;
         const matchCont = !filtroContato || t.fornecedorNome === filtroContato || t.clienteNome === filtroContato;
-        return naoPeriodo && matchBusca && matchTipo && matchStatus && matchRecorrente && matchCat && matchCC && matchCont;
+        const compItem = t.comportamento || (t.recorrente ? 'fixa' : 'variavel');
+        const matchComp = !filtroComportamento || compItem === filtroComportamento;
+        return naoPeriodo && matchBusca && matchTipo && matchStatus && matchRecorrente && matchCat && matchCC && matchCont && matchComp;
       });
     
       const filtradasTemp = filtroData === 'vencimento' 
         ? ordenarVencimentosAsc(filtradasSemOrdem)
         : ordenarMovimentacoesDesc(filtradasSemOrdem);
     return filtradasTemp;
-  }, [transacoes, filtroData, periodoFiltro, busca, filtrosAtivos, filtroCategoria, filtroCC, filtroContato, dataEspecificaInicio, dataEspecificaFim, faturas]);
+  }, [transacoes, filtroData, periodoFiltro, busca, filtrosAtivos, filtroComportamento, filtroCategoria, filtroCC, filtroContato, dataEspecificaInicio, dataEspecificaFim, faturas]);
 
   const {
     totalReceitas, receitasPagas, receitasPendentes,
@@ -944,20 +948,97 @@ const openSafeAttachment = (url: string) => {
         </div>
 
         {/* Linha 4: Filtros Específicos */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', paddingTop: 16, borderTop: '1px solid var(--border)', marginTop: 8 }}>
-            <span style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', minWidth: 60 }}>Filtros</span>
-            <select value={filtroCategoria} onChange={e => setFiltroCategoria(e.target.value)} style={{ padding: '4px 6px', fontSize: 10.5, fontWeight: 600, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg-body)', color: 'var(--text-primary)', outline: 'none', minWidth: 180 }}>
-                <option value="">Todas as Categorias</option>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', paddingTop: 12, borderTop: '1px solid var(--border)', marginTop: 6 }}>
+            <span style={{ fontSize: 10, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Filtros:</span>
+            
+            {/* Filtro Fixa / Variável */}
+            <select 
+              value={filtroComportamento} 
+              onChange={e => setFiltroComportamento(e.target.value)} 
+              style={{ 
+                padding: '4px 8px', fontSize: 10.5, fontWeight: filtroComportamento ? 700 : 500, 
+                borderRadius: 8, border: `1px solid ${filtroComportamento ? 'var(--primary)' : 'var(--border)'}`, 
+                background: filtroComportamento ? 'rgba(var(--primary-rgb, 59, 130, 246), 0.08)' : 'var(--bg-body)', 
+                color: filtroComportamento ? 'var(--primary)' : 'var(--text-primary)', 
+                outline: 'none', minWidth: 135, height: 28, cursor: 'pointer' 
+              }}
+            >
+                <option value="">Fixo ou Variável (Todos)</option>
+                <option value="fixa">🔒 Fixa (Custos Fixos)</option>
+                <option value="variavel">⚡ Variável (Custos Variáveis)</option>
+            </select>
+
+            {/* Filtro Categorias */}
+            <select 
+              value={filtroCategoria} 
+              onChange={e => setFiltroCategoria(e.target.value)} 
+              style={{ 
+                padding: '4px 8px', fontSize: 10.5, fontWeight: filtroCategoria ? 700 : 500, 
+                borderRadius: 8, border: `1px solid ${filtroCategoria ? 'var(--primary)' : 'var(--border)'}`, 
+                background: filtroCategoria ? 'rgba(var(--primary-rgb, 59, 130, 246), 0.08)' : 'var(--bg-body)', 
+                color: filtroCategoria ? 'var(--primary)' : 'var(--text-primary)', 
+                outline: 'none', minWidth: 130, height: 28, cursor: 'pointer' 
+              }}
+            >
+                <option value="">Todas Categorias</option>
                 {categoriasDropdown.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
-            <select value={filtroCC} onChange={e => setFiltroCC(e.target.value)} style={{ padding: '4px 6px', fontSize: 10.5, fontWeight: 600, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg-body)', color: 'var(--text-primary)', outline: 'none', minWidth: 180 }}>
-                <option value="">Todos os C. de Custo</option>
+
+            {/* Filtro Centro de Custo */}
+            <select 
+              value={filtroCC} 
+              onChange={e => setFiltroCC(e.target.value)} 
+              style={{ 
+                padding: '4px 8px', fontSize: 10.5, fontWeight: filtroCC ? 700 : 500, 
+                borderRadius: 8, border: `1px solid ${filtroCC ? 'var(--primary)' : 'var(--border)'}`, 
+                background: filtroCC ? 'rgba(var(--primary-rgb, 59, 130, 246), 0.08)' : 'var(--bg-body)', 
+                color: filtroCC ? 'var(--primary)' : 'var(--text-primary)', 
+                outline: 'none', minWidth: 120, height: 28, cursor: 'pointer' 
+              }}
+            >
+                <option value="">Todos C. Custo</option>
                 {ccDropdown.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
-            <select value={filtroContato} onChange={e => setFiltroContato(e.target.value)} style={{ padding: '4px 6px', fontSize: 10.5, fontWeight: 600, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg-body)', color: 'var(--text-primary)', outline: 'none', minWidth: 180 }}>
-                <option value="">Todos Fornecedores/Clientes</option>
-                {contatosDropdown.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
+
+            {/* Filtro Fornecedores/Clientes com Busca Moderna ao Digitar */}
+            <SearchableSelect
+              value={filtroContato}
+              onChange={setFiltroContato}
+              options={contatosDropdown}
+              placeholder="Digite o nome..."
+              emptyLabel="Todos Fornecedores/Clientes"
+              minWidth={175}
+              maxWidth={220}
+            />
+
+            {/* Botão Limpar Filtros Específicos se algum estiver ativo */}
+            {(filtroComportamento || filtroCategoria || filtroCC || filtroContato) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setFiltroComportamento('');
+                  setFiltroCategoria('');
+                  setFiltroCC('');
+                  setFiltroContato('');
+                }}
+                style={{
+                  padding: '3px 8px',
+                  borderRadius: 6,
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  background: 'rgba(239, 68, 68, 0.1)',
+                  color: '#ef4444',
+                  fontSize: '10px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  height: 28,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4
+                }}
+              >
+                ✕ Limpar Filtros
+              </button>
+            )}
         </div>
       </div>
 
@@ -1291,6 +1372,14 @@ const openSafeAttachment = (url: string) => {
                             style={{ fontWeight: 700, fontSize: '12.5px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer' }}
                           >
                             <span style={{ borderBottom: '1px dashed transparent' }} className="hover:border-white/30">{t.descricao}</span>
+                            {(() => {
+                              const comp = t.comportamento || (t.recorrente ? 'fixa' : 'variavel');
+                              return comp ? (
+                                <span style={{ fontSize: '9.5px', padding: '1px 5px', borderRadius: '4px', fontWeight: 700, background: comp === 'fixa' ? 'rgba(59,130,246,0.15)' : 'rgba(245,158,11,0.15)', color: comp === 'fixa' ? '#3b82f6' : '#f59e0b', border: `1px solid ${comp === 'fixa' ? 'rgba(59,130,246,0.3)' : 'rgba(245,158,11,0.3)'}` }}>
+                                  {comp === 'fixa' ? '🔒 Fixa' : '⚡ Variável'}
+                                </span>
+                              ) : null;
+                            })()}
                             {t.conciliado && <span title="Conciliado"><CheckCircle2 size={12} color="#10b981" /></span>}
                           </div>
                         )}

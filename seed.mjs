@@ -11,21 +11,21 @@ const db = getFirestore(app);
 
 async function run() {
   await addDoc(collection(db, 'saas_releases'), {
-    versao: 'v3.6.92',
-    titulo: 'Indicadores Visuais Inteligentes de Vencimento e Status Integrados (v3.6.92)',
-    descricao: 'Exibição completa e sincronizada dos 4 indicadores inteligentes (Pago verde, Atrasado com contagem de dias vermelho, Vence Hoje laranja e Em X dias azul) tanto sob a coluna de Vencimento quanto na coluna de Status e na visualização de Cards, com purga de cache PWA.',
+    versao: 'v3.6.93',
+    titulo: 'Restauração do Filtro Fixa/Variável e Novo Seletor com Busca em Tempo Real (v3.6.93)',
+    descricao: 'Restauração completa do filtro e badges de Despesas/Receitas Fixas e Variáveis (Custos Fixos vs Variáveis), novo componente de busca instantânea ao digitar para Fornecedores e Clientes (SearchableSelect) e compactação visual moderna de todos os campos de filtros.',
     dataLancamento: new Date().toISOString(),
     status: 'publicado',
     destaque: true,
     notificarTenants: false,
     alvos: 'todos',
     changes: [
-      { tipo: 'melhoria', texto: 'Badges Visuais Inteligentes: Exibição visual padronizada de status e vencimento em todas as colunas de lançamentos (Pago 🟢, Atrasado 🔴 com dias, Vence Hoje 🟠 e Em X dias 🔵).' },
-      { tipo: 'correcao', texto: 'Coluna Status Dinâmica: Alinhamento da coluna Status para refletir atrasos e prazos de vencimento em tempo real além do status bruto.' },
-      { tipo: 'melhoria', texto: 'Purga e Atualização de Cache PWA: Bump para pwa-cache-v6 garantindo carregamento imediato da versão nova sem retenção em disco.' }
+      { tipo: 'correcao', texto: 'Restauração Filtro Fixa/Variável: Reativado o filtro de Custos Fixos (🔒 Fixa) e Variáveis (⚡ Variável) junto com as badges visuais nas descrições da tabela e cards.' },
+      { tipo: 'melhoria', texto: 'Busca Inteligente ao Digitar: Novo seletor flutuante para Fornecedores/Clientes com campo de pesquisa em tempo real, contador de resultados e limpeza em um clique.' },
+      { tipo: 'melhoria', texto: 'Filtros Mais Compactos e Elegantes: Redução proporcional do tamanho dos campos de filtro na barra superior para um layout mais limpo e profissional.' }
     ]
   });
-  console.log('Release notes v3.6.92 added!');
+  console.log('Release notes v3.6.93 added!');
   process.exit(0);
 }
 
