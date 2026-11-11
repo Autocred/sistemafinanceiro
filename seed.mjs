@@ -11,21 +11,22 @@ const db = getFirestore(app);
 
 async function run() {
   await addDoc(collection(db, 'saas_releases'), {
-    versao: 'v3.6.89',
-    titulo: 'Unificação da Lógica Financeira em Todos os Gráficos: Data Real de Pagamento e Valores Efetivados',
-    descricao: 'Alinhamento integral da lógica de cálculo financeiro entre o Dashboard Inicial e a tela de Resumo Mensal. Todos os gráficos e relatórios agora operam sob a mesma regra atômica: consideração estrita da data de pagamento e recebimento (regime de caixa) e cálculo exato pelo valor final efetivado (incluindo juros/multas e descontos).',
+    versao: 'v3.6.90',
+    titulo: 'Controle de Vencimentos Futuros e Recorrentes na Tabela de Lançamentos + Áudio com IA no WhatsApp',
+    descricao: 'Adição de coluna e controle exclusivo de Data de Vencimento na tela de lançamentos para total controle de recorrências e parcelas futuras, suporte a áudio por voz no bot do WhatsApp e modularização com ganho de performance na aplicação.',
     dataLancamento: new Date().toISOString(),
     status: 'publicado',
     destaque: true,
     notificarTenants: false,
     alvos: 'todos',
     changes: [
-      { tipo: 'correcao', texto: 'Unificação de Datas nos Gráficos: Eliminada divergência de competência que movia despesas pagas em novembro para outros meses no Resumo Mensal. Agora todos os gráficos utilizam a data de pagamento/recebimento real.' },
-      { tipo: 'melhoria', texto: 'Convergência Total de Valores: Adoção do getValorFinal em todas as agregações mensais (considerando juros e multas reais), equalizando os totais de despesas (R$ 11.981,14) e receitas (R$ 6.345,88) em todas as telas.' },
-      { tipo: 'melhoria', texto: 'Consistência Multi-Gráficos: Dashboard inicial, evolução de gastos, evolução de receitas e tabela resumida agora exibem rigorosamente os mesmos números.' }
+      { tipo: 'melhoria', texto: 'Controle de Vencimentos na Tabela: Exibição lado a lado da Data de Lançamento e Data de Vencimento, facilitando o acompanhamento de despesas/receitas recorrentes e futuras com indicadores de atraso e vencimento.' },
+      { tipo: 'melhoria', texto: 'Edição Inline de Vencimento: Possibilidade de alterar a data de vencimento com duplo clique direto na linha da tabela.' },
+      { tipo: 'nova_funcionalidade', texto: 'Lançamento por Áudio no WhatsApp: O bot do WhatsApp agora aceita mensagens de voz, transcreve e extrai lançamentos automaticamente via IA Multimodal.' },
+      { tipo: 'melhoria', texto: 'Otimização e Modularização: Extração do CommandPalette e limpeza estrutural de código residual, proporcionando carregamento mais ágil.' }
     ]
   });
-  console.log('Release notes v3.6.89 added!');
+  console.log('Release notes v3.6.90 added!');
   process.exit(0);
 }
 

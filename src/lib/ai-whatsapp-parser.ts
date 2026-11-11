@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import OpenAI from 'openai';
+import OpenAI, { toFile } from 'openai';
 import { Categoria, Conta, TipoTransacao } from './types';
 
 export interface ParseResult {
@@ -11,15 +11,10 @@ export interface ParseResult {
   dataCompetencia: string; // YYYY-MM-DD
 }
 
-export async function parseWhatsappMessage(
-  texto: string,
-  config: { provedorIA: string; openaiApiKey?: string; geminiApiKey?: string },
-  categorias: Categoria[],
-  contas: Conta[]
-): Promise<ParseResult> {
+function buildSystemPrompt(categorias: Categoria[], contas: Conta[]): string {
   const dateStr = new Date().toISOString().split('T')[0];
-  const systemPrompt = `
-Você é um assistente financeiro de extração de dados. O usuário vai enviar uma mensagem informal de WhatsApp (texto ou transcrição de áudio).
+  return `
+Você é um assistente financeiro de extração de dados. O usuário vai enviar uma mensagem informal de WhatsApp (texto ou áudio).
 Sua tarefa é extrair os dados da transação em JSON estrito.
 Data de Hoje: ${dateStr}. Se o usuário não especificar a data, assuma a data de hoje. Se ele disser "ontem", diminua 1 dia, etc.
 
@@ -32,11 +27,11 @@ ${contas.map(c => `${c.id} -> ${c.nome}`).join('\n')}
 Regras:
 1. "tipo" deve ser apenas "despesa" ou "receita" (gastos são despesas).
 2. "valor" deve ser um número float (positivo), ex: 15.50.
-3. Tente deduzir a categoria mais próxima das disponíveis acima (retorne apenas o ID da categoria não campo categoriaId).
-4. Tente deduzir a conta mais próxima (ex: "nubank", "mercado pago"). Se não souber, deixe contaId vazio.
-5. "dataCompetencia" não formato "YYYY-MM-DD".
+3. Tente deduzir a categoria mais próxima das disponíveis acima (retorne apenas o ID da categoria no campo categoriaId).
+4. Tente deduzir a conta mais próxima (ex: "nubank", "mercado pago", "itau"). Se não souber, deixe contaId vazio.
+5. "dataCompetencia" no formato "YYYY-MM-DD".
 
-Você deve retornar APENAS o JSON não formato abaixo, sem formatação markdown:
+Você deve retornar APENAS o JSON no formato abaixo, sem formatação markdown:
 {
   "descricao": "Nome do que foi gasto/recebido",
   "valor": 15.50,
@@ -46,26 +41,33 @@ Você deve retornar APENAS o JSON não formato abaixo, sem formatação markdown
   "dataCompetencia": "YYYY-MM-DD"
 }
 `;
+}
 
+export async function parseWhatsappMessage(
+  texto: string,
+  config: { provedorIA: string; openaiApiKey?: string; geminiApiKey?: string },
+  categorias: Categoria[],
+  contas: Conta[]
+): Promise<ParseResult> {
+  const systemPrompt = buildSystemPrompt(categorias, contas);
   let jsonResult = '';
 
   if (config.provedorIA === 'openai' && config.openaiApiKey) {
     const openai = new OpenAI({ apiKey: config.openaiApiKey });
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: 'gpt-4o-mini',
       messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: texto }
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: texto }
       ],
-      response_format: { type: "json_object" }
+      response_format: { type: 'json_object' }
     });
     jsonResult = completion.choices[0].message.content || '{}';
   } else if (config.geminiApiKey) {
-    // Default to Gemini se OpenAI não estiver configurado ou gemini for selecionado
     const genAI = new GoogleGenerativeAI(config.geminiApiKey);
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
-      generationConfig: { responseMimeType: "application/json" }
+      model: 'gemini-1.5-flash',
+      generationConfig: { responseMimeType: 'application/json' }
     });
     const result = await model.generateContent(`${systemPrompt}\n\nMensagem do usuário: ${texto}`);
     jsonResult = result.response.text();
@@ -77,7 +79,87 @@ Você deve retornar APENAS o JSON não formato abaixo, sem formatação markdown
     const parsed = JSON.parse(jsonResult) as ParseResult;
     return parsed;
   } catch (error) {
-    console.error("Erro ao parsear JSON retornado pela IA:", jsonResult);
-    throw new Error('A IA retornãou um formato inválido.');
+    console.error('Erro ao parsear JSON retornado pela IA:', jsonResult);
+    throw new Error('A IA retornou um formato inválido.');
+  }
+}
+
+/**
+ * Processa mensagens de áudio do WhatsApp (transcreve e extrai transação automaticamente)
+ */
+export async function parseWhatsappAudio(
+  audioBase64: string,
+  mimeType: string,
+  config: { provedorIA: string; openaiApiKey?: string; geminiApiKey?: string },
+  categorias: Categoria[],
+  contas: Conta[]
+): Promise<ParseResult> {
+  const systemPrompt = buildSystemPrompt(categorias, contas);
+  let jsonResult = '';
+
+  // 1. Prioriza Gemini caso configurado (processa áudio nativamente com multimodalidade)
+  if (config.geminiApiKey && config.provedorIA !== 'openai') {
+    const genAI = new GoogleGenerativeAI(config.geminiApiKey);
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-1.5-flash',
+      generationConfig: { responseMimeType: 'application/json' }
+    });
+
+    const cleanMime = mimeType ? mimeType.split(';')[0].trim() : 'audio/ogg';
+    const result = await model.generateContent([
+      {
+        inlineData: {
+          data: audioBase64,
+          mimeType: cleanMime
+        }
+      },
+      {
+        text: `${systemPrompt}\n\nOuça com atenção o áudio do usuário e extraia a transação financeira em JSON estrito.`
+      }
+    ]);
+    jsonResult = result.response.text();
+  } else if (config.openaiApiKey) {
+    // 2. OpenAI: Transcreve via Whisper e passa para o parser
+    const openai = new OpenAI({ apiKey: config.openaiApiKey });
+    const buffer = Buffer.from(audioBase64, 'base64');
+    const ext = mimeType.includes('mp4') || mimeType.includes('m4a') ? 'm4a' : 'ogg';
+    const file = await toFile(buffer, `audio.${ext}`, { type: mimeType });
+
+    const transcription = await openai.audio.transcriptions.create({
+      file,
+      model: 'whisper-1',
+      language: 'pt'
+    });
+
+    return await parseWhatsappMessage(transcription.text, config, categorias, contas);
+  } else if (config.geminiApiKey) {
+    const genAI = new GoogleGenerativeAI(config.geminiApiKey);
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-1.5-flash',
+      generationConfig: { responseMimeType: 'application/json' }
+    });
+    const cleanMime = mimeType ? mimeType.split(';')[0].trim() : 'audio/ogg';
+    const result = await model.generateContent([
+      {
+        inlineData: {
+          data: audioBase64,
+          mimeType: cleanMime
+        }
+      },
+      {
+        text: `${systemPrompt}\n\nOuça com atenção o áudio do usuário e extraia a transação financeira em JSON estrito.`
+      }
+    ]);
+    jsonResult = result.response.text();
+  } else {
+    throw new Error('Nenhum provedor de IA com chave configurada para áudio.');
+  }
+
+  try {
+    const parsed = JSON.parse(jsonResult) as ParseResult;
+    return parsed;
+  } catch (error) {
+    console.error('Erro ao parsear JSON de áudio retornado pela IA:', jsonResult);
+    throw new Error('A IA retornou um formato inválido para o áudio.');
   }
 }

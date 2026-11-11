@@ -59,6 +59,8 @@ const FloatingScroller = dynamic(() => import('@/components/FloatingScroller').t
 const RelatorioAvancado = dynamic(() => import('@/components/RelatorioAvancado'), { ssr: false, loading: () => <div style={{display:'flex',justifyContent:'center',alignItems:'center',height:'100vh',flexDirection:'column'}}><div className='spinner'></div><p style={{marginTop:16,color:'var(--text-muted)'}}>Carregando módulo...</p></div> });
 const AtualizacoesCliente = dynamic(() => import('@/components/AtualizacoesCliente'), { ssr: false, loading: () => <div style={{display:'flex',justifyContent:'center',alignItems:'center',height:'100vh',flexDirection:'column'}}><div className='spinner'></div><p style={{marginTop:16,color:'var(--text-muted)'}}>Carregando módulo...</p></div> });
 const AgingList          = dynamic(() => import('@/components/AgingList').then(m => ({ default: m.AgingList })), { ssr: false, loading: () => <div style={{display:'flex',justifyContent:'center',alignItems:'center',height:'100vh',flexDirection:'column'}}><div className='spinner'></div><p style={{marginTop:16,color:'var(--text-muted)'}}>Carregando módulo...</p></div> });
+const CommandPalette     = dynamic(() => import('@/components/CommandPalette').then(m => ({ default: m.CommandPalette })), { ssr: false });
+import { gerarPixCopiaECola, gerarUrlQrCodePix } from '@/lib/pix';
 
 const NAV_ITEMS = [
   // ── VISÃO GERAL ─────────────────────────────────────────────────────────
@@ -95,153 +97,6 @@ const NAV_ITEMS = [
   { id: 'configuracoes'     as Pagina, label: 'Configurações',     sublabel: 'Personalização',       icon: Settings,        grupo: '🔧 Configurações' },
 ];
 
-
-function generatePixPayload(chavePix: string, nomeReceptor: string, cidadeReceptor: string, valor: number) {
-  function formatField(id: string, value: string) {
-    const len = value.length.toString().padStart(2, '0');
-    return `${id}${len}${value}`;
-  }
-
-  const payloadFormatIndicator = formatField('00', '01');
-  const merchantAccountInformation = formatField('26', 
-    formatField('00', 'BR.GOV.BCB.PIX') + 
-    formatField('01', chavePix)
-  );
-  const merchantCategoryCode = formatField('52', '0000');
-  const transactionCurrency = formatField('53', '986');
-  
-  let transactionAmount = '';
-  if (valor) {
-    transactionAmount = formatField('54', valor.toFixed(2));
-  }
-  
-  const countryCode = formatField('58', 'BR');
-  const merchantName = formatField('59', (nomeReceptor || 'Finance SaaS').substring(0, 25).trim());
-  const merchantCity = formatField('60', (cidadeReceptor || 'Sao Paulo').substring(0, 15).trim());
-  const additionalDataFieldTemplate = formatField('62', formatField('05', '***'));
-  
-  const payload = payloadFormatIndicator + merchantAccountInformation + merchantCategoryCode + transactionCurrency + transactionAmount + countryCode + merchantName + merchantCity + additionalDataFieldTemplate;
-  
-  const payloadWithCrcId = payload + '6304';
-  
-  let crc = 0xFFFF;
-  for (let i = 0; i < payloadWithCrcId.length; i++) {
-    crc ^= payloadWithCrcId.charCodeAt(i) << 8;
-    for (let j = 0; j < 8; j++) {
-      if ((crc & 0x8000) !== 0) {
-        crc = (crc << 1) ^ 0x1021;
-      } else {
-        crc = crc << 1;
-      }
-    }
-  }
-  crc = crc & 0xFFFF;
-  const crcHex = crc.toString(16).toUpperCase().padStart(4, '0');
-  
-  return payloadWithCrcId + crcHex;
-}
-
-
-
-
-
-import { collection, query, where, getDocs } from 'firebase/firestore';
-
-function CommandPalette({ isOpen, onClose, onSelect, tenantId }: { isOpen: boolean; onClose: () => void; onSelect: (t: any) => void; tenantId?: string | null }) {
-  const [queryStr, setQueryStr] = React.useState('');
-  const inputRef = React.useRef<HTMLInputElement>(null);
-  const [transacoes, setTransacoes] = React.useState<any[]>([]);
-  const [loading, setLoading] = React.useState(false);
-
-  React.useEffect(() => {
-    if (isOpen && tenantId) {
-      setQueryStr('');
-      setTimeout(() => inputRef.current?.focus(), 100);
-      
-      const fetchT = async () => {
-        setLoading(true);
-        try {
-          const { getDb } = await import('@/lib/firebase');
-          const db = getDb();
-          const { getCollectionPath } = await import('@/lib/storage');
-          const q = collection(db, getCollectionPath('transacoes'));
-          const snap = await getDocs(q);
-          const data = snap.docs.map(d => ({ id: d.id, ...(d.data() as any) }));
-          data.sort((a,b) => (b.data || '').localeCompare(a.data || ''));
-          setTransacoes(data);
-        } catch (e) {
-          console.error(e);
-        }
-        setLoading(false);
-      };
-      fetchT();
-    }
-  }, [isOpen, tenantId]);
-
-  if (!isOpen) return null;
-
-  const results = transacoes
-    .filter(t => t.descricao?.toLowerCase().includes(queryStr.toLowerCase()) || (t.fornecedorNome && t.fornecedorNome.toLowerCase().includes(queryStr.toLowerCase())))
-    .slice(0, 8);
-
-  return (
-    <div className="fixed inset-0 z-[99999] flex items-start justify-center pt-[10vh] bg-black/60 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col" onClick={e => e.stopPropagation()} style={{ border: '1px solid var(--border)' }}>
-        <div className="flex items-center px-4 py-4 border-b border-gray-200 dark:border-slate-800">
-          <Search className="w-6 h-6 text-gray-400 mr-3" />
-          <input 
-            ref={inputRef}
-            type="text" 
-            value={queryStr}
-            onChange={e => setQueryStr(e.target.value)}
-            className="flex-1 bg-transparent text-xl outline-none text-gray-800 dark:text-gray-100 placeholder-gray-400"
-            placeholder="Pesquisar lançamentos ou fornecedores..."
-          />
-          <div className="text-xs font-bold text-gray-400 border border-gray-300 rounded px-2 py-1">ESC</div>
-        </div>
-        {loading && <div className="p-6 text-center text-gray-500">Carregando dados...</div>}
-        {!loading && queryStr.length > 0 && (
-          <div className="overflow-y-auto max-h-[60vh]">
-            {results.length === 0 ? (
-              <div className="p-6 text-center text-gray-500">Nenhum resultado encontrado para "{queryStr}"</div>
-            ) : (
-              <div className="p-2">
-                <div className="px-3 py-2 text-xs font-bold text-gray-500 uppercase tracking-wider">Lançamentos Encontrados</div>
-                {results.map(t => (
-                  <div key={t.id} onClick={() => onSelect(t)} className="flex items-center justify-between p-3 mx-1 my-1 rounded-xl cursor-pointer hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-lg shadow-sm" style={{ backgroundColor: t.categoriaCor || '#64748b' }}>
-                        {t.categoriaIcone || '🏷️'}
-                      </div>
-                      <div>
-                        <div className="font-bold text-gray-800 dark:text-gray-100">{t.descricao}</div>
-                        <div className="text-sm text-gray-500">{t.data?.split('-').reverse().join('/')} {t.fornecedorNome ? '• ' + t.fornecedorNome : ''}</div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-black text-gray-800 dark:text-gray-100">
-                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(t.valor) || 0)}
-                      </div>
-                      <div className="text-xs font-bold" style={{ color: t.tipo === 'receita' ? '#16a34a' : '#ef4444' }}>
-                        {t.tipo === 'receita' ? 'Receita' : 'Despesa'}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-        {!loading && !queryStr && (
-          <div className="p-6 text-center text-gray-400 flex flex-col items-center gap-2">
-            <Search className="w-12 h-12 text-gray-300" />
-            <span>Digite para encontrar lançamentos instantaneamente.</span>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
 
 export default function Home() {
   const [paginaAtual, setPaginaAtual] = useState<Pagina>('dashboard');
@@ -791,87 +646,6 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
     }
   }, [paginaAtual]);
 
-  // AUTO-FIX V5 - AJUSTAR LIMITE CARTAO
-  useEffect(() => {
-    if (autenticado && typeof window !== 'undefined' && localStorage.getItem('cartao_autofix_v1') !== 'true') {
-      import('@/lib/storage').then(async (m) => {
-        try {
-          const cartoes = await m.getCartoes();
-          const cartao = cartoes.find(c => c.nome === 'Mercado Pago');
-          if (cartao) {
-            cartao.limite = 1700;
-            cartao.limiteDisponivel = 904.22;
-            await m.salvarCartao(cartao);
-            localStorage.setItem('cartao_autofix_v1', 'true');
-            alert('Aviso Automático: Limite do cartão corrigido com sucesso para Disponível: R$ 904,22 e Utilizado: R$ 795,78 (Total: 1700)!');
-            window.location.reload();
-          }
-        } catch(e) { console.error(e); }
-      });
-    }
-  }, [autenticado]);
-
-  // AUTO-FIX V4 - REABRIR E PAGAR AUTOMATICAMENTE COM JUROS
-  useEffect(() => {
-    if (autenticado && typeof window !== 'undefined' && localStorage.getItem('fatura_autofix_done_v4') !== 'true') {
-      import('@/lib/storage').then(async (m) => {
-        try {
-          const { getDb } = await import('@/lib/firebase');
-          const { collection, getDocs, query, where } = await import('firebase/firestore');
-          const db = getDb();
-          
-          // Acha a fatura
-          const faturasRef = collection(db, m.getCollectionPath('faturas'));
-          const qFatura = query(faturasRef, where('cartaoNome', '==', 'Mercado Pago'), where('mesReferencia', '==', '2026-08'));
-          const snapFatura = await getDocs(qFatura);
-          
-          if (!snapFatura.empty) {
-            const faturaDoc = snapFatura.docs[0];
-            const faturaId = faturaDoc.id;
-            
-            // Acha a conta Mercado Pago para o debito
-            const contasRef = collection(db, m.getCollectionPath('contas'));
-            const snapContas = await getDocs(contasRef);
-            let contaAlvo = { id: '', nome: '' };
-            snapContas.forEach(d => {
-              if (d.data().nome.toLowerCase().includes('mercado pago')) {
-                contaAlvo = { id: d.id, nome: d.data().nome };
-              }
-            });
-            
-            // Se não achar, pega a primeira
-            if (!contaAlvo.id && !snapContas.empty) {
-               contaAlvo = { id: snapContas.docs[0].id, nome: snapContas.docs[0].data().nome };
-            }
-
-            console.log('AUTO-FIX V4: REABRINDO FATURA:', faturaId);
-            await m.reabrirFatura(faturaId);
-            
-            // Aguarda 1 segundo para garantir que Firestore salvou
-            await new Promise(r => setTimeout(r, 1000));
-            
-            console.log('AUTO-FIX V4: PAGANDO FATURA COM JUROS...');
-            await m.pagarFatura(
-               faturaId, 
-               1870.00, // Valor CC
-               contaAlvo.id, 
-               contaAlvo.nome, 
-               'pix', 
-               '2026-08-03', 
-               14.90 // Juros
-            );
-            
-            alert('PRONTO! Fatura reaberta e re-paga automaticamente com juros embutidos e sem duplicidade!');
-            window.location.reload();
-          }
-          localStorage.setItem('fatura_autofix_done_v4', 'true');
-        } catch(e) { console.error('Erro no autofix V4', e); }
-      });
-    }
-  }, [autenticado]);
-
-  
-
   if (!mounted || authLoading) {
     return (
       <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', background:'#0f0a0a' }}>
@@ -1112,7 +886,7 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
                   <h4 className="text-white font-medium mb-3 text-sm">PIX (Aprovação Imediata)</h4>
                   <div className="bg-white p-2 rounded-xl mb-3">
                     <img 
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(generatePixPayload('02398455955', 'Clovis Grando', 'Sao Paulo', tenantBloqueadoData.valorAssinatura || 0))}`} 
+                      src={gerarUrlQrCodePix(gerarPixCopiaECola({ chave: '02398455955', tipoChave: 'cpf', nomeTitular: 'Clovis Grando', cidadeTitular: 'Sao Paulo', valor: tenantBloqueadoData.valorAssinatura || 0 }), 150)} 
                       alt="QR Code PIX" 
                       className="w-32 h-32" 
                     />

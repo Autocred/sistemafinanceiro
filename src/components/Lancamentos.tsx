@@ -148,7 +148,7 @@ const openSafeAttachment = (url: string) => {
 
   const [filtroData, setFiltroData] = useState<'lancamento' | 'vencimento'>('lancamento');
   const [modoVisualizacao, setModoVisualizacao] = useState<'cards' | 'tabela'>('cards');
-  const [editingCell, setEditingCell] = useState<{ id: string; field: 'descricao' | 'valor' | 'data' | 'categoria' | 'contato'; val: any } | null>(null);
+  const [editingCell, setEditingCell] = useState<{ id: string; field: 'descricao' | 'valor' | 'data' | 'dataVencimento' | 'categoria' | 'contato'; val: any } | null>(null);
   const [listaCategorias, setListaCategorias] = useState<Categoria[]>([]);
   const [salvandoInline, setSalvandoInline] = useState(false);
 
@@ -176,12 +176,11 @@ const openSafeAttachment = (url: string) => {
       } else if (field === 'data') {
         if (!val) { setEditingCell(null); setSalvandoInline(false); return; }
         atualizada.data = val;
-        if (filtroData === 'vencimento') {
-          atualizada.dataVencimento = val;
-        } else {
-          atualizada.data = val;
-          if (atualizada.status === 'pago') atualizada.dataPagamento = val;
-        }
+        atualizada.dataLancamento = val;
+        if (atualizada.status === 'pago') atualizada.dataPagamento = val;
+      } else if (field === 'dataVencimento') {
+        if (!val) { setEditingCell(null); setSalvandoInline(false); return; }
+        atualizada.dataVencimento = val;
       } else if (field === 'categoria') {
         const cat = listaCategorias.find(c => c.id === val || c.nome === val);
         if (cat) {
@@ -629,9 +628,9 @@ const openSafeAttachment = (url: string) => {
   };
 
   const exportarCSV = () => {
-    const header = 'Tipo,Descrição,Valor,Data,Categoria,Fornecedor,Conta,Forma Pgto,Status';
+    const header = 'Tipo,Descrição,Valor,Data Lançamento,Data Vencimento,Categoria,Fornecedor,Conta,Forma Pgto,Status';
     const rows = filtradas.map(t =>
-      `${t.tipo},"${t.descricao}",${t.valor},${t.data},"${t.categoriaNome || ''}","${t.fornecedorNome || ''}","${t.contaNome || ''}",${t.formaPagamento},${t.status}`
+      `${t.tipo},"${t.descricao}",${t.valor},${t.data},${t.dataVencimento || t.data},"${t.categoriaNome || ''}","${t.fornecedorNome || ''}","${t.contaNome || ''}",${t.formaPagamento},${t.status}`
     );
     const csv = [header, ...rows].join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -1108,7 +1107,8 @@ const openSafeAttachment = (url: string) => {
               <thead>
                 <tr style={{ background: 'var(--bg-body)', borderBottom: '2px solid var(--border)' }}>
                   {modoSelecao && <th style={{ width: 34, padding: '10px 8px' }}></th>}
-                  <th style={{ width: 85, padding: '10px 12px', textAlign: 'left', fontSize: '10.5px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Data</th>
+                  <th style={{ width: 85, padding: '10px 10px', textAlign: 'left', fontSize: '10.5px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Data</th>
+                  <th style={{ width: 105, padding: '10px 10px', textAlign: 'left', fontSize: '10.5px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Vencimento</th>
                   <th style={{ padding: '10px 12px', textAlign: 'left', fontSize: '10.5px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Descrição & Categoria</th>
                   <th style={{ padding: '10px 12px', textAlign: 'left', fontSize: '10.5px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Contato</th>
                   <th style={{ padding: '10px 12px', textAlign: 'left', fontSize: '10.5px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Conta</th>
@@ -1140,10 +1140,10 @@ const openSafeAttachment = (url: string) => {
                         </td>
                       )}
 
-                      {/* DATA (DUPLO CLIQUE PARA EDITAR) */}
+                      {/* DATA LANÇAMENTO (DUPLO CLIQUE PARA EDITAR) */}
                       <td
-                        onDoubleClick={() => setEditingCell({ id: t.id, field: 'data', val: String(dateToDisplay || '').substring(0, 10) })}
-                        title="Duplo clique para editar data"
+                        onDoubleClick={() => setEditingCell({ id: t.id, field: 'data', val: String(t.dataLancamento || t.data || '').substring(0, 10) })}
+                        title="Duplo clique para editar data de lançamento"
                         style={{ padding: '6px 10px', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap', cursor: 'pointer' }}
                       >
                         {editingCell?.id === t.id && editingCell.field === 'data' ? (
@@ -1159,12 +1159,55 @@ const openSafeAttachment = (url: string) => {
                             style={{ fontSize: '11px', padding: '3px 6px', borderRadius: '6px', border: '1px solid var(--primary)', background: 'var(--bg-body)', color: 'var(--text-primary)', outline: 'none' }}
                           />
                         ) : (
-                          <>
-                            <span style={{ borderBottom: '1px dashed rgba(255,255,255,0.2)' }}>
-                              {String(dateToDisplay || '').split('-').reverse().join('/')}
+                          <span style={{ borderBottom: '1px dashed rgba(255,255,255,0.2)' }}>
+                            {String(t.dataLancamento || t.data || '').split('-').reverse().join('/')}
+                          </span>
+                        )}
+                      </td>
+
+                      {/* DATA VENCIMENTO (DUPLO CLIQUE PARA EDITAR) */}
+                      <td
+                        onDoubleClick={() => setEditingCell({ id: t.id, field: 'dataVencimento', val: String(t.dataVencimento || t.data || '').substring(0, 10) })}
+                        title="Duplo clique para editar vencimento"
+                        style={{ padding: '6px 10px', fontSize: '11px', whiteSpace: 'nowrap', cursor: 'pointer' }}
+                      >
+                        {editingCell?.id === t.id && editingCell.field === 'dataVencimento' ? (
+                          <input
+                            type="date"
+                            autoFocus
+                            defaultValue={editingCell.val}
+                            onBlur={(e) => handleSalvarInline(t, 'dataVencimento', e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleSalvarInline(t, 'dataVencimento', (e.target as HTMLInputElement).value);
+                              if (e.key === 'Escape') setEditingCell(null);
+                            }}
+                            style={{ fontSize: '11px', padding: '3px 6px', borderRadius: '6px', border: '1px solid var(--primary)', background: 'var(--bg-body)', color: 'var(--text-primary)', outline: 'none' }}
+                          />
+                        ) : (
+                          <div>
+                            <span style={{
+                              fontWeight: 700,
+                              color: atrasado ? '#ef4444' : (t.status === 'pago' ? '#10b981' : '#f59e0b'),
+                              borderBottom: '1px dashed rgba(255,255,255,0.2)'
+                            }}>
+                              {String(t.dataVencimento || t.data || '').split('-').reverse().join('/')}
                             </span>
-                            {atrasado && <span style={{ display: 'block', color: '#ef4444', fontSize: '9.5px', fontWeight: 800 }}>Atrasado</span>}
-                          </>
+                            {atrasado && (
+                              <span style={{ display: 'block', color: '#ef4444', fontSize: '9px', fontWeight: 800 }}>
+                                Atrasado ({Math.abs(diff)}d)
+                              </span>
+                            )}
+                            {!atrasado && t.status !== 'pago' && diff === 0 && (
+                              <span style={{ display: 'block', color: '#f59e0b', fontSize: '9px', fontWeight: 800 }}>
+                                Vence Hoje
+                              </span>
+                            )}
+                            {!atrasado && t.status !== 'pago' && diff > 0 && (
+                              <span style={{ display: 'block', color: 'var(--text-muted)', fontSize: '9px', fontWeight: 600 }}>
+                                Em {diff}d
+                              </span>
+                            )}
+                          </div>
                         )}
                       </td>
 
@@ -1406,7 +1449,18 @@ const openSafeAttachment = (url: string) => {
                           {t.conciliado && <span title="Conciliado"><CheckCircle2 size={13} color="#10b981" /></span>}
                         </h4>
                         <p className="lancamento-subtitle" style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
-                          <span>{String(dateToDisplay || '').split('-').reverse().join('/')} {filtroData === 'vencimento' && !t.dataVencimento ? '(Data da Compra)' : ''} {filtroData === 'lancamento' && t.dataVencimento && t.dataVencimento !== t.data ? ` (Venc. ${String(t.dataVencimento).split('-').reverse().join('/')})` : ''}</span>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                            <span>Lanc: {String(t.dataLancamento || t.data || '').split('-').reverse().join('/')}</span>
+                            <span style={{
+                              fontWeight: 700,
+                              color: atrasado ? '#ef4444' : (t.status === 'pago' ? '#10b981' : '#f59e0b'),
+                              background: atrasado ? 'rgba(239,68,68,0.1)' : (t.status === 'pago' ? 'rgba(16,185,129,0.1)' : 'rgba(245,158,11,0.1)'),
+                              padding: '0 4px',
+                              borderRadius: 4
+                            }}>
+                              Venc: {String(t.dataVencimento || t.data || '').split('-').reverse().join('/')}
+                            </span>
+                          </span>
                           
                           {/* Contador de Dias Modernão */}
                           {t.status !== 'pago' && !isTransf && (
