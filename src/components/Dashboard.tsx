@@ -7,12 +7,12 @@ import {
 } from 'recharts';
 import { formatarMoeda, subscribeTransacoes, subscribeTransacoesByMes, subscribeContas, subscribeFaturas, getTenantId } from '@/lib/storage';
 import { Transacao, Conta, Fatura } from '@/lib/types';
-import { getValorFinal, normalizeDate } from '@/lib/financialEngine';
+import { getValorFinal, normalizeDate, isContaAPagarValida, isFaturaAPagarValida } from '@/lib/financialEngine';
 import { format, subDays, startOfWeek, endOfWeek } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ordenarMovimentacoesDesc } from '@/lib/sorting';
 import {
-  Trophy, Target, Sparkles,
+  Trophy, Target, Sparkles, Sliders, Layers, CheckCircle2, Lock, Unlock, ChevronDown, ChevronUp, RotateCcw,
  
   PlusCircle, ShieldAlert, TrendingUp, TrendingDown, DollarSign, Activity, 
   ArrowUpCircle, ArrowDownCircle, RefreshCw, Wallet, AlertTriangle, 
@@ -47,6 +47,27 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
   const [motor, setMotor] = useState({
     saldoAtual: 0, saldoProjetado: 0, receitasRealizadas: 0, despesasRealizadas: 0, despesasAPagarTotal: 0
   });
+
+  const [simulacaoReceitaPct, setSimulacaoReceitaPct] = useState<number>(0);
+  const [mostrarAuditoriaCustos, setMostrarAuditoriaCustos] = useState<boolean>(false);
+  const [abaAuditoriaCustos, setAbaAuditoriaCustos] = useState<'fixos' | 'variaveis'>('fixos');
+  const [overridesCustos, setOverridesCustos] = useState<Record<string, 'fixa' | 'variavel'>>({});
+
+  useEffect(() => {
+    try {
+      const salvo = localStorage.getItem('cfo_override_custos_fixos');
+      if (salvo) setOverridesCustos(JSON.parse(salvo));
+    } catch (e) {}
+  }, []);
+
+  const toggleClassificacaoCusto = (chave: string, atual: 'fixa' | 'variavel') => {
+    const novoTipo: 'fixa' | 'variavel' = atual === 'fixa' ? 'variavel' : 'fixa';
+    const atualizado = { ...overridesCustos, [chave]: novoTipo };
+    setOverridesCustos(atualizado);
+    try {
+      localStorage.setItem('cfo_override_custos_fixos', JSON.stringify(atualizado));
+    } catch (e) {}
+  };
 
   const ano = mesSelecionado.getFullYear();
   const mes = mesSelecionado.getMonth() + 1;
@@ -362,80 +383,261 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
 
   // ================= CÃLCULO PROJEï¿½!ÃO DE FLUXO DE CAIXA (30 DIAS) =================
   
-  // ================= CÁLCULO PONTO DE EQUILÍBRIO (BREAK-EVEN DAY) =================
+  // ================= CÁLCULO DE CUSTOS FIXOS, PONTO DE EQUILÍBRIO & SIMULADOR =================
   const breakEvenData = useMemo(() => {
-    const totalDespesas = (motor.despesasRealizadas || 0) + (motor.despesasAPagarTotal || 0);
-    const totalReceitas = motor.receitasRealizadas || 0;
-
-    const percentual = totalDespesas > 0 
-      ? Math.round((totalReceitas / totalDespesas) * 100) 
-      : (totalReceitas > 0 ? 100 : 0);
-
-    const atingido = totalDespesas > 0 ? totalReceitas >= totalDespesas : totalReceitas > 0;
-    const margemLivre = Math.max(0, totalReceitas - totalDespesas);
-    const faltam = Math.max(0, totalDespesas - totalReceitas);
-
-    let diaAtingido: string | null = null;
-    let diaAtingidoNum: number | null = null;
-
-    if (atingido && totalDespesas > 0) {
-      const receitasPagas = transacoesPagasMes
-        .filter(t => t.tipo === 'receita')
-        .sort((a, b) => {
-          const dtA = normalizeDate(a.dataPagamento || a.data || '');
-          const dtB = normalizeDate(b.dataPagamento || b.data || '');
-          return dtA.localeCompare(dtB);
-        });
-
-      let acumulado = 0;
-      for (const t of receitasPagas) {
-        acumulado += getValorFinal(t);
-        if (acumulado >= totalDespesas) {
-          const dt = normalizeDate(t.dataPagamento || t.data || '');
-          diaAtingido = dt;
-          const p = dt.split('-');
-          if (p.length === 3) {
-            diaAtingidoNum = parseInt(p[2], 10);
-          }
-          break;
-        }
-      }
-    }
-
     const hoje = new Date();
     const isMesAtual = mesSelecionado.getFullYear() === hoje.getFullYear() && mesSelecionado.getMonth() === hoje.getMonth();
     const totalDiasMes = new Date(mesSelecionado.getFullYear(), mesSelecionado.getMonth() + 1, 0).getDate();
-    const diaHoje = isMesAtual ? hoje.getDate() : totalDiasMes;
+    const diaHoje = isMesAtual ? Math.max(1, hoje.getDate()) : totalDiasMes;
 
-    let projecaoDia: number | null = null;
-    let ritmoDiario = 0;
+    // 1. Mapa histórico de recorrência por entidade (aparece em 2+ meses diferentes => comportamento fixo/recorrente)
+    const mesesPorEntidade: Record<string, Set<string>> = {};
+    todasTransacoes.forEach(t => {
+      if (t.tipo !== 'despesa') return;
+      const raw = (t.fornecedorNome || t.descricao || '').trim().toLowerCase()
+        .replace(/\s+(jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez|\d{2}\/\d{2,4}|\d{4}-\d{2})\b/gi, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      if (!raw || raw.length < 3) return;
+      const dt = normalizeDate(t.dataPagamento || t.dataVencimento || t.data);
+      if (!dt) return;
+      const ym = dt.slice(0, 7);
+      if (!mesesPorEntidade[raw]) mesesPorEntidade[raw] = new Set();
+      mesesPorEntidade[raw].add(ym);
+    });
 
-    if (!atingido && totalDespesas > 0 && totalReceitas > 0 && isMesAtual) {
-      ritmoDiario = totalReceitas / Math.max(1, diaHoje);
-      if (ritmoDiario > 0) {
-        const diasNecessarios = Math.ceil(faltam / ritmoDiario);
-        const diaProjetado = diaHoje + diasNecessarios;
-        if (diaProjetado <= totalDiasMes) {
-          projecaoDia = diaProjetado;
+    const KEYWORDS_FIXO = [
+      'aluguel', 'locacao', 'condominio', 'iptu', 'salario', 'folha', 'pro-labore', 'pro labore',
+      'adiantamento', 'fgts', 'inss', 'contabilidade', 'contador', 'honorar', 'internet', 'fibra',
+      'telefone', 'celular', 'vivo', 'claro', 'tim', 'oi', 'energia', 'luz', 'celesc', 'copel',
+      'agua', 'casan', 'sanepar', 'seguro', 'mensalidade', 'assinatura', 'sistema', 'software',
+      'licenca', 'hospedagem', 'limpeza', 'seguranca', 'monitoramento', 'alarme', 'vale transporte',
+      'vale alimentacao', 'vale refeicao', 'plano de saude', 'unimed', 'financiamento', 'consorcio',
+      'tarifa', 'cesta', 'manutencao de conta', 'anuidade', 'fixo', 'fixa'
+    ];
+
+    const classificarItem = (
+      nomeRaw: string,
+      catRaw: string,
+      comportamento?: 'fixa' | 'variavel',
+      recorrente?: boolean,
+      isFaturaCartao?: boolean
+    ): { tipo: 'fixa' | 'variavel'; motivo: string; chave: string } => {
+      const chave = (nomeRaw || catRaw || 'despesa').trim().toLowerCase()
+        .replace(/\s+(jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez|\d{2}\/\d{2,4}|\d{4}-\d{2})\b/gi, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      if (overridesCustos[chave]) {
+        return {
+          tipo: overridesCustos[chave],
+          motivo: overridesCustos[chave] === 'fixa' ? 'Fixado manualmente pelo gestor' : 'Marcado como variável pelo gestor',
+          chave
+        };
+      }
+      if (comportamento === 'fixa') return { tipo: 'fixa', motivo: 'Cadastro Fixo', chave };
+      if (comportamento === 'variavel') return { tipo: 'variavel', motivo: 'Cadastro Variável', chave };
+      if (recorrente) return { tipo: 'fixa', motivo: 'Lançamento Recorrente', chave };
+      if (isFaturaCartao) return { tipo: 'variavel', motivo: 'Fatura de Cartão', chave };
+
+      const textoBusca = `${chave} ${(catRaw || '').toLowerCase()}`;
+      if (KEYWORDS_FIXO.some(kw => textoBusca.includes(kw))) {
+        return { tipo: 'fixa', motivo: 'Despesa Estrutural Fixa', chave };
+      }
+      if ((mesesPorEntidade[chave]?.size || 0) >= 2) {
+        return { tipo: 'fixa', motivo: `Recorrente (${mesesPorEntidade[chave].size} meses)`, chave };
+      }
+      return { tipo: 'variavel', motivo: 'Gasto Variável / Pontual', chave };
+    };
+
+    // 2. Coletar rigorosamente todas as despesas que compõem o mês (Pagas + A Pagar)
+    const despesasPagasMes = todasTransacoes.filter(t => {
+      const db = normalizeDate(t.dataPagamento || t.dataVencimento || t.data);
+      return db.startsWith(mesFormatado) && t.tipo === 'despesa' && t.formaPagamento !== 'cartao_credito' && t.status === 'pago';
+    });
+    const pendentesComuns = todasTransacoes.filter(t => isContaAPagarValida(t, mesSelecionado));
+    const faturasValidas = faturas.filter(f => isFaturaAPagarValida(f, mesSelecionado));
+
+    const itensAuditados: any[] = [];
+    const idsProcessados = new Set<string>();
+
+    despesasPagasMes.forEach(t => {
+      if (idsProcessados.has(t.id)) return;
+      idsProcessados.add(t.id);
+      const val = getValorFinal(t);
+      if (val <= 0) return;
+      const nome = t.fornecedorNome || t.descricao || 'Despesa';
+      const info = classificarItem(nome, t.categoriaNome || '', t.comportamento, t.recorrente, false);
+      itensAuditados.push({
+        id: t.id,
+        nome,
+        categoria: t.categoriaNome || 'Geral',
+        valor: val,
+        status: 'pago',
+        data: normalizeDate(t.dataPagamento || t.dataVencimento || t.data),
+        chave: info.chave,
+        tipo: info.tipo,
+        motivo: info.motivo
+      });
+    });
+
+    pendentesComuns.forEach(t => {
+      if (idsProcessados.has(t.id)) return;
+      idsProcessados.add(t.id);
+      const val = getValorFinal(t);
+      if (val <= 0) return;
+      const nome = t.fornecedorNome || t.descricao || 'Conta a Pagar';
+      const info = classificarItem(nome, t.categoriaNome || '', t.comportamento, t.recorrente, false);
+      itensAuditados.push({
+        id: t.id,
+        nome,
+        categoria: t.categoriaNome || 'Geral',
+        valor: val,
+        status: 'pendente',
+        data: normalizeDate(t.dataVencimento || t.data),
+        chave: info.chave,
+        tipo: info.tipo,
+        motivo: info.motivo
+      });
+    });
+
+    faturasValidas.forEach(f => {
+      const pago = f.pagamentos?.reduce((acc, p) => acc + p.valor, 0) || 0;
+      const val = Math.max(0, (f.valorTotal || 0) - pago);
+      if (val <= 0) return;
+      const nome = `Fatura ${f.cartaoNome}`;
+      const info = classificarItem(nome, 'Cartão de Crédito', undefined, false, true);
+      itensAuditados.push({
+        id: f.id,
+        nome,
+        categoria: 'Fatura de Cartão',
+        valor: val,
+        status: 'pendente',
+        data: normalizeDate(f.dataVencimento),
+        chave: info.chave,
+        tipo: info.tipo,
+        motivo: info.motivo
+      });
+    });
+
+    const itensFixos = itensAuditados.filter(i => i.tipo === 'fixa').sort((a, b) => b.valor - a.valor);
+    const itensVariaveis = itensAuditados.filter(i => i.tipo === 'variavel').sort((a, b) => b.valor - a.valor);
+
+    const custoFixoPago = itensFixos.filter(i => i.status === 'pago').reduce((s, i) => s + i.valor, 0);
+    const custoFixoAPagar = itensFixos.filter(i => i.status === 'pendente').reduce((s, i) => s + i.valor, 0);
+    const custoFixoTotal = custoFixoPago + custoFixoAPagar;
+
+    const custoVariavelPago = itensVariaveis.filter(i => i.status === 'pago').reduce((s, i) => s + i.valor, 0);
+    const custoVariavelAPagar = itensVariaveis.filter(i => i.status === 'pendente').reduce((s, i) => s + i.valor, 0);
+    const custoVariavelTotal = custoVariavelPago + custoVariavelAPagar;
+
+    const totalDespesas = (motor.despesasRealizadas || 0) + (motor.despesasAPagarTotal || 0);
+    const totalReceitasBase = motor.receitasRealizadas || 0;
+
+    // Receitas pagas ordenadas cronologicamente para encontrar o dia real do calendário
+    const receitasPagasOrdenadas = transacoesPagasMes
+      .filter(t => t.tipo === 'receita')
+      .sort((a, b) => {
+        const dtA = normalizeDate(a.dataPagamento || a.data || '');
+        const dtB = normalizeDate(b.dataPagamento || b.data || '');
+        return dtA.localeCompare(dtB);
+      });
+
+    // Função que calcula todas as métricas para qualquer variação percentual de faturamento (Ex: 0%, -15%, -20%, -30%)
+    const calcularCenario = (pctVariacao: number) => {
+      const fator = Math.max(0, 1 + pctVariacao / 100);
+      const receitaSimulada = totalReceitasBase * fator;
+      const ritmoDiarioMes = receitaSimulada / Math.max(1, totalDiasMes);
+
+      const atingiuFixo = custoFixoTotal > 0 ? receitaSimulada >= custoFixoTotal : receitaSimulada > 0;
+      const atingiuTotal = totalDespesas > 0 ? receitaSimulada >= totalDespesas : receitaSimulada > 0;
+
+      const pctFixo = custoFixoTotal > 0 ? Math.round((receitaSimulada / custoFixoTotal) * 100) : 100;
+      const pctTotal = totalDespesas > 0 ? Math.round((receitaSimulada / totalDespesas) * 100) : (receitaSimulada > 0 ? 100 : 0);
+
+      const faltaFixo = Math.max(0, custoFixoTotal - receitaSimulada);
+      const faltaTotal = Math.max(0, totalDespesas - receitaSimulada);
+      const resultadoLiquido = receitaSimulada - totalDespesas;
+
+      // Dias de esforço dentro do mês (quantos dias de faturamento do mês são consumidos)
+      const diasParaPagarFixo = custoFixoTotal > 0 && ritmoDiarioMes > 0
+        ? Math.ceil(custoFixoTotal / ritmoDiarioMes)
+        : 0;
+      const diasParaPagarTotal = totalDespesas > 0 && ritmoDiarioMes > 0
+        ? Math.ceil(totalDespesas / ritmoDiarioMes)
+        : 0;
+      const diasParaPagarVariavel = Math.max(0, diasParaPagarTotal - diasParaPagarFixo);
+      const diasDeLucroNoMes = atingiuTotal ? Math.max(0, totalDiasMes - Math.min(totalDiasMes, diasParaPagarTotal)) : 0;
+
+      // Dia exato do calendário em que as receitas realizadas acumuladas bateram o Custo Fixo e o Custo Total
+      let diaCalendarioFixo: number | null = null;
+      let diaCalendarioTotal: number | null = null;
+
+      if (receitasPagasOrdenadas.length > 0) {
+        let acum = 0;
+        for (const t of receitasPagasOrdenadas) {
+          acum += getValorFinal(t) * fator;
+          const dt = normalizeDate(t.dataPagamento || t.data || '');
+          const p = dt.split('-');
+          const dNum = p.length === 3 ? parseInt(p[2], 10) : null;
+
+          if (diaCalendarioFixo === null && custoFixoTotal > 0 && acum >= custoFixoTotal) {
+            diaCalendarioFixo = dNum;
+          }
+          if (diaCalendarioTotal === null && totalDespesas > 0 && acum >= totalDespesas) {
+            diaCalendarioTotal = dNum;
+          }
         }
       }
-    }
+
+      return {
+        pctVariacao,
+        receitaSimulada,
+        ritmoDiarioMes,
+        atingiuFixo,
+        atingiuTotal,
+        pctFixo,
+        pctTotal,
+        faltaFixo,
+        faltaTotal,
+        resultadoLiquido,
+        diasParaPagarFixo,
+        diasParaPagarVariavel,
+        diasParaPagarTotal,
+        diasDeLucroNoMes,
+        diaCalendarioFixo,
+        diaCalendarioTotal
+      };
+    };
+
+    const cenarioReal = calcularCenario(0);
+    const cenarioAtivo = calcularCenario(simulacaoReceitaPct);
+    const matrizCenarios = [0, -10, -15, -20, -30].map(pct => calcularCenario(pct));
 
     return {
+      custoFixoPago,
+      custoFixoAPagar,
+      custoFixoTotal,
+      custoVariavelPago,
+      custoVariavelAPagar,
+      custoVariavelTotal,
       totalDespesas,
-      totalReceitas,
-      percentual,
-      atingido,
-      margemLivre,
-      faltam,
-      diaAtingido,
-      diaAtingidoNum,
-      projecaoDia,
-      ritmoDiario,
+      totalReceitas: cenarioAtivo.receitaSimulada,
+      totalReceitasReal: totalReceitasBase,
+      percentual: cenarioAtivo.pctTotal,
+      atingido: cenarioAtivo.atingiuTotal,
+      margemLivre: Math.max(0, cenarioAtivo.resultadoLiquido),
+      faltam: cenarioAtivo.faltaTotal,
+      diaAtingidoNum: cenarioAtivo.diaCalendarioTotal,
       totalDiasMes,
-      isMesAtual
+      isMesAtual,
+      itensFixos,
+      itensVariaveis,
+      cenarioReal,
+      cenarioAtivo,
+      matrizCenarios
     };
-  }, [motor.despesasRealizadas, motor.despesasAPagarTotal, motor.receitasRealizadas, transacoesPagasMes, mesSelecionado]);
+  }, [motor.despesasRealizadas, motor.despesasAPagarTotal, motor.receitasRealizadas, todasTransacoes, faturas, transacoesPagasMes, mesSelecionado, mesFormatado, simulacaoReceitaPct, overridesCustos]);
 
   const projecaoData = useMemo(() => {
     if (!todasTransacoes || !todasTransacoes.length) return [];
@@ -1281,53 +1483,78 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
       </div>
 
 
-      {/* TERMÔMETRO DE PONTO DE EQUILÍBRIO AO VIVO (BREAK-EVEN DAY) */}
+      {/* PAINEL INTEGRADO: CUSTOS FIXOS, PONTO DE EQUILÍBRIO & SIMULADOR DE CENÁRIOS */}
       <div style={{
         background: 'var(--bg-card)',
         borderRadius: 16,
         padding: '24px 28px',
         boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
-        border: breakEvenData.atingido ? '1px solid #10b98144' : '1px solid var(--border)',
+        border: breakEvenData.cenarioAtivo.atingiuTotal
+          ? '1px solid rgba(16, 185, 129, 0.35)'
+          : breakEvenData.cenarioAtivo.atingiuFixo
+            ? '1px solid rgba(245, 158, 11, 0.35)'
+            : '1px solid rgba(239, 68, 68, 0.35)',
         marginBottom: 24,
         position: 'relative',
         overflow: 'hidden'
       }}>
-        {/* Subtle decorative glow */}
+        {/* Glow decorativo sutil */}
         <div style={{
           position: 'absolute',
-          top: -30,
-          right: -30,
-          width: 140,
-          height: 140,
+          top: -40,
+          right: -40,
+          width: 180,
+          height: 180,
           borderRadius: '50%',
-          background: breakEvenData.atingido ? 'radial-gradient(circle, rgba(16,185,129,0.15) 0%, transparent 70%)' : 'radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%)',
+          background: breakEvenData.cenarioAtivo.atingiuTotal
+            ? 'radial-gradient(circle, rgba(16,185,129,0.14) 0%, transparent 70%)'
+            : 'radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%)',
           pointerEvents: 'none'
         }} />
 
-        {/* HEADER DO CARD */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14, marginBottom: 20 }}>
+        {/* 1. CABEÇALHO DO PAINEL */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, marginBottom: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             <div style={{
-              width: 46,
-              height: 46,
+              width: 48,
+              height: 48,
               borderRadius: 12,
-              background: breakEvenData.atingido 
-                ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' 
-                : 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+              background: breakEvenData.cenarioAtivo.atingiuTotal
+                ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+                : breakEvenData.cenarioAtivo.atingiuFixo
+                  ? 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)'
+                  : 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: breakEvenData.atingido ? '0 4px 12px rgba(16, 185, 129, 0.35)' : '0 4px 12px rgba(59, 130, 246, 0.35)',
-              color: '#fff'
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+              color: '#fff',
+              flexShrink: 0
             }}>
-              {breakEvenData.atingido ? <Trophy size={24} /> : <Target size={24} />}
+              {breakEvenData.cenarioAtivo.atingiuTotal ? <Trophy size={24} /> : <Target size={24} />}
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                 <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: 'var(--text-title)', letterSpacing: '-0.01em' }}>
-                  Termômetro de Ponto de Equilíbrio (Break-Even Day)
+                  Raio-X de Custos Fixos, Ponto de Equilíbrio & Simulador de Lucro
                 </h3>
-                {breakEvenData.atingido ? (
+                {simulacaoReceitaPct !== 0 && (
+                  <span style={{
+                    background: simulacaoReceitaPct < 0 ? '#fee2e2' : '#dcfce7',
+                    color: simulacaoReceitaPct < 0 ? '#b91c1c' : '#15803d',
+                    border: simulacaoReceitaPct < 0 ? '1px solid #fca5a5' : '1px solid #86efac',
+                    fontSize: 11,
+                    fontWeight: 800,
+                    padding: '3px 10px',
+                    borderRadius: 12,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4
+                  }}>
+                    <Sliders size={12} /> SIMULANDO {simulacaoReceitaPct > 0 ? '+' + simulacaoReceitaPct : simulacaoReceitaPct}% NO FATURAMENTO
+                  </span>
+                )}
+                {breakEvenData.cenarioAtivo.atingiuTotal ? (
                   <span style={{
                     background: '#dcfce7',
                     color: '#15803d',
@@ -1339,7 +1566,21 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
                     alignItems: 'center',
                     gap: 4
                   }}>
-                    <Sparkles size={12} color="#15803d" /> META ATINGIDA
+                    <Sparkles size={12} color="#15803d" /> OPERANDO EM LUCRO LÍQUIDO
+                  </span>
+                ) : breakEvenData.cenarioAtivo.atingiuFixo ? (
+                  <span style={{
+                    background: '#dbeafe',
+                    color: '#1d4ed8',
+                    fontSize: 11,
+                    fontWeight: 800,
+                    padding: '3px 10px',
+                    borderRadius: 12,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4
+                  }}>
+                    <CheckCircle2 size={12} color="#1d4ed8" /> CUSTOS FIXOS COBERTOS
                   </span>
                 ) : (
                   <span style={{
@@ -1353,206 +1594,609 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
                     alignItems: 'center',
                     gap: 4
                   }}>
-                    <Clock size={12} color="#b45309" /> EM ANDAMENTO
+                    <Clock size={12} color="#b45309" /> PAGANDO CUSTOS FIXOS
                   </span>
                 )}
               </div>
               <p style={{ margin: '4px 0 0 0', fontSize: 13, color: 'var(--text-muted)' }}>
-                {breakEvenData.atingido ? (
+                {breakEvenData.cenarioAtivo.atingiuTotal ? (
                   <span>
-                    🎉 Em <strong>{breakEvenData.diaAtingidoNum ? 'Dia ' + breakEvenData.diaAtingidoNum + ' de ' + mesesStr[mesSelecionado.getMonth()] : mesesStr[mesSelecionado.getMonth()]}</strong> você cobriu 100% das obrigações do mês. Cada novo real agora é <strong>Lucro Líquido Real</strong>!
+                    Você precisa de <strong>{breakEvenData.cenarioAtivo.diasParaPagarFixo} dias</strong> do mês para pagar suas <strong>Contas Fixas ({fmt(breakEvenData.custoFixoTotal)})</strong> e mais <strong>{breakEvenData.cenarioAtivo.diasParaPagarVariavel} dias</strong> para os variáveis. Sobram <strong>{breakEvenData.cenarioAtivo.diasDeLucroNoMes} dias trabalhando 100% para o seu Lucro ({fmt(breakEvenData.cenarioAtivo.resultadoLiquido)})</strong>!
                   </span>
                 ) : (
                   <span>
-                    O momento em que as receitas cobrem 100% dos custos fixos e variáveis de <strong>{mesesStr[mesSelecionado.getMonth()]}</strong>.
+                    Acompanhe quantos dias são necessários para quitar as <strong>Contas Fixas ({fmt(breakEvenData.custoFixoTotal)})</strong> e atingir o lucro líquido em <strong>{mesesStr[mesSelecionado.getMonth()]}</strong>.
                   </span>
                 )}
               </p>
             </div>
           </div>
 
-          {/* BADGE DE PERCENTUAL */}
-          <div style={{ textAlign: 'right' }}>
-            <div style={{
-              fontSize: 28,
+          {/* Botão para abrir/fechar auditoria da separação rigorosa de custos fixos vs variáveis */}
+          <button
+            onClick={() => setMostrarAuditoriaCustos(!mostrarAuditoriaCustos)}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '8px 14px',
+              borderRadius: 10,
+              border: '1px solid var(--border)',
+              background: mostrarAuditoriaCustos ? 'var(--primary)' : 'var(--bg-secondary)',
+              color: mostrarAuditoriaCustos ? '#ffffff' : 'var(--text-title)',
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <Layers size={14} />
+            {mostrarAuditoriaCustos ? 'Ocultar Lista de Custos' : `Ver / Separar Contas Fixas (${breakEvenData.itensFixos.length}) vs Variáveis (${breakEvenData.itensVariaveis.length})`}
+            {mostrarAuditoriaCustos ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          </button>
+        </div>
+
+        {/* 2. BARRA DO SIMULADOR DE ESTRESSE ("E SE O FATURAMENTO CAIR 15%, 20%, 30%...?") */}
+        <div style={{
+          background: simulacaoReceitaPct !== 0 ? 'rgba(245, 158, 11, 0.07)' : 'var(--bg-secondary, #f8fafc)',
+          border: simulacaoReceitaPct !== 0 ? '1px solid rgba(245, 158, 11, 0.35)' : '1px solid var(--border)',
+          borderRadius: 12,
+          padding: '12px 16px',
+          marginBottom: 20,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 12
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--text-title)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <Sliders size={14} color="var(--primary)" /> Simular Queda / Alta de Faturamento:
+            </span>
+            {[
+              { label: 'Real (0%)', val: 0 },
+              { label: '-10%', val: -10 },
+              { label: '-15%', val: -15 },
+              { label: '-20%', val: -20 },
+              { label: '-25%', val: -25 },
+              { label: '-30%', val: -30 },
+              { label: '-40%', val: -40 },
+              { label: '+15%', val: 15 }
+            ].map(btn => {
+              const ativo = simulacaoReceitaPct === btn.val;
+              const isNeg = btn.val < 0;
+              return (
+                <button
+                  key={btn.val}
+                  onClick={() => setSimulacaoReceitaPct(btn.val)}
+                  style={{
+                    padding: '5px 11px',
+                    borderRadius: 8,
+                    fontSize: 11.5,
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    border: ativo
+                      ? (isNeg ? '1px solid #dc2626' : btn.val > 0 ? '1px solid #16a34a' : '1px solid var(--primary)')
+                      : '1px solid var(--border)',
+                    background: ativo
+                      ? (isNeg ? '#dc2626' : btn.val > 0 ? '#16a34a' : 'var(--primary)')
+                      : 'var(--bg-card)',
+                    color: ativo ? '#ffffff' : isNeg ? '#dc2626' : btn.val > 0 ? '#16a34a' : 'var(--text-title)',
+                    boxShadow: ativo ? '0 2px 6px rgba(0,0,0,0.15)' : 'none',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  {btn.label}
+                </button>
+              );
+            })}
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)' }}>Ajuste Fino:</span>
+            <input
+              type="range"
+              min={-50}
+              max={50}
+              step={5}
+              value={simulacaoReceitaPct}
+              onChange={(e) => setSimulacaoReceitaPct(Number(e.target.value))}
+              style={{ width: 110, cursor: 'pointer', accentColor: 'var(--primary)' }}
+            />
+            <span style={{
+              fontSize: 12,
               fontWeight: 900,
-              color: breakEvenData.atingido ? '#10b981' : 'var(--text-title)',
-              lineHeight: 1
+              minWidth: 44,
+              textAlign: 'right',
+              color: simulacaoReceitaPct < 0 ? '#dc2626' : simulacaoReceitaPct > 0 ? '#16a34a' : 'var(--text-title)'
             }}>
-              {breakEvenData.percentual}%
-            </div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 4 }}>
-              {breakEvenData.atingido ? 'Obrigações Cobertas' : 'Progresso de Cobertura'}
-            </div>
+              {simulacaoReceitaPct > 0 ? `+${simulacaoReceitaPct}%` : `${simulacaoReceitaPct}%`}
+            </span>
+            {simulacaoReceitaPct !== 0 && (
+              <button
+                onClick={() => setSimulacaoReceitaPct(0)}
+                style={{
+                  padding: '4px 8px',
+                  borderRadius: 6,
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg-card)',
+                  color: 'var(--text-muted)',
+                  fontSize: 11,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4
+                }}
+                title="Voltar para os dados reais"
+              >
+                <RotateCcw size={11} /> Resetar
+              </button>
+            )}
           </div>
         </div>
 
-        {/* BARRA DE PROGRESSO / TERMÔMETRO */}
+        {/* 3. LINHA DO TEMPO DO MÊS EM 3 ZONAS (DIAS P/ CUSTO FIXO -> VARIÁVEL -> LUCRO) */}
         <div style={{ marginBottom: 20 }}>
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 8,
             fontSize: 12,
             fontWeight: 700,
-            color: 'var(--text-muted)',
             marginBottom: 8
           }}>
-            <span>0% (R$ 0,00)</span>
-            <span style={{ color: breakEvenData.atingido ? '#10b981' : 'var(--text-title)' }}>
-              {breakEvenData.atingido 
-                ? '🏆 100% Coberto - Ponto de Equilíbrio Alcançado!' 
-                : breakEvenData.percentual + '% Concluído'}
+            <span style={{ color: '#2563eb', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+              🟦 1ª Etapa: Pagar Contas Fixas ({breakEvenData.cenarioAtivo.diasParaPagarFixo <= breakEvenData.totalDiasMes ? `${breakEvenData.cenarioAtivo.diasParaPagarFixo} dias` : 'Acima da receita'})
             </span>
-            <span>Meta: {fmt(breakEvenData.totalDespesas)}</span>
+            <span style={{ color: '#d97706', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+              🟧 2ª Etapa: Pagar Variáveis (+{breakEvenData.cenarioAtivo.diasParaPagarVariavel} dias)
+            </span>
+            <span style={{ color: breakEvenData.cenarioAtivo.atingiuTotal ? '#059669' : '#dc2626', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+              {breakEvenData.cenarioAtivo.atingiuTotal
+                ? `🟩 3ª Etapa: ${breakEvenData.cenarioAtivo.diasDeLucroNoMes} Dias Gerando Lucro Puro (+${fmt(breakEvenData.cenarioAtivo.resultadoLiquido)})`
+                : `🟥 Déficit no Cenário: Faltam ${fmt(breakEvenData.cenarioAtivo.faltaTotal)} p/ empatar`}
+            </span>
           </div>
 
-          <div style={{
-            position: 'relative',
-            width: '100%',
-            height: 16,
-            background: 'var(--bg-secondary, #f1f5f9)',
-            borderRadius: 999,
-            overflow: 'hidden',
-            border: '1px solid var(--border)'
-          }}>
-            <div style={{
-              width: Math.min(100, Math.max(0, breakEvenData.percentual)) + '%',
-              height: '100%',
-              borderRadius: 999,
-              background: breakEvenData.atingido 
-                ? 'linear-gradient(90deg, #10b981 0%, #059669 100%)'
-                : breakEvenData.percentual >= 70 
-                  ? 'linear-gradient(90deg, #3b82f6 0%, #10b981 100%)'
-                  : 'linear-gradient(90deg, #f59e0b 0%, #3b82f6 100%)',
-              transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
-              boxShadow: breakEvenData.atingido 
-                ? '0 0 12px rgba(16, 185, 129, 0.5)' 
-                : '0 0 10px rgba(59, 130, 246, 0.3)'
-            }} />
-          </div>
+          {/* Barra segmentada proporcional aos 30/31 dias do mês */}
+          {(() => {
+            const dMes = breakEvenData.totalDiasMes;
+            const dFixo = Math.min(dMes, breakEvenData.cenarioAtivo.diasParaPagarFixo);
+            const dVar = Math.min(dMes - dFixo, breakEvenData.cenarioAtivo.diasParaPagarVariavel);
+            const dLucro = Math.max(0, dMes - dFixo - dVar);
+
+            const pctBarraFixo = Math.round((dFixo / dMes) * 100);
+            const pctBarraVar = Math.round((dVar / dMes) * 100);
+            const pctBarraLucro = Math.max(0, 100 - pctBarraFixo - pctBarraVar);
+
+            return (
+              <div>
+                <div style={{
+                  display: 'flex',
+                  width: '100%',
+                  height: 24,
+                  borderRadius: 999,
+                  overflow: 'hidden',
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg-secondary, #f1f5f9)'
+                }}>
+                  {/* Segmento Custos Fixos */}
+                  {pctBarraFixo > 0 && (
+                    <div
+                      style={{
+                        width: `${pctBarraFixo}%`,
+                        background: 'linear-gradient(90deg, #2563eb 0%, #3b82f6 100%)',
+                        color: '#fff',
+                        fontSize: 10.5,
+                        fontWeight: 800,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        transition: 'width 0.4s ease'
+                      }}
+                      title={`Custos Fixos: ${fmt(breakEvenData.custoFixoTotal)} (${dFixo} dias)`}
+                    >
+                      {pctBarraFixo >= 14 ? `Fixo: ${dFixo}d` : ''}
+                    </div>
+                  )}
+                  {/* Segmento Custos Variáveis */}
+                  {pctBarraVar > 0 && (
+                    <div
+                      style={{
+                        width: `${pctBarraVar}%`,
+                        background: 'linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%)',
+                        color: '#fff',
+                        fontSize: 10.5,
+                        fontWeight: 800,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        transition: 'width 0.4s ease'
+                      }}
+                      title={`Custos Variáveis: ${fmt(breakEvenData.custoVariavelTotal)} (+${dVar} dias)`}
+                    >
+                      {pctBarraVar >= 12 ? `Variável: +${dVar}d` : ''}
+                    </div>
+                  )}
+                  {/* Segmento Lucro ou Déficit */}
+                  {pctBarraLucro > 0 && (
+                    <div
+                      style={{
+                        width: `${pctBarraLucro}%`,
+                        background: breakEvenData.cenarioAtivo.atingiuTotal
+                          ? 'linear-gradient(90deg, #10b981 0%, #059669 100%)'
+                          : 'repeating-linear-gradient(45deg, #fee2e2, #fee2e2 10px, #fecaca 10px, #fecaca 20px)',
+                        color: breakEvenData.cenarioAtivo.atingiuTotal ? '#fff' : '#b91c1c',
+                        fontSize: 10.5,
+                        fontWeight: 800,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        transition: 'width 0.4s ease'
+                      }}
+                    >
+                      {pctBarraLucro >= 14
+                        ? (breakEvenData.cenarioAtivo.atingiuTotal ? `Lucro Livre: ${dLucro} dias` : 'Déficit')
+                        : ''}
+                    </div>
+                  )}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-muted)', marginTop: 5, fontWeight: 600 }}>
+                  <span>Dia 1</span>
+                  <span>
+                    Marco Fixo: Dia {Math.min(dMes, breakEvenData.cenarioAtivo.diasParaPagarFixo)}
+                    {breakEvenData.cenarioAtivo.diaCalendarioFixo ? ` (Pago em caixa Dia ${breakEvenData.cenarioAtivo.diaCalendarioFixo})` : ''}
+                  </span>
+                  <span>
+                    Break-Even Total: Dia {Math.min(dMes, breakEvenData.cenarioAtivo.diasParaPagarTotal)}
+                    {breakEvenData.cenarioAtivo.diaCalendarioTotal ? ` (Atingido em caixa Dia ${breakEvenData.cenarioAtivo.diaCalendarioTotal})` : ''}
+                  </span>
+                  <span>Dia {dMes}</span>
+                </div>
+              </div>
+            );
+          })()}
         </div>
 
-        {/* GRID DE MÉTRICAS */}
+        {/* 4. GRID DE 4 CARDS ESTRATÉGICOS (CUSTO FIXO | CUSTO VARIÁVEL | RECEITA SIMULADA | LUCRO PROJETADO) */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: 16,
-          marginBottom: 16
+          gap: 14,
+          marginBottom: 18
         }}>
-          {/* Card 1: Total Obrigações */}
+          {/* Card 1: Custos Mensais Fixos */}
           <div style={{
-            background: 'var(--bg-secondary, rgba(0,0,0,0.02))',
+            background: 'rgba(37, 99, 235, 0.04)',
             borderRadius: 12,
-            padding: '14px 18px',
-            border: '1px solid var(--border)'
+            padding: '14px 16px',
+            border: '1px solid rgba(37, 99, 235, 0.2)',
+            borderLeft: '4px solid #2563eb'
           }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Obrigações do Mês
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: 11, fontWeight: 800, color: '#1d4ed8', textTransform: 'uppercase' }}>
+                1. Custos Mensais Fixos
+              </span>
+              <span style={{ fontSize: 11, fontWeight: 800, background: '#dbeafe', color: '#1e40af', padding: '2px 7px', borderRadius: 6 }}>
+                {breakEvenData.cenarioAtivo.diasParaPagarFixo} dias p/ pagar
+              </span>
             </div>
-            <div style={{ fontSize: 19, fontWeight: 900, color: 'var(--text-title)', marginTop: 4 }}>
-              <span className="valor-sensivel">{fmt(breakEvenData.totalDespesas)}</span>
+            <div style={{ fontSize: 20, fontWeight: 900, color: 'var(--text-title)', marginTop: 6 }}>
+              <span className="valor-sensivel">{fmt(breakEvenData.custoFixoTotal)}</span>
             </div>
-            <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>
-              Pagas: <span className="valor-sensivel">{fmt(motor.despesasRealizadas)}</span> | A Pagar: <span className="valor-sensivel">{fmt(motor.despesasAPagarTotal)}</span>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
+              Pago: <span className="valor-sensivel">{fmt(breakEvenData.custoFixoPago)}</span> | Falta: <span className="valor-sensivel">{fmt(breakEvenData.custoFixoAPagar)}</span>
+            </div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: breakEvenData.cenarioAtivo.atingiuFixo ? '#059669' : '#dc2626', marginTop: 4 }}>
+              {breakEvenData.cenarioAtivo.atingiuFixo
+                ? `✅ 100% coberto (${simulacaoReceitaPct !== 0 ? `Antes: ${breakEvenData.cenarioReal.diasParaPagarFixo}d ➔ Agora: ${breakEvenData.cenarioAtivo.diasParaPagarFixo}d` : `Quitado em ${breakEvenData.cenarioAtivo.diasParaPagarFixo} dias do mês`})`
+                : `⚠️ Faltam ${fmt(breakEvenData.cenarioAtivo.faltaFixo)} p/ cobrir o Fixo`}
             </div>
           </div>
 
-          {/* Card 2: Receitas em Caixa */}
+          {/* Card 2: Custos Variáveis & Custo Total */}
           <div style={{
-            background: 'var(--bg-secondary, rgba(0,0,0,0.02))',
+            background: 'rgba(245, 158, 11, 0.04)',
             borderRadius: 12,
-            padding: '14px 18px',
-            border: '1px solid var(--border)'
+            padding: '14px 16px',
+            border: '1px solid rgba(245, 158, 11, 0.25)',
+            borderLeft: '4px solid #f59e0b'
           }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Receitas Realizadas
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: 11, fontWeight: 800, color: '#b45309', textTransform: 'uppercase' }}>
+                2. Variáveis + Custo Total
+              </span>
+              <span style={{ fontSize: 11, fontWeight: 800, background: '#fef3c7', color: '#92400e', padding: '2px 7px', borderRadius: 6 }}>
+                +{breakEvenData.cenarioAtivo.diasParaPagarVariavel} dias
+              </span>
             </div>
-            <div style={{ fontSize: 19, fontWeight: 900, color: '#16a34a', marginTop: 4 }}>
-              <span className="valor-sensivel">{fmt(breakEvenData.totalReceitas)}</span>
+            <div style={{ fontSize: 20, fontWeight: 900, color: 'var(--text-title)', marginTop: 6 }}>
+              <span className="valor-sensivel">{fmt(breakEvenData.custoVariavelTotal)}</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', marginLeft: 6 }}>variáveis</span>
             </div>
-            <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>
-              Dinheiro efetivamente recebido em caixa
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
+              Custo Total (Fixo + Var): <strong style={{ color: 'var(--text-title)' }} className="valor-sensivel">{fmt(breakEvenData.totalDespesas)}</strong>
+            </div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#b45309', marginTop: 4 }}>
+              Equilíbrio Total: <strong>{breakEvenData.cenarioAtivo.diasParaPagarTotal} dias</strong> de faturamento
             </div>
           </div>
 
-          {/* Card 3: Posição Líquida */}
+          {/* Card 3: Faturamento (Real vs Simulado) */}
           <div style={{
-            background: breakEvenData.atingido ? '#ecfdf5' : '#fffbeb',
+            background: 'var(--bg-secondary, rgba(0,0,0,0.02))',
             borderRadius: 12,
-            padding: '14px 18px',
-            border: breakEvenData.atingido ? '1px solid #a7f3d0' : '1px solid #fde68a'
+            padding: '14px 16px',
+            border: '1px solid var(--border)',
+            borderLeft: '4px solid #10b981'
           }}>
-            <div style={{
-              fontSize: 11,
-              fontWeight: 700,
-              color: breakEvenData.atingido ? '#047857' : '#b45309',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em'
-            }}>
-              {breakEvenData.atingido ? 'Margem Livre / Lucro Líquido' : 'Falta para o Equilíbrio'}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                3. {simulacaoReceitaPct !== 0 ? `Receita Simulada (${simulacaoReceitaPct}%)` : 'Receita Realizada'}
+              </span>
+              <span style={{ fontSize: 11, fontWeight: 800, color: '#16a34a' }}>
+                {breakEvenData.cenarioAtivo.pctTotal}% do custo
+              </span>
+            </div>
+            <div style={{ fontSize: 20, fontWeight: 900, color: '#16a34a', marginTop: 6 }}>
+              <span className="valor-sensivel">{fmt(breakEvenData.cenarioAtivo.receitaSimulada)}</span>
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
+              Média diária: <strong className="valor-sensivel">{fmt(breakEvenData.cenarioAtivo.ritmoDiarioMes)}/dia</strong>
+            </div>
+            <div style={{ fontSize: 11, color: simulacaoReceitaPct < 0 ? '#dc2626' : 'var(--text-muted)', fontWeight: 600, marginTop: 4 }}>
+              {simulacaoReceitaPct !== 0
+                ? `Real atual: ${fmt(breakEvenData.totalReceitasReal)} (${simulacaoReceitaPct > 0 ? '+' : ''}${fmt(breakEvenData.cenarioAtivo.receitaSimulada - breakEvenData.totalReceitasReal)})`
+                : 'Baseado nas receitas efetivadas no mês'}
+            </div>
+          </div>
+
+          {/* Card 4: Projeção de Lucro Líquido (ou Déficit) */}
+          <div style={{
+            background: breakEvenData.cenarioAtivo.atingiuTotal ? '#ecfdf5' : '#fef2f2',
+            borderRadius: 12,
+            padding: '14px 16px',
+            border: breakEvenData.cenarioAtivo.atingiuTotal ? '1px solid #a7f3d0' : '1px solid #fecaca',
+            borderLeft: breakEvenData.cenarioAtivo.atingiuTotal ? '4px solid #059669' : '4px solid #dc2626'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{
+                fontSize: 11,
+                fontWeight: 800,
+                color: breakEvenData.cenarioAtivo.atingiuTotal ? '#047857' : '#b91c1c',
+                textTransform: 'uppercase'
+              }}>
+                4. {breakEvenData.cenarioAtivo.atingiuTotal ? 'Lucro Líquido Livre' : 'Falta p/ dar Lucro'}
+              </span>
+              <span style={{
+                fontSize: 11,
+                fontWeight: 800,
+                background: breakEvenData.cenarioAtivo.atingiuTotal ? '#d1fae5' : '#fee2e2',
+                color: breakEvenData.cenarioAtivo.atingiuTotal ? '#065f46' : '#991b1b',
+                padding: '2px 7px',
+                borderRadius: 6
+              }}>
+                {breakEvenData.cenarioAtivo.atingiuTotal ? `${breakEvenData.cenarioAtivo.diasDeLucroNoMes} dias de lucro` : 'Em déficit'}
+              </span>
             </div>
             <div style={{
-              fontSize: 19,
+              fontSize: 20,
               fontWeight: 900,
-              color: breakEvenData.atingido ? '#059669' : '#d97706',
-              marginTop: 4
+              color: breakEvenData.cenarioAtivo.atingiuTotal ? '#059669' : '#dc2626',
+              marginTop: 6
             }}>
               <span className="valor-sensivel">
-                {breakEvenData.atingido ? '+ ' + fmt(breakEvenData.margemLivre) : fmt(breakEvenData.faltam)}
+                {breakEvenData.cenarioAtivo.atingiuTotal
+                  ? '+ ' + fmt(breakEvenData.cenarioAtivo.resultadoLiquido)
+                  : '- ' + fmt(breakEvenData.cenarioAtivo.faltaTotal)}
               </span>
             </div>
             <div style={{
               fontSize: 11,
-              color: breakEvenData.atingido ? '#047857' : '#92400e',
+              color: breakEvenData.cenarioAtivo.atingiuTotal ? '#047857' : '#b91c1c',
               marginTop: 4,
-              fontWeight: 600
+              fontWeight: 700
             }}>
-              {breakEvenData.atingido 
-                ? 'Excedente livre acumulado'
-                : breakEvenData.projecaoDia 
-                  ? 'Previsão de empate: Dia ' + breakEvenData.projecaoDia
-                  : 'Necessário para fechar no azul'}
+              {breakEvenData.cenarioAtivo.atingiuTotal
+                ? `Sobram livres após pagar Fixos e Variáveis`
+                : `Necessário p/ quitar todas as contas do mês`}
             </div>
+            {simulacaoReceitaPct !== 0 && (
+              <div style={{ fontSize: 11, color: '#64748b', marginTop: 3, fontWeight: 600 }}>
+                No cenário real (0%): <span className="valor-sensivel">{fmt(breakEvenData.cenarioReal.resultadoLiquido)}</span>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* BANNER INFORMATIVO / CFO INSIGHT */}
+        {/* 5. MATRIZ RÁPIDA DE SIMULAÇÃO DE QUEDA (-10%, -15%, -20%, -30%) */}
         <div style={{
-          background: breakEvenData.atingido ? 'rgba(16, 185, 129, 0.08)' : 'rgba(59, 130, 246, 0.06)',
-          borderRadius: 10,
-          padding: '10px 16px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          border: breakEvenData.atingido ? '1px solid rgba(16, 185, 129, 0.2)' : '1px solid rgba(59, 130, 246, 0.15)'
+          background: 'var(--bg-secondary, #f8fafc)',
+          borderRadius: 12,
+          padding: '14px 16px',
+          border: '1px solid var(--border)',
+          marginBottom: mostrarAuditoriaCustos ? 18 : 0
         }}>
-          {breakEvenData.atingido ? (
-            <Sparkles size={16} color="#059669" style={{ flexShrink: 0 }} />
-          ) : (
-            <Activity size={16} color="#2563eb" style={{ flexShrink: 0 }} />
-          )}
-          <span style={{
-            fontSize: 12,
-            color: breakEvenData.atingido ? '#065f46' : '#1e40af',
-            fontWeight: 600,
-            lineHeight: 1.4
-          }}>
-            {breakEvenData.atingido ? (
-              <>
-                <strong>Dia de Liberdade Financeira:</strong> Suas despesas operacionais deste mês já estão 100% honradas {breakEvenData.diaAtingidoNum ? 'desde o dia ' + breakEvenData.diaAtingidoNum : ''}. Todo faturamento excedente vai direto para geração de patrimônio ou novos investimentos.
-              </>
-            ) : breakEvenData.projecaoDia ? (
-              <>
-                <strong>Ritmo de Faturamento:</strong> Você vem recebendo em média <strong>{fmt(breakEvenData.ritmoDiario)}/dia</strong>. Mantendo essa média, o ponto de equilíbrio será atingido por volta do <strong>dia {breakEvenData.projecaoDia}</strong> deste mês.
-              </>
-            ) : (
-              <>
-                <strong>Meta de Cobertura:</strong> O Break-Even Day sinaliza a data em que você deixa de trabalhar para pagar contas e passa a acumular lucro líquido real.
-              </>
-            )}
-          </span>
+          <div style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--text-title)', marginBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+            <span>📊 Projeção Comparativa Automática: Quantos dias você precisa para pagar as Contas Fixas e quanto sobra de Lucro se o faturamento cair:</span>
+            <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>Clique em qualquer cenário para simular</span>
+          </div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--text-muted)', fontSize: 11 }}>
+                  <th style={{ padding: '6px 8px' }}>Cenário</th>
+                  <th style={{ padding: '6px 8px' }}>Faturamento Projetado</th>
+                  <th style={{ padding: '6px 8px' }}>Dias p/ Pagar Custo Fixo ({fmt(breakEvenData.custoFixoTotal)})</th>
+                  <th style={{ padding: '6px 8px' }}>Dias p/ Pagar Custo Total ({fmt(breakEvenData.totalDespesas)})</th>
+                  <th style={{ padding: '6px 8px' }}>Dias de Lucro</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'right' }}>Lucro Líquido / Resultado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {breakEvenData.matrizCenarios.map(c => {
+                  const isSelected = simulacaoReceitaPct === c.pctVariacao;
+                  return (
+                    <tr
+                      key={c.pctVariacao}
+                      onClick={() => setSimulacaoReceitaPct(c.pctVariacao)}
+                      style={{
+                        borderBottom: '1px solid var(--border)',
+                        background: isSelected ? 'rgba(59, 130, 246, 0.08)' : 'transparent',
+                        cursor: 'pointer',
+                        fontWeight: isSelected ? 800 : 600
+                      }}
+                    >
+                      <td style={{ padding: '8px', color: c.pctVariacao < 0 ? '#dc2626' : 'var(--text-title)', fontWeight: 800 }}>
+                        {c.pctVariacao === 0 ? '📌 Atual (0%)' : `🔻 Queda de ${c.pctVariacao}%`}
+                      </td>
+                      <td style={{ padding: '8px' }} className="valor-sensivel">{fmt(c.receitaSimulada)}</td>
+                      <td style={{ padding: '8px', color: '#1d4ed8', fontWeight: 700 }}>
+                        {c.atingiuFixo ? `${c.diasParaPagarFixo} dias do mês` : `🚨 Falta ${fmt(c.faltaFixo)}`}
+                      </td>
+                      <td style={{ padding: '8px', color: '#b45309', fontWeight: 700 }}>
+                        {c.atingiuTotal ? `${c.diasParaPagarTotal} dias do mês` : `🚨 Não atinge (Falta ${fmt(c.faltaTotal)})`}
+                      </td>
+                      <td style={{ padding: '8px', color: c.diasDeLucroNoMes > 0 ? '#059669' : '#94a3b8', fontWeight: 700 }}>
+                        {c.diasDeLucroNoMes > 0 ? `${c.diasDeLucroNoMes} dias livres` : '0 dias'}
+                      </td>
+                      <td style={{
+                        padding: '8px',
+                        textAlign: 'right',
+                        fontWeight: 900,
+                        color: c.resultadoLiquido >= 0 ? '#059669' : '#dc2626'
+                      }} className="valor-sensivel">
+                        {c.resultadoLiquido >= 0 ? '+ ' + fmt(c.resultadoLiquido) : '- ' + fmt(Math.abs(c.resultadoLiquido))}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
+
+        {/* 6. GAVETA EXPANSÍVEL: AUDITORIA E SEPARAÇÃO RIGOROSA DE CUSTOS FIXOS VS VARIÁVEIS */}
+        {mostrarAuditoriaCustos && (
+          <div style={{
+            background: 'var(--bg-secondary, #f8fafc)',
+            borderRadius: 12,
+            padding: '16px',
+            border: '1px solid var(--border)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 12 }}>
+              <div>
+                <h4 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: 'var(--text-title)' }}>
+                  📋 Separação Rigorosa dos Custos de {mesesStr[mesSelecionado.getMonth()]}
+                </h4>
+                <p style={{ margin: '2px 0 0 0', fontSize: 12, color: 'var(--text-muted)' }}>
+                  Se desejar reclassificar alguma conta entre <strong>Custo Fixo</strong> e <strong>Custo Variável</strong>, clique no botão ao lado do lançamento e o cálculo será atualizado imediatamente.
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  onClick={() => setAbaAuditoriaCustos('fixos')}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: 8,
+                    fontSize: 12,
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    border: abaAuditoriaCustos === 'fixos' ? '1px solid #2563eb' : '1px solid var(--border)',
+                    background: abaAuditoriaCustos === 'fixos' ? '#2563eb' : 'var(--bg-card)',
+                    color: abaAuditoriaCustos === 'fixos' ? '#fff' : 'var(--text-title)'
+                  }}
+                >
+                  📌 Custos Fixos ({breakEvenData.itensFixos.length}) — {fmt(breakEvenData.custoFixoTotal)}
+                </button>
+                <button
+                  onClick={() => setAbaAuditoriaCustos('variaveis')}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: 8,
+                    fontSize: 12,
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    border: abaAuditoriaCustos === 'variaveis' ? '1px solid #f59e0b' : '1px solid var(--border)',
+                    background: abaAuditoriaCustos === 'variaveis' ? '#f59e0b' : 'var(--bg-card)',
+                    color: abaAuditoriaCustos === 'variaveis' ? '#fff' : 'var(--text-title)'
+                  }}
+                >
+                  📊 Custos Variáveis ({breakEvenData.itensVariaveis.length}) — {fmt(breakEvenData.custoVariavelTotal)}
+                </button>
+              </div>
+            </div>
+
+            <div style={{ maxHeight: 320, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {(abaAuditoriaCustos === 'fixos' ? breakEvenData.itensFixos : breakEvenData.itensVariaveis).map(item => (
+                <div
+                  key={item.id}
+                  style={{
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 10,
+                    padding: '10px 14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: 10
+                  }}
+                >
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-title)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span>{item.nome}</span>
+                      <span style={{
+                        fontSize: 10,
+                        fontWeight: 700,
+                        padding: '2px 6px',
+                        borderRadius: 6,
+                        background: item.status === 'pago' ? '#dcfce7' : '#fef3c7',
+                        color: item.status === 'pago' ? '#15803d' : '#b45309'
+                      }}>
+                        {item.status === 'pago' ? 'Pago' : 'A Pagar'}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
+                      {item.categoria} • {item.motivo} {item.data ? `• ${item.data.split('-').reverse().join('/')}` : ''}
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <span style={{ fontSize: 14, fontWeight: 900, color: 'var(--text-title)' }} className="valor-sensivel">
+                      {fmt(item.valor)}
+                    </span>
+                    <button
+                      onClick={() => toggleClassificacaoCusto(item.chave, item.tipo)}
+                      style={{
+                        padding: '5px 10px',
+                        borderRadius: 8,
+                        border: '1px solid var(--border)',
+                        background: 'var(--bg-secondary)',
+                        color: 'var(--text-title)',
+                        fontSize: 11,
+                        fontWeight: 700,
+                        cursor: 'pointer'
+                      }}
+                      title="Alternar entre Custo Fixo e Custo Variável"
+                    >
+                      {item.tipo === 'fixa' ? 'Mover p/ Variável 📊' : 'Mover p/ Fixo 📌'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       

@@ -11,22 +11,22 @@ const db = getFirestore(app);
 
 async function run() {
   await addDoc(collection(db, 'saas_releases'), {
-    versao: 'v3.7.3',
-    titulo: 'Auditor de Assinaturas Zumbis & Tarifas Recorrentes no Radar de Desperdícios',
-    descricao: 'Novo módulo inteligente de auditoria que rastreia despesas fixas contínuas (SaaS, streamings, anuidades, tarifas bancárias e pacotes de serviços). Mapeia o impacto anual de cada micro-saída e inclui um checklist interativo com botão "Cortar (Zumbi)" para simular a economia imediata de fluxo de caixa e estancar renovações automáticas indesejadas.',
+    versao: 'v3.7.4',
+    titulo: 'Raio-X de Custos Fixos, Dias para Equilíbrio & Simulador de Queda de Faturamento',
+    descricao: 'Evolução completa do Termômetro de Ponto de Equilíbrio no Dashboard: agora realiza a separação rigorosa entre Custos Mensais Fixos e Custos Variáveis, calcula exatamente quantos dias de faturamento são necessários para pagar as contas fixas e a partir de qual dia começa o Lucro Líquido, além de trazer um Simulador de Cenários interativo (-10%, -15%, -20%, -30%, etc.) com matriz comparativa em tempo real.',
     dataLancamento: new Date().toISOString(),
     status: 'publicado',
     destaque: true,
     notificarTenants: false,
     alvos: 'todos',
     changes: [
-      { tipo: 'novidade', texto: 'Auditor de Assinaturas & Recorrências: Nova aba no Radar de Desperdícios que mapeia todos os contratos e custos recorrentes com projeção anual.' },
-      { tipo: 'novidade', texto: 'Checklist Interativo de Corte ("Marcar Zumbi"): Identifique serviços ociosos e simule em tempo real o caixa anual liberado com cancelamentos.' },
-      { tipo: 'novidade', texto: 'Detector de Tarifas Bancárias Evitáveis: Alerta forense para tarifas de manutenção de conta e cestas com recomendação de gratuidade Bacen.' },
-      { tipo: 'melhoria', texto: 'Card Hero de Assinaturas: Acesso em 1 clique direto pelo cabeçalho do Radar de Desperdícios.' }
+      { tipo: 'novidade', texto: 'Separação Rigorosa de Custos Fixos vs. Variáveis: Classificação inteligente e auditável de todas as obrigações do mês com opção de reclassificação em 1 clique pelo gestor.' },
+      { tipo: 'novidade', texto: 'Linha do Tempo em 3 Etapas (Fixo -> Variável -> Lucro): Mostra quantos dias do mês você trabalha para pagar as Contas Fixas, quantos para os Variáveis e quantos dias geram Lucro Puro.' },
+      { tipo: 'novidade', texto: 'Simulador Interativo de Faturamento ("E se cair 15%, 20%, 30%?"): Botões rápidos e controle deslizante que recalculam instantaneamente os dias de equilíbrio e o lucro líquido projetado.' },
+      { tipo: 'melhoria', texto: 'Matriz Comparativa de Estresse: Tabela executiva comparando lado a lado o Cenário Atual (0%) contra quedas de -10%, -15%, -20% e -30%.' }
     ]
   });
-  console.log('Release notes v3.7.3 added!');
+  console.log('Release notes v3.7.4 added!');
   process.exit(0);
 }
 
