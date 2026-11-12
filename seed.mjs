@@ -11,19 +11,21 @@ const db = getFirestore(app);
 
 async function run() {
   await addDoc(collection(db, 'saas_releases'), {
-    versao: 'v3.7.0',
-    titulo: 'Design 3D Premium: Botão Executivo do Radar de Desperdícios',
-    descricao: 'Atualização visual de alto padrão no Dashboard: o botão de acesso ao Radar de Desperdícios agora conta com o mesmo estilo moderno 3D tátil do botão Novo Lançamento, com profundidade de borda chanfrada, gradiente energético, microinteração de clique e sombras volumétricas.',
+    versao: 'v3.7.1',
+    titulo: 'Aprovação de Reajustes Contratuais Legítimos (Baseline Oficial de Preço)',
+    descricao: 'Permite ao gestor financeiro aprovar aumentos reais e legítimos (como reajustes de aluguel anual, dissídios salariais ou planos renegociados). Ao aprovar com 1 clique, o novo valor passa a ser o novo padrão aceito, removendo penalidades do Score de Proteção de Caixa e arquivando o histórico na nova aba Reajustes Aprovados.',
     dataLancamento: new Date().toISOString(),
     status: 'publicado',
     destaque: true,
     notificarTenants: false,
     alvos: 'todos',
     changes: [
-      { tipo: 'melhoria', texto: 'Botão 3D Radar de Desperdícios: Redesenhado no Dashboard com o estilo moderno 3D, gradiente crimson executive, borda chanfrada de 5px e animação de clique idêntica ao botão Novo Lançamento.' }
+      { tipo: 'novidade', texto: 'Botão Aprovar Aumento nos Alertas: Permite homologar aumentos reais de fornecedores e contratos sem que o sistema os trate como vazamento ou desperdício.' },
+      { tipo: 'novidade', texto: 'Nova Aba Reajustes Aprovados: Painel histórico de todos os aumentos aceitos pelo gestor, com opção de revogar e reabrir auditoria a qualquer momento.' },
+      { tipo: 'melhoria', texto: 'Inteligência Forense de Baseline: O algoritmo passa a considerar o valor aprovado como novo teto de normalidade, alertando apenas se houver reajuste além deste novo patamar.' }
     ]
   });
-  console.log('Release notes v3.7.0 added!');
+  console.log('Release notes v3.7.1 added!');
   process.exit(0);
 }
 

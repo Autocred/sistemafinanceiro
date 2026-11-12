@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { subscribeTransacoes, formatarMoeda } from '@/lib/storage';
 import { Transacao } from '@/lib/types';
-import { analisarVazamentosDeCaixa, AlertaVazamento, TipoAlertaVazamento } from '@/lib/leak-radar';
+import { analisarVazamentosDeCaixa, AlertaVazamento, TipoAlertaVazamento, ReajusteAprovado } from '@/lib/leak-radar';
 import { 
   ShieldAlert, 
   TrendingDown, 
@@ -31,6 +31,52 @@ export default function RadarDesperdicios({ onNavigateToLancamentos }: RadarDesp
   const [loading, setLoading] = useState(true);
   const [dispensados, setDispensados] = useState<Set<string>>(new Set());
   const [filtroTipo, setFiltroTipo] = useState<string>('todos');
+  const [reajustesAprovados, setReajustesAprovados] = useState<Record<string, ReajusteAprovado>>({});
+  const [alertaParaAprovar, setAlertaParaAprovar] = useState<AlertaVazamento | null>(null);
+
+  // Carregar reajustes aprovados salvos
+  useEffect(() => {
+    try {
+      const salvo = localStorage.getItem('radar_reajustes_aprovados');
+      if (salvo) {
+        setReajustesAprovados(JSON.parse(salvo));
+      }
+    } catch (e) {
+      console.error('Erro ao ler reajustes aprovados:', e);
+    }
+  }, []);
+
+  // Aprovar aumento contratual/salarial
+  const handleAprovarReajuste = (alerta: AlertaVazamento, motivo?: string) => {
+    const key = (alerta.entidade || '').trim().toLowerCase();
+    const novo: Record<string, ReajusteAprovado> = {
+      ...reajustesAprovados,
+      [key]: {
+        id: `aprov-${Date.now()}`,
+        entidade: alerta.entidade,
+        novoValorPadrao: alerta.valorAtual,
+        valorAnterior: alerta.valorAnterior || 0,
+        percentualAumento: alerta.percentualAumento,
+        categoriaNome: alerta.categoriaNome,
+        dataAprovacao: new Date().toISOString(),
+        motivo: motivo || 'Aumento aprovado pelo gestor'
+      }
+    };
+    setReajustesAprovados(novo);
+    try {
+      localStorage.setItem('radar_reajustes_aprovados', JSON.stringify(novo));
+    } catch (e) {}
+  };
+
+  // Revogar aprovação de aumento
+  const handleRevogarAprovacao = (entidadeKey: string) => {
+    const novo = { ...reajustesAprovados };
+    delete novo[entidadeKey];
+    setReajustesAprovados(novo);
+    try {
+      localStorage.setItem('radar_reajustes_aprovados', JSON.stringify(novo));
+    } catch (e) {}
+  };
 
   // Carregar lista de alertas dispensados pelo usuário
   useEffect(() => {
@@ -74,8 +120,8 @@ export default function RadarDesperdicios({ onNavigateToLancamentos }: RadarDesp
 
   // Executar análise forense
   const resultadoRadar = useMemo(() => {
-    return analisarVazamentosDeCaixa(transacoes);
-  }, [transacoes]);
+    return analisarVazamentosDeCaixa(transacoes, reajustesAprovados);
+  }, [transacoes, reajustesAprovados]);
 
   // Alertas ativos (não dispensados)
   const alertasAtivos = useMemo(() => {
@@ -272,7 +318,8 @@ export default function RadarDesperdicios({ onNavigateToLancamentos }: RadarDesp
           { id: 'todos', label: `Todos os Alertas (${alertasAtivos.length})` },
           { id: 'reajuste_silencioso', label: `Reajustes Silenciosos (${totalPorTipo.reajuste_silencioso})` },
           { id: 'duplicidade_suspeita', label: `Duplicidades Suspeitas (${totalPorTipo.duplicidade_suspeita})` },
-          { id: 'pico_anomalo', label: `Picos Fora do Padrão (${totalPorTipo.pico_anomalo})` }
+          { id: 'pico_anomalo', label: `Picos Fora do Padrão (${totalPorTipo.pico_anomalo})` },
+          { id: 'aprovados', label: `✅ Reajustes Aprovados (${Object.keys(reajustesAprovados).length})` }
         ].map(tab => {
           const isActive = filtroTipo === tab.id;
           return (
@@ -300,7 +347,106 @@ export default function RadarDesperdicios({ onNavigateToLancamentos }: RadarDesp
       </div>
 
       {/* ── LISTA DE ALERTAS FORENSES ──────────────────────────────────────── */}
-      {loading ? (
+      {filtroTipo === 'aprovados' ? (
+        Object.keys(reajustesAprovados).length === 0 ? (
+          <div style={{
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border)',
+            borderRadius: 16,
+            padding: '48px 24px',
+            textAlign: 'center',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.02)'
+          }}>
+            <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(16, 185, 129, 0.12)', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+              <CheckCircle2 size={30} />
+            </div>
+            <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px 0' }}>
+              Nenhum reajuste aprovado ainda
+            </h3>
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)', maxWidth: 500, margin: '0 auto' }}>
+              Quando você aprovar aumentos reais (como aluguel, dissídios ou contratos renegociados), eles aparecerão aqui como novos tetos oficiais.
+            </p>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {Object.entries(reajustesAprovados).map(([key, item]) => {
+              const dt = new Date(item.dataAprovacao).toLocaleDateString('pt-BR');
+              return (
+                <div
+                  key={item.id}
+                  style={{
+                    background: 'var(--bg-card)',
+                    border: '1px solid rgba(16, 185, 129, 0.35)',
+                    borderLeft: '4px solid #10b981',
+                    borderRadius: 14,
+                    padding: '18px 22px',
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.03)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: 12
+                  }}
+                >
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                      <span style={{
+                        background: 'rgba(16, 185, 129, 0.12)',
+                        color: '#10b981',
+                        border: '1px solid rgba(16, 185, 129, 0.3)',
+                        padding: '2px 8px',
+                        borderRadius: 6,
+                        fontSize: '10px',
+                        fontWeight: 800,
+                        textTransform: 'uppercase'
+                      }}>
+                        ✅ Aprovado pelo Gestor
+                      </span>
+                      {item.categoriaNome && (
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>
+                          • {item.categoriaNome}
+                        </span>
+                      )}
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                        • Aprovado em {dt}
+                      </span>
+                    </div>
+
+                    <h4 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 4px 0' }}>
+                      {item.entidade}
+                    </h4>
+
+                    <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', margin: 0 }}>
+                      Anterior: R$ {item.valorAnterior.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ➔ <strong style={{ color: '#10b981' }}>Novo Padrão Aprovado: R$ {item.novoValorPadrao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+                      {item.percentualAumento ? ` (+${item.percentualAumento}%)` : ''}
+                    </p>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <button
+                      onClick={() => handleRevogarAprovacao(key)}
+                      style={{
+                        padding: '7px 14px',
+                        borderRadius: 8,
+                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                        background: 'rgba(239, 68, 68, 0.08)',
+                        color: '#ef4444',
+                        fontSize: '11.5px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease'
+                      }}
+                      title="Revogar aprovação e reabrir alertas para este lançamento"
+                    >
+                      Revogar / Reabrir Alerta
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )
+      ) : loading ? (
         <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)' }}>
           <div className="spinner" style={{ margin: '0 auto 16px' }} />
           <p style={{ fontSize: '13px', fontWeight: 600 }}>Executando auditoria forense nos lançamentos...</p>
@@ -417,6 +563,38 @@ export default function RadarDesperdicios({ onNavigateToLancamentos }: RadarDesp
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {alerta.tipo === 'reajuste_silencioso' && (
+                        <button
+                          onClick={() => setAlertaParaAprovar(alerta)}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 5,
+                            padding: '6px 12px',
+                            borderRadius: 8,
+                            border: '1px solid rgba(16, 185, 129, 0.4)',
+                            background: 'rgba(16, 185, 129, 0.1)',
+                            color: '#10b981',
+                            fontSize: '11px',
+                            fontWeight: 800,
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = '#10b981';
+                            e.currentTarget.style.color = '#ffffff';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'rgba(16, 185, 129, 0.1)';
+                            e.currentTarget.style.color = '#10b981';
+                          }}
+                          title="Aprovar este aumento como o novo valor padrão e não alertar mais"
+                        >
+                          <CheckCircle2 size={12} />
+                          <span>Aprovar Aumento</span>
+                        </button>
+                      )}
+
                       {onNavigateToLancamentos && alerta.transacaoIds && alerta.transacaoIds.length > 0 && (
                         <button
                           onClick={() => {
@@ -471,6 +649,102 @@ export default function RadarDesperdicios({ onNavigateToLancamentos }: RadarDesp
               </div>
             );
           })}
+        </div>
+      )}
+      {/* ── MODAL DE CONFIRMAÇÃO DE APROVAÇÃO DE AUMENTO ────────────────── */}
+      {alertaParaAprovar && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.6)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10000,
+          padding: 16
+        }}>
+          <div style={{
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border)',
+            borderRadius: 16,
+            maxWidth: 480,
+            width: '100%',
+            padding: 24,
+            boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
+            animation: 'fadeIn 0.2s ease-out'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+              <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <CheckCircle2 size={24} />
+              </div>
+              <div>
+                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: 'var(--text-primary)' }}>
+                  Aprovar Aumento Legítimo
+                </h3>
+                <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--text-muted)' }}>
+                  Definir novo valor padrão oficial para este lançamento
+                </p>
+              </div>
+            </div>
+
+            <p style={{ fontSize: 13.5, color: 'var(--text-secondary)', lineHeight: 1.5, margin: '0 0 16px 0' }}>
+              Deseja aprovar o valor de <strong style={{ color: 'var(--text-primary)' }}>R$ {alertaParaAprovar.valorAtual.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong> como o novo teto padrão acordado para <strong style={{ color: 'var(--text-primary)' }}>"{alertaParaAprovar.entidade}"</strong>?
+            </p>
+
+            <div style={{
+              background: 'rgba(16, 185, 129, 0.08)',
+              border: '1px solid rgba(16, 185, 129, 0.25)',
+              borderRadius: 10,
+              padding: '12px 14px',
+              marginBottom: 20,
+              fontSize: 12,
+              color: 'var(--text-primary)',
+              lineHeight: 1.4
+            }}>
+              💡 <strong>Inteligência do Radar:</strong> O sistema não considerará mais este valor como desperdício e deixará de alertar nas cobranças futuras deste mesmo patamar. Se o fornecedor aumentar <em>novamente</em> além deste teto, o Radar voltará a notificá-lo.
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+              <button
+                onClick={() => setAlertaParaAprovar(null)}
+                style={{
+                  padding: '9px 16px',
+                  borderRadius: 8,
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg-body)',
+                  color: 'var(--text-primary)',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  handleAprovarReajuste(alertaParaAprovar);
+                  setAlertaParaAprovar(null);
+                }}
+                style={{
+                  padding: '9px 18px',
+                  borderRadius: 8,
+                  border: 'none',
+                  background: 'linear-gradient(180deg, #10b981 0%, #059669 100%)',
+                  color: '#ffffff',
+                  fontSize: 13,
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  boxShadow: '0 3px 10px rgba(16, 185, 129, 0.35)'
+                }}
+              >
+                Confirmar Novo Padrão
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

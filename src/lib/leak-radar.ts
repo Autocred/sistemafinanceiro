@@ -26,6 +26,17 @@ export interface AlertaVazamento {
   dicaAcao: string;
 }
 
+export interface ReajusteAprovado {
+  id: string;
+  entidade: string;
+  novoValorPadrao: number;
+  valorAnterior: number;
+  percentualAumento?: number;
+  categoriaNome?: string;
+  dataAprovacao: string;
+  motivo?: string;
+}
+
 function parseDataTimestamp(dataRaw?: any): number {
   if (!dataRaw) return 0;
   const norm = normalizeDate(dataRaw);
@@ -55,7 +66,10 @@ export interface ResultadoRadarVazamentos {
  * Motor Forense de Detecção Autônoma de Vazamentos e Desperdícios
  * Inspirado nos algoritmos de Expense Leak Detection do Ramp e Brex (EUA)
  */
-export function analisarVazamentosDeCaixa(transacoes: Transacao[]): ResultadoRadarVazamentos {
+export function analisarVazamentosDeCaixa(
+  transacoes: Transacao[],
+  reajustesAprovados: Record<string, ReajusteAprovado> = {}
+): ResultadoRadarVazamentos {
   const alertas: AlertaVazamento[] = [];
   
   if (!transacoes || transacoes.length === 0) {
@@ -157,14 +171,28 @@ export function analisarVazamentosDeCaixa(transacoes: Transacao[]): ResultadoRad
 
     const valorAtual = Number(maisRecente.valor);
     const mediaHistorica = historico.reduce((acc, curr) => acc + Number(curr.valor), 0) / historico.length;
+    const fornNome = maisRecente.fornecedorNome || maisRecente.descricao;
+    const fornKeyNorm = fornKey.trim().toLowerCase();
+    const aprovado = reajustesAprovados[fornKeyNorm];
+
+    let baseCalculo = mediaHistorica;
+    let baseLabel = 'média recente';
+
+    if (aprovado && aprovado.novoValorPadrao > 0) {
+      // Se o valor atual está dentro do novo padrão aprovado pelo usuário (com tolerância de 2%)
+      if (valorAtual <= aprovado.novoValorPadrao * 1.02) {
+        return; // Não gera alerta! Reajuste já foi aprovado pelo gestor!
+      }
+      baseCalculo = aprovado.novoValorPadrao;
+      baseLabel = 'padrão aprovado';
+    }
 
     // Se subiu mais de 6% e a diferença for de pelo menos R$ 15,00
-    const diferenca = valorAtual - mediaHistorica;
-    const percentual = ((valorAtual - mediaHistorica) / mediaHistorica) * 100;
+    const diferenca = valorAtual - baseCalculo;
+    const percentual = ((valorAtual - baseCalculo) / baseCalculo) * 100;
 
-    if (diferenca >= 15 && percentual >= 6 && mediaHistorica > 0) {
+    if (diferenca >= 15 && percentual >= 6 && baseCalculo > 0) {
       const impactoAnual = diferenca * 12;
-      const fornNome = maisRecente.fornecedorNome || maisRecente.descricao;
       const dataBr = formatarDataBr(maisRecente.dataVencimento || maisRecente.dataLancamento || maisRecente.data);
       const descComp = maisRecente.descricao && maisRecente.descricao !== fornNome ? ` (${maisRecente.descricao})` : '';
 
@@ -172,10 +200,10 @@ export function analisarVazamentosDeCaixa(transacoes: Transacao[]): ResultadoRad
         id: `creep-${maisRecente.id}`,
         tipo: 'reajuste_silencioso',
         titulo: `Reajuste Silencioso Detectado (+${percentual.toFixed(1)}%)`,
-        descricao: `A cobrança de "${fornNome}"${descComp}${dataBr ? ` em ${dataBr}` : ''} subiu de R$ ${mediaHistorica.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} (média recente) para R$ ${valorAtual.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}, gerando um vazamento anual de R$ ${impactoAnual.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}.`,
+        descricao: `A cobrança de "${fornNome}"${descComp}${dataBr ? ` em ${dataBr}` : ''} subiu de R$ ${baseCalculo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} (${baseLabel}) para R$ ${valorAtual.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}, gerando um vazamento anual de R$ ${impactoAnual.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}.`,
         entidade: fornNome,
         valorAtual: valorAtual,
-        valorAnterior: mediaHistorica,
+        valorAnterior: baseCalculo,
         diferencaValor: diferenca,
         percentualAumento: Math.round(percentual),
         impactoAnual: Math.round(impactoAnual),
