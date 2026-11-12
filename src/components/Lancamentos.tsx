@@ -51,6 +51,7 @@ const openSafeAttachment = (url: string) => {
   const [loading, setLoading] = useState(true);
   const [mes, setMes] = useState(new Date());
   const [busca, setBusca] = useState('');
+  const [filtroTransacaoIds, setFiltroTransacaoIds] = useState<string[]>([]);
   const [isListening, setIsListening] = useState(false);
   const [vozStatus, setVozStatus] = useState('');
   const [transacaoCobrarPix, setTransacaoCobrarPix] = useState<Transacao | null>(null);
@@ -319,6 +320,18 @@ const openSafeAttachment = (url: string) => {
 
   useEffect(() => {
     if (filtroRapido) {
+      if (filtroRapido.startsWith('id:')) {
+        const ids = filtroRapido.replace('id:', '').split(',').map(s => s.trim()).filter(Boolean);
+        setFiltroTransacaoIds(ids);
+        setPeriodoFiltro('todos');
+        setFiltrosAtivos(['todos']);
+        setFiltroContato('');
+        setFiltroCategoria('');
+        setFiltroCC('');
+        setBusca('');
+        return;
+      }
+      setFiltroTransacaoIds([]);
       let periodo: any = 'mes';
       let ativos: string[] = [];
       let dataRefStr: any = 'vencimento';
@@ -358,6 +371,9 @@ const openSafeAttachment = (url: string) => {
     const filtradasBase = transacoes.filter(t => !(t.faturaId && t.descricao.startsWith('Juros/Multa')));
     
       const filtradasSemOrdem = filtradasBase.filter(t => {
+        if (filtroTransacaoIds.length > 0) {
+          return filtroTransacaoIds.includes(t.id);
+        }
         const rawRef = filtroData === 'lancamento' ? (t.dataPagamento || t.dataLancamento || t.data) : (t.dataVencimento || t.data);
         const dataRef = normalizeDate(rawRef);
         
@@ -453,7 +469,7 @@ const openSafeAttachment = (url: string) => {
         ? ordenarVencimentosAsc(filtradasSemOrdem)
         : ordenarMovimentacoesDesc(filtradasSemOrdem);
     return filtradasTemp;
-  }, [transacoes, filtroData, periodoFiltro, busca, filtrosAtivos, filtroComportamento, filtroCategoria, filtroCC, filtroContato, dataEspecificaInicio, dataEspecificaFim, faturas]);
+  }, [transacoes, filtroData, periodoFiltro, busca, filtrosAtivos, filtroComportamento, filtroCategoria, filtroCC, filtroContato, dataEspecificaInicio, dataEspecificaFim, faturas, filtroTransacaoIds]);
 
   const {
     totalReceitas, receitasPagas, receitasPendentes,
@@ -1231,6 +1247,42 @@ const openSafeAttachment = (url: string) => {
 
       {/* Tabela (Transformada em Timeline V2) */}
       <div style={{ marginTop: 20 }}>
+        {filtroTransacaoIds.length > 0 && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '12px 18px',
+            marginBottom: 16,
+            background: 'rgba(var(--primary-rgb, 59, 130, 246), 0.1)',
+            border: '1px solid var(--primary)',
+            borderRadius: 10,
+            color: 'var(--text-primary)',
+            fontSize: 13,
+            fontWeight: 600,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 16 }}>🎯</span>
+              <span>Visualizando <strong>apenas o lançamento específico auditado no Radar de Desperdícios</strong> ({filtradas.length} encontrado).</span>
+            </div>
+            <button
+              onClick={() => { setFiltroTransacaoIds([]); setPeriodoFiltro('mes'); }}
+              style={{
+                background: 'var(--primary)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 6,
+                padding: '6px 14px',
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}
+            >
+              Ver Todos os Lançamentos
+            </button>
+          </div>
+        )}
         {loading ? (
           <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>
             <div style={{ fontSize: 32, marginBottom: 12 }}>⏳</div>

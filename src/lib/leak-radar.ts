@@ -1,4 +1,5 @@
 import { Transacao } from './types';
+import { normalizeDate } from './financialEngine';
 
 export type TipoAlertaVazamento = 
   | 'reajuste_silencioso' 
@@ -21,7 +22,25 @@ export interface AlertaVazamento {
   dataDetectada: string;
   transacaoIds: string[];
   categoriaNome?: string;
+  descricaoTransacao?: string;
   dicaAcao: string;
+}
+
+function parseDataTimestamp(dataRaw?: any): number {
+  if (!dataRaw) return 0;
+  const norm = normalizeDate(dataRaw);
+  if (!norm) return 0;
+  const t = new Date(norm).getTime();
+  return isNaN(t) ? 0 : t;
+}
+
+function formatarDataBr(dataRaw?: any): string {
+  if (!dataRaw) return '';
+  const norm = normalizeDate(dataRaw);
+  if (!norm) return '';
+  const parts = norm.split('-');
+  if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  return norm;
 }
 
 export interface ResultadoRadarVazamentos {
@@ -66,7 +85,7 @@ export function analisarVazamentosDeCaixa(transacoes: Transacao[]): ResultadoRad
     const t1 = despesas[i];
     if (processadasDuplicadas.has(t1.id)) continue;
 
-    const data1 = new Date(t1.dataVencimento || t1.dataLancamento || t1.data).getTime();
+    const data1 = parseDataTimestamp(t1.dataVencimento || t1.dataLancamento || t1.data);
     const nome1 = (t1.fornecedorNome || t1.descricao || '').trim().toLowerCase();
     const valor1 = Number(t1.valor);
 
@@ -74,7 +93,7 @@ export function analisarVazamentosDeCaixa(transacoes: Transacao[]): ResultadoRad
       const t2 = despesas[j];
       if (processadasDuplicadas.has(t2.id)) continue;
 
-      const data2 = new Date(t2.dataVencimento || t2.dataLancamento || t2.data).getTime();
+      const data2 = parseDataTimestamp(t2.dataVencimento || t2.dataLancamento || t2.data);
       const nome2 = (t2.fornecedorNome || t2.descricao || '').trim().toLowerCase();
       const valor2 = Number(t2.valor);
 
@@ -102,6 +121,7 @@ export function analisarVazamentosDeCaixa(transacoes: Transacao[]): ResultadoRad
           dataDetectada: t1.dataVencimento || t1.dataLancamento || t1.data,
           transacaoIds: [t1.id, t2.id],
           categoriaNome: t1.categoriaNome,
+          descricaoTransacao: t1.descricao,
           dicaAcao: 'Verifique com o fornecedor ou banco se não houve débito duplo acidental antes de liquidar.'
         });
         break;
@@ -125,10 +145,10 @@ export function analisarVazamentosDeCaixa(transacoes: Transacao[]): ResultadoRad
     // Requer pelo menos 3 lançamentos para ter base histórica confiável
     if (lista.length < 3) return;
 
-    // Ordena do mais recente para o mais antigo
+    // Ordena do mais recente para o mais antigo de forma robusta
     const ordenadas = [...lista].sort((a, b) => {
-      const dA = new Date(a.dataVencimento || a.dataLancamento || a.data).getTime();
-      const dB = new Date(b.dataVencimento || b.dataLancamento || b.data).getTime();
+      const dA = parseDataTimestamp(a.dataVencimento || a.dataLancamento || a.data);
+      const dB = parseDataTimestamp(b.dataVencimento || b.dataLancamento || b.data);
       return dB - dA;
     });
 
@@ -145,12 +165,14 @@ export function analisarVazamentosDeCaixa(transacoes: Transacao[]): ResultadoRad
     if (diferenca >= 15 && percentual >= 6 && mediaHistorica > 0) {
       const impactoAnual = diferenca * 12;
       const fornNome = maisRecente.fornecedorNome || maisRecente.descricao;
+      const dataBr = formatarDataBr(maisRecente.dataVencimento || maisRecente.dataLancamento || maisRecente.data);
+      const descComp = maisRecente.descricao && maisRecente.descricao !== fornNome ? ` (${maisRecente.descricao})` : '';
 
       alertas.push({
         id: `creep-${maisRecente.id}`,
         tipo: 'reajuste_silencioso',
         titulo: `Reajuste Silencioso Detectado (+${percentual.toFixed(1)}%)`,
-        descricao: `A cobrança de "${fornNome}" subiu de R$ ${mediaHistorica.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} (média recente) para R$ ${valorAtual.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}, gerando um vazamento anual de R$ ${impactoAnual.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}.`,
+        descricao: `A cobrança de "${fornNome}"${descComp}${dataBr ? ` em ${dataBr}` : ''} subiu de R$ ${mediaHistorica.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} (média recente) para R$ ${valorAtual.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}, gerando um vazamento anual de R$ ${impactoAnual.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}.`,
         entidade: fornNome,
         valorAtual: valorAtual,
         valorAnterior: mediaHistorica,
@@ -161,6 +183,7 @@ export function analisarVazamentosDeCaixa(transacoes: Transacao[]): ResultadoRad
         dataDetectada: maisRecente.dataVencimento || maisRecente.dataLancamento || maisRecente.data,
         transacaoIds: [maisRecente.id, ...historico.map(h => h.id)],
         categoriaNome: maisRecente.categoriaNome,
+        descricaoTransacao: maisRecente.descricao,
         dicaAcao: 'Solicite renegociação imediata da tarifa ou consulte planos concorrentes mais vantajosos.'
       });
     }
@@ -201,6 +224,7 @@ export function analisarVazamentosDeCaixa(transacoes: Transacao[]): ResultadoRad
           dataDetectada: item.dataVencimento || item.dataLancamento || item.data,
           transacaoIds: [item.id],
           categoriaNome: catNome,
+          descricaoTransacao: item.descricao,
           dicaAcao: 'Confira a nota fiscal e certifique-se de que a alocação de centro de custo está correta.'
         });
       }

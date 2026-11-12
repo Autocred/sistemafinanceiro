@@ -11,22 +11,22 @@ const db = getFirestore(app);
 
 async function run() {
   await addDoc(collection(db, 'saas_releases'), {
-    versao: 'v3.6.98',
-    titulo: 'Lançamento Exclusivo: Radar Forense de Desperdícios & Gastos Fantasma (Estilo Ramp / Brex)',
-    descricao: 'Motor de inteligência analítica autônoma que varre continuamente os lançamentos em busca de cobranças duplicadas, reajustes silenciosos de fornecedores e anomalias de custos, calculando a economia mensal e anual imediata do negócio.',
+    versao: 'v3.6.99',
+    titulo: 'Auditoria de Alta Precisão no Radar Forense & Isolamento de Lançamento Auditado',
+    descricao: 'Aprimoramento do Radar de Desperdícios: ao clicar em "Auditar Lançamento", o sistema agora redireciona com precisão cirúrgica isolando apenas a transação especificada, exibindo data, descrição, ID e banner de controle para conferência e edição imediata sem interferência de filtros de mês.',
     dataLancamento: new Date().toISOString(),
     status: 'publicado',
     destaque: true,
     notificarTenants: false,
     alvos: 'todos',
     changes: [
-      { tipo: 'novidade', texto: 'Radar Forense de Desperdícios: Nova tela completa com cálculo de Economia Imediata Mensal/Anual e Score de Proteção de Caixa.' },
-      { tipo: 'novidade', texto: 'Detector de Reajustes Silenciosos: Identifica aumentos acima da média histórica recente em contas recorrentes e contratos de fornecedores.' },
-      { tipo: 'novidade', texto: 'Detector de Cobranças Duplicadas: Cruza valores idênticos e datas próximas para evitar pagamentos duplos acidentais.' },
-      { tipo: 'novidade', texto: 'Atalho Executivo no Dashboard & Menu: Acesso instantâneo de 1 clique ao Radar através do Dashboard e da barra lateral de Inteligência.' }
+      { tipo: 'novidade', texto: 'Navegação Direta e Precisa: Ao clicar em "Auditar Lançamento" no Radar, a tela de Lançamentos abre filtrando exclusivamente o lançamento especificado.' },
+      { tipo: 'melhoria', texto: 'Banner de Auditoria em Lançamentos: Exibe notificação de auditoria ativa com botão de 1 clique para retornar à visão geral de todos os lançamentos.' },
+      { tipo: 'melhoria', texto: 'Metadados Detalhados nos Alertas: Cada alerta agora exibe a data de vencimento/competência, descrição exata do item e o ID do documento para conferência forense imediata.' },
+      { tipo: 'correcao', texto: 'Normalização Temporal Rigorosa: Algoritmo de análise temporal atualizado para garantir consistência em datas de diferentes formatos.' }
     ]
   });
-  console.log('Release notes v3.6.98 added!');
+  console.log('Release notes v3.6.99 added!');
   process.exit(0);
 }
 

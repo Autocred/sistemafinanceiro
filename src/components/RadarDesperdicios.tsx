@@ -367,6 +367,16 @@ export default function RadarDesperdicios({ onNavigateToLancamentos }: RadarDesp
                           • {alerta.categoriaNome}
                         </span>
                       )}
+                      {alerta.descricaoTransacao && alerta.descricaoTransacao !== alerta.entidade && (
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 500 }}>
+                          • {alerta.descricaoTransacao}
+                        </span>
+                      )}
+                      {alerta.transacaoIds && alerta.transacaoIds.length > 0 && (
+                        <span style={{ fontSize: '10px', color: 'var(--text-muted)', background: 'var(--bg-body)', padding: '2px 6px', borderRadius: 4, fontFamily: 'monospace' }}>
+                          ID: {alerta.transacaoIds[0]}
+                        </span>
+                      )}
                     </div>
 
                     <h4 style={{ fontSize: '15.5px', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px 0' }}>
@@ -407,14 +417,19 @@ export default function RadarDesperdicios({ onNavigateToLancamentos }: RadarDesp
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      {onNavigateToLancamentos && alerta.entidade && (
+                      {onNavigateToLancamentos && alerta.transacaoIds && alerta.transacaoIds.length > 0 && (
                         <button
-                          onClick={() => onNavigateToLancamentos(alerta.entidade)}
+                          onClick={() => {
+                            const alvo = alerta.tipo === 'duplicidade_suspeita'
+                              ? alerta.transacaoIds.join(',')
+                              : alerta.transacaoIds[0];
+                            onNavigateToLancamentos(`id:${alvo}`);
+                          }}
                           style={{
                             display: 'inline-flex',
                             alignItems: 'center',
-                            gap: 4,
-                            padding: '6px 12px',
+                            gap: 5,
+                            padding: '6px 14px',
                             borderRadius: 8,
                             border: '1px solid var(--primary)',
                             background: 'var(--primary)',
@@ -422,11 +437,12 @@ export default function RadarDesperdicios({ onNavigateToLancamentos }: RadarDesp
                             fontSize: '11px',
                             fontWeight: 700,
                             cursor: 'pointer',
-                            boxShadow: '0 2px 4px rgba(var(--primary-rgb, 59, 130, 246), 0.3)'
+                            boxShadow: '0 2px 4px rgba(var(--primary-rgb, 59, 130, 246), 0.3)',
+                            transition: 'all 0.15s ease'
                           }}
-                          title={`Ver lançamentos de ${alerta.entidade}`}
+                          title="Abrir diretamente este lançamento especificado na tabela de lançamentos"
                         >
-                          Auditar Lançamentos <ExternalLink size={11} />
+                          Auditar Lançamento <ExternalLink size={11} />
                         </button>
                       )}
 
