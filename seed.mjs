@@ -10,28 +10,27 @@ const app = initializeApp({
 const db = getFirestore(app);
 
 async function run() {
-  const q = query(collection(db, 'saas_releases'), where('versao', '==', 'v3.7.4'));
+  const q = query(collection(db, 'saas_releases'), where('versao', '==', 'v3.7.5'));
   const snap = await getDocs(q);
   if (snap.empty) {
     await addDoc(collection(db, 'saas_releases'), {
-      versao: 'v3.7.4',
-      titulo: 'Raio-X de Custos Fixos, Dias para Equilíbrio & Simulador de Queda de Faturamento',
-      descricao: 'Evolução completa do Termômetro de Ponto de Equilíbrio no Dashboard: agora realiza a separação rigorosa entre Custos Mensais Fixos e Custos Variáveis, calcula exatamente quantos dias de faturamento são necessários para pagar as contas fixas e a partir de qual dia começa o Lucro Líquido, além de trazer um Simulador de Cenários interativo (-10%, -15%, -20%, -30%, etc.) com matriz comparativa em tempo real.',
+      versao: 'v3.7.5',
+      titulo: 'Terminal de Login FinTech, Bolsa de Valores & Inteligência Artificial',
+      descricao: 'Redesign completo da experiência de autenticação (Login, PIN, Biometria e Cadastro) com estética institucional de Terminal Financeiro, Bolsa de Valores (B3 / Wall Street) e Motor de Inteligência Artificial Preditivo, preservando 100% da identidade White Label de cada licença (Logo, Nome do Sistema e Paleta Primária).',
       dataLancamento: new Date().toISOString(),
       status: 'publicado',
       destaque: true,
       notificarTenants: false,
       alvos: 'todos',
       changes: [
-        { tipo: 'novidade', texto: 'Separação Rigorosa de Custos Fixos vs. Variáveis: Classificação inteligente e auditável de todas as obrigações do mês com opção de reclassificação em 1 clique pelo gestor.' },
-        { tipo: 'novidade', texto: 'Linha do Tempo em 3 Etapas (Fixo -> Variável -> Lucro): Mostra quantos dias do mês você trabalha para pagar as Contas Fixas, quantos para os Variáveis e quantos dias geram Lucro Puro.' },
-        { tipo: 'novidade', texto: 'Simulador Interativo de Faturamento ("E se cair 15%, 20%, 30%?"): Botões rápidos e controle deslizante que recalculam instantaneamente os dias de equilíbrio e o lucro líquido projetado.' },
-        { tipo: 'melhoria', texto: 'Matriz Comparativa de Estresse: Tabela executiva comparando lado a lado o Cenário Atual (0%) contra quedas de -10%, -15%, -20% e -30%.' }
+        { tipo: 'novidade', texto: 'Ticker Tape Financeiro ao Vivo (B3 & Global Markets): Barra superior contínua com indicadores financeiros (IBOVESPA, S&P 500, NASDAQ AI, USD/BRL, SELIC, CDI, BTC e SLA do Motor Neural IA).' },
+        { tipo: 'novidade', texto: 'HUD Executivo de Telemetria & Gráfico Candlestick IA: Painel visual de alta tecnologia no desktop com gráfico quantitativo em tempo real e indicadores de segurança institucional.' },
+        { tipo: 'melhoria', texto: 'Card de Autenticação Glassmorphic 3D White-Label: Destaque luminoso para a logomarca e nome do Tenant, campos modernos com ícones dedicados, botão mostrar/ocultar senha e botão físico 3D.' }
       ]
     });
-    console.log('Release notes v3.7.4 added!');
+    console.log('Release notes v3.7.5 added!');
   } else {
-    console.log('Release notes v3.7.4 already registered!');
+    console.log('Release notes v3.7.5 already registered!');
   }
   process.exit(0);
 }
