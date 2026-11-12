@@ -26,6 +26,24 @@ export interface AlertaVazamento {
   dicaAcao: string;
 }
 
+
+export interface AssinaturaRecorrente {
+  id: string;
+  entidade: string;
+  categoriaNome?: string;
+  valorMensal: number;
+  custoAnual: number;
+  quantidadeOcorrencias: number;
+  primeiraData: string;
+  ultimaData: string;
+  ultimoValor: number;
+  intervaloMedioDias: number;
+  formaPagamento?: string;
+  isTarifaBancaria: boolean;
+  statusCorte: 'ativo' | 'zumbi' | 'essencial';
+  transacaoIds: string[];
+}
+
 export interface ReajusteAprovado {
   id: string;
   entidade: string;
@@ -60,6 +78,9 @@ export interface ResultadoRadarVazamentos {
   economiaAnualPotencial: number;
   scoreSaude: number; // 0 a 100
   alertas: AlertaVazamento[];
+  assinaturas: AssinaturaRecorrente[];
+  totalAnualAssinaturas: number;
+  totalEconomiaZumbis: number;
 }
 
 /**
@@ -68,7 +89,8 @@ export interface ResultadoRadarVazamentos {
  */
 export function analisarVazamentosDeCaixa(
   transacoes: Transacao[],
-  reajustesAprovados: Record<string, ReajusteAprovado> = {}
+  reajustesAprovados: Record<string, ReajusteAprovado> = {},
+  statusAssinaturas: Record<string, 'ativo' | 'zumbi' | 'essencial'> = {}
 ): ResultadoRadarVazamentos {
   const alertas: AlertaVazamento[] = [];
   
@@ -78,7 +100,10 @@ export function analisarVazamentosDeCaixa(
       economiaMensalPotencial: 0,
       economiaAnualPotencial: 0,
       scoreSaude: 100,
-      alertas: []
+      alertas: [],
+      assinaturas: [],
+      totalAnualAssinaturas: 0,
+      totalEconomiaZumbis: 0
     };
   }
 
@@ -259,6 +284,157 @@ export function analisarVazamentosDeCaixa(
     });
   });
 
+  
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 4. DETECÇÃO DE ASSINATURAS RECORRENTES & TARIFAS BANCÁRIAS (ZUMBIS)
+  // ─────────────────────────────────────────────────────────────────────────────
+  const KEYWORDS_ASSINATURA = [
+    'netflix', 'spotify', 'prime', 'amazon prime', 'disney', 'hbo', 'max', 'paramount', 'globoplay', 'apple', 'icloud',
+    'google', 'storage', 'workspace', 'drive', 'youtube', 'dropbox', 'chatgpt', 'openai', 'anthropic', 'midjourney',
+    'canva', 'adobe', 'creative cloud', 'microsoft', 'office', '365', 'github', 'vercel', 'heroku', 'aws',
+    'digitalocean', 'hostgator', 'locaweb', 'cloudflare', 'zoom', 'slack', 'trello', 'notion', 'asana', 'jira',
+    'gympass', 'smartfit', 'totalpass', 'bluefit', 'academia', 'plano de saude', 'unimed', 'bradesco saude', 'amil',
+    'vivo', 'claro', 'tim', 'oi', 'telecom', 'internet', 'fibra', 'tarifa', 'cesta', 'manutencao de conta', 'anuidade',
+    'mensalidade', 'seguro', 'sem parar', 'conectcar', 'veloe', 'tag', 'pedagio', 'software', 'saas', 'dominio', 'antivirus'
+  ];
+
+  const KEYWORDS_TARIFA_BANCARIA = [
+    'tarifa', 'cesta', 'manutencao de conta', 'pacote de servico', 'anuidade', 'ted', 'doc', 'iof', 'encargos', 'tarifa bancaria'
+  ];
+
+  const gruposAssinaturas: Record<string, Transacao[]> = {};
+  despesas.forEach(t => {
+    const rawNome = (t.fornecedorNome || t.descricao || '').trim();
+    if (!rawNome || rawNome.length < 3) return;
+    const key = rawNome.toLowerCase()
+      .replace(/\s+(jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez|\d{2}\/\d{2,4}|\d{4}-\d{2})\b/gi, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (!gruposAssinaturas[key]) gruposAssinaturas[key] = [];
+    gruposAssinaturas[key].push(t);
+  });
+
+  const assinaturas: AssinaturaRecorrente[] = [];
+
+  Object.entries(gruposAssinaturas).forEach(([key, lista]) => {
+    const ordenadas = [...lista].sort((a, b) => {
+      const dA = parseDataTimestamp(a.dataPagamento || a.dataVencimento || a.dataLancamento || a.data);
+      const dB = parseDataTimestamp(b.dataPagamento || b.dataVencimento || b.dataLancamento || b.data);
+      return dA - dB;
+    });
+
+    const maisRecente = ordenadas[ordenadas.length - 1];
+    const primeira = ordenadas[0];
+    const fornNome = maisRecente.fornecedorNome || maisRecente.descricao;
+    
+    const mesesDistintos = new Set(
+      ordenadas.map(t => {
+        const norm = normalizeDate(t.dataPagamento || t.dataVencimento || t.dataLancamento || t.data);
+        return norm ? norm.slice(0, 7) : '';
+      }).filter(Boolean)
+    );
+
+    const temFlagRecorrente = ordenadas.some(t => t.recorrente);
+    const temKeywordAssinatura = KEYWORDS_ASSINATURA.some(kw => 
+      key.includes(kw) || ordenadas.some(t => (t.descricao || '').toLowerCase().includes(kw))
+    );
+    const isTarifaBancaria = KEYWORDS_TARIFA_BANCARIA.some(kw => 
+      key.includes(kw) || ordenadas.some(t => (t.descricao || '').toLowerCase().includes(kw))
+    );
+
+    const isRecorrente = temFlagRecorrente || mesesDistintos.size >= 2 || (temKeywordAssinatura && ordenadas.length >= 1);
+
+    if (!isRecorrente) return;
+
+    const ultimoValor = Number(maisRecente.valor);
+    const somaValores = ordenadas.reduce((s, i) => s + Number(i.valor), 0);
+    const valorMedio = somaValores / ordenadas.length;
+    const valorMensal = ultimoValor > 0 ? ultimoValor : valorMedio;
+    const custoAnual = Math.round(valorMensal * 12 * 100) / 100;
+
+    let intervaloMedioDias = 30;
+    if (ordenadas.length >= 2) {
+      const tsPrimeiro = parseDataTimestamp(primeira.dataPagamento || primeira.dataVencimento || primeira.dataLancamento || primeira.data);
+      const tsUltimo = parseDataTimestamp(maisRecente.dataPagamento || maisRecente.dataVencimento || maisRecente.dataLancamento || maisRecente.data);
+      if (tsUltimo > tsPrimeiro) {
+        intervaloMedioDias = Math.round((tsUltimo - tsPrimeiro) / ((ordenadas.length - 1) * 1000 * 60 * 60 * 24));
+      }
+    }
+
+    const subId = `sub-${key.replace(/[^a-z0-9]/g, '-')}`;
+    const statusCorte = statusAssinaturas[subId] || 'ativo';
+
+    assinaturas.push({
+      id: subId,
+      entidade: fornNome,
+      categoriaNome: maisRecente.categoriaNome,
+      valorMensal: Math.round(valorMensal * 100) / 100,
+      custoAnual,
+      quantidadeOcorrencias: ordenadas.length,
+      primeiraData: primeira.dataPagamento || primeira.dataVencimento || primeira.dataLancamento || primeira.data,
+      ultimaData: maisRecente.dataPagamento || maisRecente.dataVencimento || maisRecente.dataLancamento || maisRecente.data,
+      ultimoValor,
+      intervaloMedioDias,
+      formaPagamento: maisRecente.formaPagamento,
+      isTarifaBancaria,
+      statusCorte,
+      transacaoIds: ordenadas.map(t => t.id)
+    });
+
+    if (isTarifaBancaria && statusCorte !== 'essencial') {
+      alertas.push({
+        id: `tarifa-${subId}`,
+        tipo: 'assinatura_fantasma',
+        titulo: 'Tarifa Bancária Recorrente (100% Evitável)',
+        descricao: `Identificamos cobrança contínua de tarifa/manutenção bancária em "${fornNome}" de R$ ${valorMensal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/mês, totalizando R$ ${custoAnual.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/ano.`,
+        entidade: fornNome,
+        valorAtual: valorMensal,
+        valorAnterior: 0,
+        diferencaValor: valorMensal,
+        impactoAnual: custoAnual,
+        severidade: 'media',
+        dataDetectada: maisRecente.dataPagamento || maisRecente.dataVencimento || maisRecente.dataLancamento || maisRecente.data,
+        transacaoIds: ordenadas.map(t => t.id),
+        categoriaNome: maisRecente.categoriaNome,
+        descricaoTransacao: maisRecente.descricao,
+        dicaAcao: 'Solicite a conversão para o Pacote de Serviços Essenciais Gratuito (Resolução 3.919 Bacen) ou utilize contas digitais gratuitas.'
+      });
+    }
+
+    if (statusCorte === 'zumbi') {
+      alertas.push({
+        id: `zumbi-${subId}`,
+        tipo: 'assinatura_fantasma',
+        titulo: 'Assinatura Zumbi Marcada para Corte',
+        descricao: `O serviço "${fornNome}" foi classificado como zumbi/desnecessário. Cancele no fornecedor para recuperar R$ ${custoAnual.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/ano no seu fluxo de caixa.`,
+        entidade: fornNome,
+        valorAtual: valorMensal,
+        valorAnterior: 0,
+        diferencaValor: valorMensal,
+        impactoAnual: custoAnual,
+        severidade: 'alta',
+        dataDetectada: maisRecente.dataPagamento || maisRecente.dataVencimento || maisRecente.dataLancamento || maisRecente.data,
+        transacaoIds: ordenadas.map(t => t.id),
+        categoriaNome: maisRecente.categoriaNome,
+        descricaoTransacao: maisRecente.descricao,
+        dicaAcao: 'Acesse a conta deste serviço e interrompa a renovação automática para cessar as cobranças.'
+      });
+    }
+  });
+
+  assinaturas.sort((a, b) => {
+    if (a.statusCorte === 'zumbi' && b.statusCorte !== 'zumbi') return -1;
+    if (b.statusCorte === 'zumbi' && a.statusCorte !== 'zumbi') return 1;
+    if (a.isTarifaBancaria && !b.isTarifaBancaria) return -1;
+    if (!a.isTarifaBancaria && b.isTarifaBancaria) return 1;
+    return b.custoAnual - a.custoAnual;
+  });
+
+  const totalAnualAssinaturas = assinaturas.reduce((acc, curr) => acc + curr.custoAnual, 0);
+  const totalEconomiaZumbis = assinaturas
+    .filter(s => s.statusCorte === 'zumbi')
+    .reduce((acc, curr) => acc + curr.custoAnual, 0);
+
   // Ordenar alertas por severidade (alta -> media -> baixa) e depois por impacto anual
   const pesosSeveridade = { alta: 3, media: 2, baixa: 1 };
   alertas.sort((a, b) => {
@@ -286,6 +462,9 @@ export function analisarVazamentosDeCaixa(
     economiaMensalPotencial: Math.round(economiaMensal * 100) / 100,
     economiaAnualPotencial: Math.round(economiaAnual * 100) / 100,
     scoreSaude,
-    alertas
+    alertas,
+    assinaturas,
+    totalAnualAssinaturas: Math.round(totalAnualAssinaturas * 100) / 100,
+    totalEconomiaZumbis: Math.round(totalEconomiaZumbis * 100) / 100
   };
 }

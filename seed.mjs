@@ -11,22 +11,22 @@ const db = getFirestore(app);
 
 async function run() {
   await addDoc(collection(db, 'saas_releases'), {
-    versao: 'v3.7.2',
-    titulo: 'Termômetro de Ponto de Equilíbrio ao Vivo (Break-Even Day) no Dashboard',
-    descricao: 'Novo painel inteligente posicionado estrategicamente no topo do Dashboard que monitora em tempo real a quitação de 100% dos custos e despesas do mês corrente. Identifica com precisão cirúrgica o dia exato do empate de custos ("Break-Even Day") e destaca a margem de lucro líquido real gerada a partir daquele instante, além de projetar o ritmo diário até o equilíbrio caso o mês ainda esteja em andamento.',
+    versao: 'v3.7.3',
+    titulo: 'Auditor de Assinaturas Zumbis & Tarifas Recorrentes no Radar de Desperdícios',
+    descricao: 'Novo módulo inteligente de auditoria que rastreia despesas fixas contínuas (SaaS, streamings, anuidades, tarifas bancárias e pacotes de serviços). Mapeia o impacto anual de cada micro-saída e inclui um checklist interativo com botão "Cortar (Zumbi)" para simular a economia imediata de fluxo de caixa e estancar renovações automáticas indesejadas.',
     dataLancamento: new Date().toISOString(),
     status: 'publicado',
     destaque: true,
     notificarTenants: false,
     alvos: 'todos',
     changes: [
-      { tipo: 'novidade', texto: 'Termômetro de Break-Even Day: Visualização ao vivo do percentual de cobertura das despesas totais (pagas + pendentes) com barra de progresso dinâmica e badge de status.' },
-      { tipo: 'novidade', texto: 'Identificação Exata do Dia de Lucro: O motor audita as receitas recebidas para apontar em qual dia do mês você cobriu todos os compromissos e passou a operar em lucro livre.' },
-      { tipo: 'melhoria', texto: 'Projeção de Ritmo Financeiro (Run-Rate): Calcula a média diária de recebimentos e prevê em qual dia o equilíbrio será conquistado quando o mês ainda estiver em curso.' },
-      { tipo: 'melhoria', texto: 'Design 3D e White Label: Interface moderna integrada à paleta do tenant com suporte integral a mascaramento de valores sensíveis.' }
+      { tipo: 'novidade', texto: 'Auditor de Assinaturas & Recorrências: Nova aba no Radar de Desperdícios que mapeia todos os contratos e custos recorrentes com projeção anual.' },
+      { tipo: 'novidade', texto: 'Checklist Interativo de Corte ("Marcar Zumbi"): Identifique serviços ociosos e simule em tempo real o caixa anual liberado com cancelamentos.' },
+      { tipo: 'novidade', texto: 'Detector de Tarifas Bancárias Evitáveis: Alerta forense para tarifas de manutenção de conta e cestas com recomendação de gratuidade Bacen.' },
+      { tipo: 'melhoria', texto: 'Card Hero de Assinaturas: Acesso em 1 clique direto pelo cabeçalho do Radar de Desperdícios.' }
     ]
   });
-  console.log('Release notes v3.7.2 added!');
+  console.log('Release notes v3.7.3 added!');
   process.exit(0);
 }
 

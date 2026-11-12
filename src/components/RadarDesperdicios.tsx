@@ -3,9 +3,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { subscribeTransacoes, formatarMoeda } from '@/lib/storage';
 import { Transacao } from '@/lib/types';
-import { analisarVazamentosDeCaixa, AlertaVazamento, TipoAlertaVazamento, ReajusteAprovado } from '@/lib/leak-radar';
+import { analisarVazamentosDeCaixa, AlertaVazamento, TipoAlertaVazamento, ReajusteAprovado, AssinaturaRecorrente } from '@/lib/leak-radar';
 import { 
   ShieldAlert, 
+  Skull, 
+  Scissors, 
+  Landmark, 
+  CreditCard, 
+  Layers, 
   TrendingDown, 
   AlertTriangle, 
   CheckCircle2, 
@@ -33,6 +38,34 @@ export default function RadarDesperdicios({ onNavigateToLancamentos }: RadarDesp
   const [filtroTipo, setFiltroTipo] = useState<string>('todos');
   const [reajustesAprovados, setReajustesAprovados] = useState<Record<string, ReajusteAprovado>>({});
   const [alertaParaAprovar, setAlertaParaAprovar] = useState<AlertaVazamento | null>(null);
+  const [statusAssinaturas, setStatusAssinaturas] = useState<Record<string, 'ativo' | 'zumbi' | 'essencial'>>({});
+  const [filtroSubAba, setFiltroSubAba] = useState<'todas' | 'zumbis' | 'tarifas' | 'essenciais'>('todas');
+
+  // Carregar status das assinaturas (zumbis / essenciais)
+  useEffect(() => {
+    try {
+      const salvo = localStorage.getItem('radar_status_assinaturas');
+      if (salvo) {
+        setStatusAssinaturas(JSON.parse(salvo));
+      }
+    } catch (e) {
+      console.error('Erro ao ler status das assinaturas:', e);
+    }
+  }, []);
+
+  const handleToggleStatusAssinatura = (subId: string, novoStatus: 'ativo' | 'zumbi' | 'essencial') => {
+    const atualizado = {
+      ...statusAssinaturas,
+      [subId]: novoStatus
+    };
+    setStatusAssinaturas(atualizado);
+    try {
+      localStorage.setItem('radar_status_assinaturas', JSON.stringify(atualizado));
+    } catch (e) {
+      console.error('Erro ao salvar status da assinatura:', e);
+    }
+  };
+
 
   // Carregar reajustes aprovados salvos
   useEffect(() => {
@@ -120,8 +153,8 @@ export default function RadarDesperdicios({ onNavigateToLancamentos }: RadarDesp
 
   // Executar análise forense
   const resultadoRadar = useMemo(() => {
-    return analisarVazamentosDeCaixa(transacoes, reajustesAprovados);
-  }, [transacoes, reajustesAprovados]);
+    return analisarVazamentosDeCaixa(transacoes, reajustesAprovados, statusAssinaturas);
+  }, [transacoes, reajustesAprovados, statusAssinaturas]);
 
   // Alertas ativos (não dispensados)
   const alertasAtivos = useMemo(() => {
@@ -156,7 +189,8 @@ export default function RadarDesperdicios({ onNavigateToLancamentos }: RadarDesp
     const counts: Record<string, number> = {
       reajuste_silencioso: 0,
       duplicidade_suspeita: 0,
-      pico_anomalo: 0
+      pico_anomalo: 0,
+      assinatura_fantasma: 0
     };
     alertasAtivos.forEach(a => {
       if (counts[a.tipo] !== undefined) counts[a.tipo]++;
@@ -229,7 +263,7 @@ export default function RadarDesperdicios({ onNavigateToLancamentos }: RadarDesp
         {/* ── CARDS DE IMPACTO FINANCEIRO CONSOLIDADO ───────────────────────── */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
           gap: 16,
           marginTop: 22
         }}>
@@ -302,6 +336,39 @@ export default function RadarDesperdicios({ onNavigateToLancamentos }: RadarDesp
               {scoreDinamico >= 85 ? '🛡️ Excelente controle sem vazamentos graves' : '⚠️ Oportunidades claras de redução de custos identificadas'}
             </p>
           </div>
+
+          {/* Card 4: Assinaturas Zumbis & Recorrências */}
+          <div 
+            onClick={() => setFiltroTipo('assinaturas')}
+            style={{
+              background: 'var(--bg-card)',
+              border: filtroTipo === 'assinaturas' ? '1px solid var(--primary)' : '1px solid var(--border)',
+              borderRadius: 14,
+              padding: '16px 20px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.03), inset 0 1px 0 rgba(255,255,255,0.1)',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Assinaturas & Recorrências
+              </span>
+              <span style={{ fontSize: '11px', fontWeight: 800, color: '#8b5cf6', background: 'rgba(139, 92, 246, 0.12)', padding: '2px 6px', borderRadius: 6 }}>
+                {resultadoRadar.assinaturas.length} ativas
+              </span>
+            </div>
+            <div style={{ fontSize: '24px', fontWeight: 900, color: 'var(--text-primary)', marginTop: 4 }}>
+              <span>{formatarMoeda(resultadoRadar.totalAnualAssinaturas)}</span>
+              <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}>/ano</span>
+            </div>
+            <p style={{ fontSize: '11px', color: resultadoRadar.totalEconomiaZumbis > 0 ? '#10b981' : 'var(--text-muted)', margin: '4px 0 0 0', fontWeight: 600 }}>
+              {resultadoRadar.totalEconomiaZumbis > 0 
+                ? `✂️ + ${formatarMoeda(resultadoRadar.totalEconomiaZumbis)}/ano em cortes marcados`
+                : 'Mapeie serviços e tarifas que podem ser cancelados'}
+            </p>
+          </div>
+
         </div>
       </div>
 
@@ -316,6 +383,7 @@ export default function RadarDesperdicios({ onNavigateToLancamentos }: RadarDesp
       }}>
         {[
           { id: 'todos', label: `Todos os Alertas (${alertasAtivos.length})` },
+          { id: 'assinaturas', label: `🧟 Assinaturas & Recorrências (${resultadoRadar.assinaturas.length})` },
           { id: 'reajuste_silencioso', label: `Reajustes Silenciosos (${totalPorTipo.reajuste_silencioso})` },
           { id: 'duplicidade_suspeita', label: `Duplicidades Suspeitas (${totalPorTipo.duplicidade_suspeita})` },
           { id: 'pico_anomalo', label: `Picos Fora do Padrão (${totalPorTipo.pico_anomalo})` },
@@ -446,7 +514,340 @@ export default function RadarDesperdicios({ onNavigateToLancamentos }: RadarDesp
             })}
           </div>
         )
-      ) : loading ? (
+      ) : 
+      filtroTipo === 'assinaturas' ? (
+        <div>
+          {/* Hero Banner das Assinaturas */}
+          <div style={{
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border)',
+            borderRadius: 16,
+            padding: '24px',
+            marginBottom: 20,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.03)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
+              <div>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(139, 92, 246, 0.12)', color: '#8b5cf6', padding: '3px 10px', borderRadius: 20, fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', marginBottom: 8 }}>
+                  <Skull size={14} /> Monitor de Gastos Recorrentes Fixos
+                </div>
+                <h2 style={{ fontSize: '20px', fontWeight: 900, color: 'var(--text-primary)', margin: '0 0 6px 0' }}>
+                  Auditor de Assinaturas Zumbis & Tarifas Bancárias
+                </h2>
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0, maxWidth: 650 }}>
+                  Serviços recorrentes e tarifas fixas consom silenciosamente seu caixa mês a mês. Marque serviços ociosos como <strong>Zumbi (Cortar)</strong> para simular e estancar saídas de caixa.
+                </p>
+              </div>
+
+              {/* Box de Economia Imediata com Zumbis */}
+              <div style={{
+                background: resultadoRadar.totalEconomiaZumbis > 0 ? 'rgba(16, 185, 129, 0.12)' : 'var(--bg-secondary)',
+                border: resultadoRadar.totalEconomiaZumbis > 0 ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid var(--border)',
+                borderRadius: 14,
+                padding: '14px 20px',
+                textAlign: 'right'
+              }}>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: resultadoRadar.totalEconomiaZumbis > 0 ? '#10b981' : 'var(--text-muted)', textTransform: 'uppercase' }}>
+                  Economia Anual com Cortes
+                </div>
+                <div style={{ fontSize: '24px', fontWeight: 900, color: resultadoRadar.totalEconomiaZumbis > 0 ? '#10b981' : 'var(--text-primary)', marginTop: 2 }}>
+                  + {formatarMoeda(resultadoRadar.totalEconomiaZumbis)}
+                  <span style={{ fontSize: '12px', fontWeight: 600 }}>/ano</span>
+                </div>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 2 }}>
+                  {resultadoRadar.assinaturas.filter(s => s.statusCorte === 'zumbi').length} serviço(s) marcados para cancelamento
+                </div>
+              </div>
+            </div>
+
+            {/* Sub-Abas de Filtro da Categoria */}
+            <div style={{ display: 'flex', gap: 8, marginTop: 20, flexWrap: 'wrap' }}>
+              {[
+                { id: 'todas', label: `Todas (${resultadoRadar.assinaturas.length})` },
+                { id: 'zumbis', label: `🧟 Marcadas para Cancelar (${resultadoRadar.assinaturas.filter(s => s.statusCorte === 'zumbi').length})` },
+                { id: 'tarifas', label: `🏦 Tarifas Bancárias (${resultadoRadar.assinaturas.filter(s => s.isTarifaBancaria).length})` },
+                { id: 'essenciais', label: `✅ Essenciais Confirmadas (${resultadoRadar.assinaturas.filter(s => s.statusCorte === 'essencial').length})` }
+              ].map(subTab => {
+                const isSubActive = filtroSubAba === subTab.id;
+                return (
+                  <button
+                    key={subTab.id}
+                    onClick={() => setFiltroSubAba(subTab.id as any)}
+                    style={{
+                      padding: '5px 12px',
+                      borderRadius: 16,
+                      fontSize: '11px',
+                      fontWeight: isSubActive ? 800 : 600,
+                      border: `1px solid ${isSubActive ? 'var(--primary)' : 'var(--border)'}`,
+                      background: isSubActive ? 'var(--primary)' : 'var(--bg-secondary)',
+                      color: isSubActive ? '#fff' : 'var(--text-secondary)',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    {subTab.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Lista de Cards de Assinaturas */}
+          {(() => {
+            const lista = resultadoRadar.assinaturas.filter(s => {
+              if (filtroSubAba === 'zumbis') return s.statusCorte === 'zumbi';
+              if (filtroSubAba === 'tarifas') return s.isTarifaBancaria;
+              if (filtroSubAba === 'essenciais') return s.statusCorte === 'essencial';
+              return true;
+            });
+
+            if (lista.length === 0) {
+              return (
+                <div style={{
+                  background: 'var(--bg-card)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 16,
+                  padding: '48px 24px',
+                  textAlign: 'center',
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.02)'
+                }}>
+                  <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(139, 92, 246, 0.12)', color: '#8b5cf6', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                    <Skull size={30} />
+                  </div>
+                  <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px 0' }}>
+                    Nenhuma assinatura encontrada neste filtro
+                  </h3>
+                  <p style={{ fontSize: '13px', color: 'var(--text-muted)', maxWidth: 450, margin: '0 auto' }}>
+                    {filtroSubAba === 'zumbis' 
+                      ? 'Nenhum serviço foi marcado como zumbi. Explore a lista completa para selecionar gastos que podem ser cortados.'
+                      : 'Nenhuma despesa recorrente atende a este critério no momento.'}
+                  </p>
+                </div>
+              );
+            }
+
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {lista.map(sub => {
+                  const isZumbi = sub.statusCorte === 'zumbi';
+                  const isEssencial = sub.statusCorte === 'essencial';
+                  const dtUltima = sub.ultimaData ? new Date(sub.ultimaData).toLocaleDateString('pt-BR') : '';
+
+                  return (
+                    <div
+                      key={sub.id}
+                      style={{
+                        background: 'var(--bg-card)',
+                        border: isZumbi 
+                          ? '1px solid rgba(239, 68, 68, 0.45)' 
+                          : isEssencial 
+                            ? '1px solid rgba(16, 185, 129, 0.35)' 
+                            : '1px solid var(--border)',
+                        borderLeft: isZumbi 
+                          ? '5px solid #ef4444' 
+                          : isEssencial 
+                            ? '5px solid #10b981' 
+                            : sub.isTarifaBancaria 
+                              ? '5px solid #f59e0b' 
+                              : '5px solid var(--primary)',
+                        borderRadius: 14,
+                        padding: '18px 22px',
+                        boxShadow: '0 4px 16px rgba(0,0,0,0.02)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        flexWrap: 'wrap',
+                        gap: 16,
+                        opacity: isZumbi ? 0.95 : 1,
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      {/* Info do Serviço */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 280 }}>
+                        <div style={{
+                          width: 44,
+                          height: 44,
+                          borderRadius: 12,
+                          background: isZumbi 
+                            ? 'rgba(239, 68, 68, 0.12)' 
+                            : sub.isTarifaBancaria 
+                              ? 'rgba(245, 158, 11, 0.12)' 
+                              : 'rgba(var(--primary-rgb, 59, 130, 246), 0.12)',
+                          color: isZumbi 
+                            ? '#ef4444' 
+                            : sub.isTarifaBancaria 
+                              ? '#f59e0b' 
+                              : 'var(--primary)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0
+                        }}>
+                          {isZumbi ? <Skull size={22} /> : sub.isTarifaBancaria ? <Landmark size={22} /> : <RefreshCw size={22} />}
+                        </div>
+
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 4 }}>
+                            {isZumbi && (
+                              <span style={{ background: '#fee2e2', color: '#b91c1c', border: '1px solid #fca5a5', padding: '2px 8px', borderRadius: 6, fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>
+                                🚨 Marcada para Cancelamento
+                              </span>
+                            )}
+                            {isEssencial && (
+                              <span style={{ background: '#dcfce7', color: '#15803d', border: '1px solid #86efac', padding: '2px 8px', borderRadius: 6, fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>
+                                ✅ Essencial Confirmada
+                              </span>
+                            )}
+                            {sub.isTarifaBancaria && (
+                              <span style={{ background: '#fef3c7', color: '#b45309', border: '1px solid #fde68a', padding: '2px 8px', borderRadius: 6, fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>
+                                🏦 Tarifa Bancária (Evitável)
+                              </span>
+                            )}
+                            {sub.categoriaNome && (
+                              <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>
+                                • {sub.categoriaNome}
+                              </span>
+                            )}
+                            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                              • {sub.quantidadeOcorrencias} cobrança(s) detectada(s)
+                            </span>
+                            {dtUltima && (
+                              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                                • Última: {dtUltima}
+                              </span>
+                            )}
+                          </div>
+
+                          <h4 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)', margin: 0, textDecoration: isZumbi ? 'line-through' : 'none' }}>
+                            {sub.entidade}
+                          </h4>
+                        </div>
+                      </div>
+
+                      {/* Valores */}
+                      <div style={{ textAlign: 'right', minWidth: 140 }}>
+                        <div style={{ fontSize: '18px', fontWeight: 900, color: isZumbi ? '#ef4444' : 'var(--text-primary)' }}>
+                          {formatarMoeda(sub.valorMensal)} <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>/mês</span>
+                        </div>
+                        <div style={{ fontSize: '12px', fontWeight: 700, color: isZumbi ? '#b91c1c' : '#10b981', marginTop: 2 }}>
+                          {formatarMoeda(sub.custoAnual)} / ano
+                        </div>
+                      </div>
+
+                      {/* Botões de Ação */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        {isZumbi ? (
+                          <button
+                            onClick={() => handleToggleStatusAssinatura(sub.id, 'ativo')}
+                            style={{
+                              padding: '7px 14px',
+                              borderRadius: 8,
+                              border: '1px solid rgba(239, 68, 68, 0.3)',
+                              background: 'rgba(239, 68, 68, 0.08)',
+                              color: '#ef4444',
+                              fontSize: '11.5px',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 6
+                            }}
+                            title="Desmarcar status de zumbi"
+                          >
+                            ↩️ Desfazer Corte
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleToggleStatusAssinatura(sub.id, 'zumbi')}
+                            style={{
+                              padding: '7px 14px',
+                              borderRadius: 8,
+                              border: '1px solid #ef4444',
+                              background: '#ef4444',
+                              color: '#ffffff',
+                              fontSize: '11.5px',
+                              fontWeight: 800,
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 6,
+                              boxShadow: '0 2px 8px rgba(239, 68, 68, 0.3)'
+                            }}
+                            title="Marcar assinatura como desnecessária para cancelamento"
+                          >
+                            <Skull size={14} /> Cortar (Zumbi)
+                          </button>
+                        )}
+
+                        {!isEssencial ? (
+                          <button
+                            onClick={() => handleToggleStatusAssinatura(sub.id, 'essencial')}
+                            style={{
+                              padding: '7px 12px',
+                              borderRadius: 8,
+                              border: '1px solid var(--border)',
+                              background: 'var(--bg-secondary)',
+                              color: 'var(--text-secondary)',
+                              fontSize: '11.5px',
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 4
+                            }}
+                            title="Marcar como despesa essencial"
+                          >
+                            <Check size={14} /> Essencial
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleToggleStatusAssinatura(sub.id, 'ativo')}
+                            style={{
+                              padding: '7px 12px',
+                              borderRadius: 8,
+                              border: '1px solid rgba(16, 185, 129, 0.3)',
+                              background: 'rgba(16, 185, 129, 0.08)',
+                              color: '#10b981',
+                              fontSize: '11.5px',
+                              fontWeight: 700,
+                              cursor: 'pointer'
+                            }}
+                            title="Alterar status de essencial"
+                          >
+                            Alterar
+                          </button>
+                        )}
+
+                        {onNavigateToLancamentos && sub.transacaoIds.length > 0 && (
+                          <button
+                            onClick={() => onNavigateToLancamentos(`id:${sub.transacaoIds[sub.transacaoIds.length - 1]}`)}
+                            style={{
+                              padding: '7px 12px',
+                              borderRadius: 8,
+                              border: '1px solid var(--border)',
+                              background: 'var(--bg-secondary)',
+                              color: 'var(--text-secondary)',
+                              fontSize: '11.5px',
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 4
+                            }}
+                            title="Ver histórico de lançamentos desta assinatura"
+                          >
+                            <ExternalLink size={13} /> Auditar
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
+        </div>
+      ) :  loading ? (
         <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)' }}>
           <div className="spinner" style={{ margin: '0 auto 16px' }} />
           <p style={{ fontSize: '13px', fontWeight: 600 }}>Executando auditoria forense nos lançamentos...</p>
