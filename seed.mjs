@@ -11,22 +11,19 @@ const db = getFirestore(app);
 
 async function run() {
   await addDoc(collection(db, 'saas_releases'), {
-    versao: 'v3.6.99',
-    titulo: 'Auditoria de Alta Precisão no Radar Forense & Isolamento de Lançamento Auditado',
-    descricao: 'Aprimoramento do Radar de Desperdícios: ao clicar em "Auditar Lançamento", o sistema agora redireciona com precisão cirúrgica isolando apenas a transação especificada, exibindo data, descrição, ID e banner de controle para conferência e edição imediata sem interferência de filtros de mês.',
+    versao: 'v3.7.0',
+    titulo: 'Design 3D Premium: Botão Executivo do Radar de Desperdícios',
+    descricao: 'Atualização visual de alto padrão no Dashboard: o botão de acesso ao Radar de Desperdícios agora conta com o mesmo estilo moderno 3D tátil do botão Novo Lançamento, com profundidade de borda chanfrada, gradiente energético, microinteração de clique e sombras volumétricas.',
     dataLancamento: new Date().toISOString(),
     status: 'publicado',
     destaque: true,
     notificarTenants: false,
     alvos: 'todos',
     changes: [
-      { tipo: 'novidade', texto: 'Navegação Direta e Precisa: Ao clicar em "Auditar Lançamento" no Radar, a tela de Lançamentos abre filtrando exclusivamente o lançamento especificado.' },
-      { tipo: 'melhoria', texto: 'Banner de Auditoria em Lançamentos: Exibe notificação de auditoria ativa com botão de 1 clique para retornar à visão geral de todos os lançamentos.' },
-      { tipo: 'melhoria', texto: 'Metadados Detalhados nos Alertas: Cada alerta agora exibe a data de vencimento/competência, descrição exata do item e o ID do documento para conferência forense imediata.' },
-      { tipo: 'correcao', texto: 'Normalização Temporal Rigorosa: Algoritmo de análise temporal atualizado para garantir consistência em datas de diferentes formatos.' }
+      { tipo: 'melhoria', texto: 'Botão 3D Radar de Desperdícios: Redesenhado no Dashboard com o estilo moderno 3D, gradiente crimson executive, borda chanfrada de 5px e animação de clique idêntica ao botão Novo Lançamento.' }
     ]
   });
-  console.log('Release notes v3.6.99 added!');
+  console.log('Release notes v3.7.0 added!');
   process.exit(0);
 }
 

@@ -448,25 +448,49 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
         <div style={{ display: 'flex', gap: 8 }}>
           {onNavigateToRadar && (
             <button 
+              className="hover-lift active-press"
               onClick={onNavigateToRadar}
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 6,
-                background: 'linear-gradient(180deg, rgba(239, 68, 68, 0.12) 0%, rgba(239, 68, 68, 0.04) 100%)',
-                color: '#ef4444',
-                border: '1px solid rgba(239, 68, 68, 0.35)',
+                gap: 8,
+                background: 'linear-gradient(180deg, #f43f5e 0%, #e11d48 100%)',
+                color: '#ffffff',
+                border: 'none',
                 borderRadius: 12,
-                padding: '12px 18px',
-                fontSize: 13,
-                fontWeight: 800,
+                padding: '12px 22px',
+                fontSize: 14,
+                fontWeight: 900,
                 cursor: 'pointer',
-                boxShadow: '0 4px 12px rgba(239, 68, 68, 0.1), inset 0 1px 0 rgba(255,255,255,0.2)',
-                transition: 'all 0.15s ease'
+                transition: 'all 0.15s ease',
+                borderBottom: '5px solid #9f1239',
+                boxShadow: '0 4px 15px rgba(225, 29, 72, 0.42)',
+                textShadow: '0 1px 2px rgba(0,0,0,0.25)',
+                letterSpacing: '0.4px'
               }}
-              title="Abrir Radar Forense de Desperdícios (Estilo Ramp)"
+              onMouseDown={e => {
+                e.currentTarget.style.borderBottomWidth = '0px';
+                e.currentTarget.style.transform = 'translateY(5px)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+              onMouseUp={e => {
+                e.currentTarget.style.borderBottomWidth = '5px';
+                e.currentTarget.style.transform = 'translateY(0px)';
+                e.currentTarget.style.boxShadow = '0 4px 15px rgba(225, 29, 72, 0.42)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderBottomWidth = '5px';
+                e.currentTarget.style.transform = 'translateY(0px)';
+                e.currentTarget.style.boxShadow = '0 4px 15px rgba(225, 29, 72, 0.42)';
+                e.currentTarget.style.filter = 'brightness(1)';
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.filter = 'brightness(1.1)';
+              }}
+              title="Abrir Radar Forense de Desperdícios & Gastos Fantasma"
             >
-              <ShieldAlert size={16} /> Radar de Desperdícios
+              <ShieldAlert size={17} style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.2))' }} />
+              <span>Radar de Desperdícios</span>
             </button>
           )}
           <button className="hover-lift active-press" onClick={onNovoLancamento} style={{ display: 'flex', alignItems: 'center', gap: 6, background: (getTenantId() === 'master' || getTenantId() === '9yxuafoC0AV9BrIKem05ponbmgn2' || !getTenantId()) ? 'linear-gradient(180deg, #10b981 0%, #059669 100%)' : 'linear-gradient(180deg, var(--primary) 0%, var(--primary-dark) 100%)', color: '#fff', border: 'none', borderRadius: 12, padding: '12px 24px', fontSize: 14, fontWeight: 900, cursor: 'pointer', transition: 'all 0.15s ease', borderBottom: (getTenantId() === 'master' || getTenantId() === '9yxuafoC0AV9BrIKem05ponbmgn2' || !getTenantId()) ? '5px solid #047857' : '5px solid color-mix(in srgb, var(--primary-dark) 80%, black)', boxShadow: (getTenantId() === 'master' || getTenantId() === '9yxuafoC0AV9BrIKem05ponbmgn2' || !getTenantId()) ? '0 4px 15px rgba(16,185,129,0.4)' : '0 4px 15px var(--primary-light)', textShadow: '0 1px 2px rgba(0,0,0,0.2)', letterSpacing: '0.5px' }}
