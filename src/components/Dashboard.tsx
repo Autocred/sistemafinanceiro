@@ -11,7 +11,9 @@ import { getValorFinal, normalizeDate } from '@/lib/financialEngine';
 import { format, subDays, startOfWeek, endOfWeek } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ordenarMovimentacoesDesc } from '@/lib/sorting';
-import { 
+import {
+  Trophy, Target, Sparkles,
+ 
   PlusCircle, ShieldAlert, TrendingUp, TrendingDown, DollarSign, Activity, 
   ArrowUpCircle, ArrowDownCircle, RefreshCw, Wallet, AlertTriangle, 
   ChevronLeft, ChevronRight, PieChart as PieIcon, BarChart3, 
@@ -359,6 +361,82 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
   }, [transacoesPagasMes]);
 
   // ================= CÃLCULO PROJEï¿½!ÃO DE FLUXO DE CAIXA (30 DIAS) =================
+  
+  // ================= CÁLCULO PONTO DE EQUILÍBRIO (BREAK-EVEN DAY) =================
+  const breakEvenData = useMemo(() => {
+    const totalDespesas = (motor.despesasRealizadas || 0) + (motor.despesasAPagarTotal || 0);
+    const totalReceitas = motor.receitasRealizadas || 0;
+
+    const percentual = totalDespesas > 0 
+      ? Math.round((totalReceitas / totalDespesas) * 100) 
+      : (totalReceitas > 0 ? 100 : 0);
+
+    const atingido = totalDespesas > 0 ? totalReceitas >= totalDespesas : totalReceitas > 0;
+    const margemLivre = Math.max(0, totalReceitas - totalDespesas);
+    const faltam = Math.max(0, totalDespesas - totalReceitas);
+
+    let diaAtingido: string | null = null;
+    let diaAtingidoNum: number | null = null;
+
+    if (atingido && totalDespesas > 0) {
+      const receitasPagas = transacoesPagasMes
+        .filter(t => t.tipo === 'receita')
+        .sort((a, b) => {
+          const dtA = normalizeDate(a.dataPagamento || a.data || '');
+          const dtB = normalizeDate(b.dataPagamento || b.data || '');
+          return dtA.localeCompare(dtB);
+        });
+
+      let acumulado = 0;
+      for (const t of receitasPagas) {
+        acumulado += getValorFinal(t);
+        if (acumulado >= totalDespesas) {
+          const dt = normalizeDate(t.dataPagamento || t.data || '');
+          diaAtingido = dt;
+          const p = dt.split('-');
+          if (p.length === 3) {
+            diaAtingidoNum = parseInt(p[2], 10);
+          }
+          break;
+        }
+      }
+    }
+
+    const hoje = new Date();
+    const isMesAtual = mesSelecionado.getFullYear() === hoje.getFullYear() && mesSelecionado.getMonth() === hoje.getMonth();
+    const totalDiasMes = new Date(mesSelecionado.getFullYear(), mesSelecionado.getMonth() + 1, 0).getDate();
+    const diaHoje = isMesAtual ? hoje.getDate() : totalDiasMes;
+
+    let projecaoDia: number | null = null;
+    let ritmoDiario = 0;
+
+    if (!atingido && totalDespesas > 0 && totalReceitas > 0 && isMesAtual) {
+      ritmoDiario = totalReceitas / Math.max(1, diaHoje);
+      if (ritmoDiario > 0) {
+        const diasNecessarios = Math.ceil(faltam / ritmoDiario);
+        const diaProjetado = diaHoje + diasNecessarios;
+        if (diaProjetado <= totalDiasMes) {
+          projecaoDia = diaProjetado;
+        }
+      }
+    }
+
+    return {
+      totalDespesas,
+      totalReceitas,
+      percentual,
+      atingido,
+      margemLivre,
+      faltam,
+      diaAtingido,
+      diaAtingidoNum,
+      projecaoDia,
+      ritmoDiario,
+      totalDiasMes,
+      isMesAtual
+    };
+  }, [motor.despesasRealizadas, motor.despesasAPagarTotal, motor.receitasRealizadas, transacoesPagasMes, mesSelecionado]);
+
   const projecaoData = useMemo(() => {
     if (!todasTransacoes || !todasTransacoes.length) return [];
     let saldoTemp = motor.saldoAtual || 0;
@@ -1199,6 +1277,281 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
             <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Despesas a Pagar</span>
           </div>
           <div style={{ fontSize: 26, fontWeight: 900, color: '#f59e0b' }}><span className="valor-sensivel">{fmt(motor.despesasAPagarTotal)}</span></div>
+        </div>
+      </div>
+
+
+      {/* TERMÔMETRO DE PONTO DE EQUILÍBRIO AO VIVO (BREAK-EVEN DAY) */}
+      <div style={{
+        background: 'var(--bg-card)',
+        borderRadius: 16,
+        padding: '24px 28px',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+        border: breakEvenData.atingido ? '1px solid #10b98144' : '1px solid var(--border)',
+        marginBottom: 24,
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        {/* Subtle decorative glow */}
+        <div style={{
+          position: 'absolute',
+          top: -30,
+          right: -30,
+          width: 140,
+          height: 140,
+          borderRadius: '50%',
+          background: breakEvenData.atingido ? 'radial-gradient(circle, rgba(16,185,129,0.15) 0%, transparent 70%)' : 'radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%)',
+          pointerEvents: 'none'
+        }} />
+
+        {/* HEADER DO CARD */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14, marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{
+              width: 46,
+              height: 46,
+              borderRadius: 12,
+              background: breakEvenData.atingido 
+                ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' 
+                : 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: breakEvenData.atingido ? '0 4px 12px rgba(16, 185, 129, 0.35)' : '0 4px 12px rgba(59, 130, 246, 0.35)',
+              color: '#fff'
+            }}>
+              {breakEvenData.atingido ? <Trophy size={24} /> : <Target size={24} />}
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: 'var(--text-title)', letterSpacing: '-0.01em' }}>
+                  Termômetro de Ponto de Equilíbrio (Break-Even Day)
+                </h3>
+                {breakEvenData.atingido ? (
+                  <span style={{
+                    background: '#dcfce7',
+                    color: '#15803d',
+                    fontSize: 11,
+                    fontWeight: 800,
+                    padding: '3px 10px',
+                    borderRadius: 12,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4
+                  }}>
+                    <Sparkles size={12} color="#15803d" /> META ATINGIDA
+                  </span>
+                ) : (
+                  <span style={{
+                    background: '#fef3c7',
+                    color: '#b45309',
+                    fontSize: 11,
+                    fontWeight: 800,
+                    padding: '3px 10px',
+                    borderRadius: 12,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4
+                  }}>
+                    <Clock size={12} color="#b45309" /> EM ANDAMENTO
+                  </span>
+                )}
+              </div>
+              <p style={{ margin: '4px 0 0 0', fontSize: 13, color: 'var(--text-muted)' }}>
+                {breakEvenData.atingido ? (
+                  <span>
+                    🎉 Em <strong>{breakEvenData.diaAtingidoNum ? 'Dia ' + breakEvenData.diaAtingidoNum + ' de ' + mesesStr[mesSelecionado.getMonth()] : mesesStr[mesSelecionado.getMonth()]}</strong> você cobriu 100% das obrigações do mês. Cada novo real agora é <strong>Lucro Líquido Real</strong>!
+                  </span>
+                ) : (
+                  <span>
+                    O momento em que as receitas cobrem 100% dos custos fixos e variáveis de <strong>{mesesStr[mesSelecionado.getMonth()]}</strong>.
+                  </span>
+                )}
+              </p>
+            </div>
+          </div>
+
+          {/* BADGE DE PERCENTUAL */}
+          <div style={{ textAlign: 'right' }}>
+            <div style={{
+              fontSize: 28,
+              fontWeight: 900,
+              color: breakEvenData.atingido ? '#10b981' : 'var(--text-title)',
+              lineHeight: 1
+            }}>
+              {breakEvenData.percentual}%
+            </div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 4 }}>
+              {breakEvenData.atingido ? 'Obrigações Cobertas' : 'Progresso de Cobertura'}
+            </div>
+          </div>
+        </div>
+
+        {/* BARRA DE PROGRESSO / TERMÔMETRO */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            fontSize: 12,
+            fontWeight: 700,
+            color: 'var(--text-muted)',
+            marginBottom: 8
+          }}>
+            <span>0% (R$ 0,00)</span>
+            <span style={{ color: breakEvenData.atingido ? '#10b981' : 'var(--text-title)' }}>
+              {breakEvenData.atingido 
+                ? '🏆 100% Coberto - Ponto de Equilíbrio Alcançado!' 
+                : breakEvenData.percentual + '% Concluído'}
+            </span>
+            <span>Meta: {fmt(breakEvenData.totalDespesas)}</span>
+          </div>
+
+          <div style={{
+            position: 'relative',
+            width: '100%',
+            height: 16,
+            background: 'var(--bg-secondary, #f1f5f9)',
+            borderRadius: 999,
+            overflow: 'hidden',
+            border: '1px solid var(--border)'
+          }}>
+            <div style={{
+              width: Math.min(100, Math.max(0, breakEvenData.percentual)) + '%',
+              height: '100%',
+              borderRadius: 999,
+              background: breakEvenData.atingido 
+                ? 'linear-gradient(90deg, #10b981 0%, #059669 100%)'
+                : breakEvenData.percentual >= 70 
+                  ? 'linear-gradient(90deg, #3b82f6 0%, #10b981 100%)'
+                  : 'linear-gradient(90deg, #f59e0b 0%, #3b82f6 100%)',
+              transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
+              boxShadow: breakEvenData.atingido 
+                ? '0 0 12px rgba(16, 185, 129, 0.5)' 
+                : '0 0 10px rgba(59, 130, 246, 0.3)'
+            }} />
+          </div>
+        </div>
+
+        {/* GRID DE MÉTRICAS */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+          gap: 16,
+          marginBottom: 16
+        }}>
+          {/* Card 1: Total Obrigações */}
+          <div style={{
+            background: 'var(--bg-secondary, rgba(0,0,0,0.02))',
+            borderRadius: 12,
+            padding: '14px 18px',
+            border: '1px solid var(--border)'
+          }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Obrigações do Mês
+            </div>
+            <div style={{ fontSize: 19, fontWeight: 900, color: 'var(--text-title)', marginTop: 4 }}>
+              <span className="valor-sensivel">{fmt(breakEvenData.totalDespesas)}</span>
+            </div>
+            <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>
+              Pagas: <span className="valor-sensivel">{fmt(motor.despesasRealizadas)}</span> | A Pagar: <span className="valor-sensivel">{fmt(motor.despesasAPagarTotal)}</span>
+            </div>
+          </div>
+
+          {/* Card 2: Receitas em Caixa */}
+          <div style={{
+            background: 'var(--bg-secondary, rgba(0,0,0,0.02))',
+            borderRadius: 12,
+            padding: '14px 18px',
+            border: '1px solid var(--border)'
+          }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Receitas Realizadas
+            </div>
+            <div style={{ fontSize: 19, fontWeight: 900, color: '#16a34a', marginTop: 4 }}>
+              <span className="valor-sensivel">{fmt(breakEvenData.totalReceitas)}</span>
+            </div>
+            <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>
+              Dinheiro efetivamente recebido em caixa
+            </div>
+          </div>
+
+          {/* Card 3: Posição Líquida */}
+          <div style={{
+            background: breakEvenData.atingido ? '#ecfdf5' : '#fffbeb',
+            borderRadius: 12,
+            padding: '14px 18px',
+            border: breakEvenData.atingido ? '1px solid #a7f3d0' : '1px solid #fde68a'
+          }}>
+            <div style={{
+              fontSize: 11,
+              fontWeight: 700,
+              color: breakEvenData.atingido ? '#047857' : '#b45309',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em'
+            }}>
+              {breakEvenData.atingido ? 'Margem Livre / Lucro Líquido' : 'Falta para o Equilíbrio'}
+            </div>
+            <div style={{
+              fontSize: 19,
+              fontWeight: 900,
+              color: breakEvenData.atingido ? '#059669' : '#d97706',
+              marginTop: 4
+            }}>
+              <span className="valor-sensivel">
+                {breakEvenData.atingido ? '+ ' + fmt(breakEvenData.margemLivre) : fmt(breakEvenData.faltam)}
+              </span>
+            </div>
+            <div style={{
+              fontSize: 11,
+              color: breakEvenData.atingido ? '#047857' : '#92400e',
+              marginTop: 4,
+              fontWeight: 600
+            }}>
+              {breakEvenData.atingido 
+                ? 'Excedente livre acumulado'
+                : breakEvenData.projecaoDia 
+                  ? 'Previsão de empate: Dia ' + breakEvenData.projecaoDia
+                  : 'Necessário para fechar no azul'}
+            </div>
+          </div>
+        </div>
+
+        {/* BANNER INFORMATIVO / CFO INSIGHT */}
+        <div style={{
+          background: breakEvenData.atingido ? 'rgba(16, 185, 129, 0.08)' : 'rgba(59, 130, 246, 0.06)',
+          borderRadius: 10,
+          padding: '10px 16px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          border: breakEvenData.atingido ? '1px solid rgba(16, 185, 129, 0.2)' : '1px solid rgba(59, 130, 246, 0.15)'
+        }}>
+          {breakEvenData.atingido ? (
+            <Sparkles size={16} color="#059669" style={{ flexShrink: 0 }} />
+          ) : (
+            <Activity size={16} color="#2563eb" style={{ flexShrink: 0 }} />
+          )}
+          <span style={{
+            fontSize: 12,
+            color: breakEvenData.atingido ? '#065f46' : '#1e40af',
+            fontWeight: 600,
+            lineHeight: 1.4
+          }}>
+            {breakEvenData.atingido ? (
+              <>
+                <strong>Dia de Liberdade Financeira:</strong> Suas despesas operacionais deste mês já estão 100% honradas {breakEvenData.diaAtingidoNum ? 'desde o dia ' + breakEvenData.diaAtingidoNum : ''}. Todo faturamento excedente vai direto para geração de patrimônio ou novos investimentos.
+              </>
+            ) : breakEvenData.projecaoDia ? (
+              <>
+                <strong>Ritmo de Faturamento:</strong> Você vem recebendo em média <strong>{fmt(breakEvenData.ritmoDiario)}/dia</strong>. Mantendo essa média, o ponto de equilíbrio será atingido por volta do <strong>dia {breakEvenData.projecaoDia}</strong> deste mês.
+              </>
+            ) : (
+              <>
+                <strong>Meta de Cobertura:</strong> O Break-Even Day sinaliza a data em que você deixa de trabalhar para pagar contas e passa a acumular lucro líquido real.
+              </>
+            )}
+          </span>
         </div>
       </div>
 
