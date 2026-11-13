@@ -215,7 +215,7 @@ export default function WaterfallAttribution({
 
       // Se é parcelamento e já terminou (sem parcelas a vencer), ignora do cálculo
       const infoSerie = getInfoSerieParcelamento(t, transacoes);
-      if (infoSerie.isSerieParcelada && infoSerie.terminado) return;
+      if (infoSerie.isParcelamento && infoSerie.terminado) return;
 
       const isPago = t.status === 'pago';
       const dataEfetiva = isPago
