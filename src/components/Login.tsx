@@ -607,10 +607,11 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
     { symbol: 'SALÁRIO MÍNIMO', val: 'R$ 1.518,00', chg: 'BASE NACIONAL', up: true },
   ];
 
-  // Shared high-tech financial & AI background wrapper
+  // Shared high-tech financial & AI background wrapper (100vh, zero scrollbar)
   const renderFinancialBackdrop = (children: React.ReactNode) => (
     <div style={{
-      minHeight: '100vh',
+      height: '100vh',
+      maxHeight: '100vh',
       width: '100%',
       display: 'flex',
       flexDirection: 'column',
@@ -646,29 +647,30 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
         .login-grid-layout {
           display: grid;
           grid-template-columns: 1.15fr 0.85fr;
-          gap: 44px;
-          max-width: 1180px;
+          gap: 32px;
+          max-width: 1140px;
           width: 100%;
           margin: 0 auto;
-          padding: 28px 24px;
+          padding: 8px 24px;
           align-items: center;
           position: relative;
           z-index: 10;
           flex: 1;
+          min-height: 0;
         }
         .login-hud-panel {
           display: flex;
           flex-direction: column;
-          gap: 22px;
+          gap: 12px;
         }
         .fintech-input {
           width: 100%;
           background: rgba(15, 23, 42, 0.78) !important;
           border: 1px solid rgba(148, 163, 184, 0.22) !important;
           color: #f8fafc !important;
-          border-radius: 14px !important;
-          padding: 14px 16px 14px 46px !important;
-          font-size: 15px !important;
+          border-radius: 12px !important;
+          padding: 10px 14px 10px 42px !important;
+          font-size: 14px !important;
           font-weight: 500 !important;
           outline: none !important;
           transition: all 0.22s ease !important;
@@ -685,9 +687,9 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
         @media (max-width: 960px) {
           .login-grid-layout {
             grid-template-columns: 1fr;
-            max-width: 460px;
-            padding: 20px 16px;
-            gap: 20px;
+            max-width: 440px;
+            padding: 12px 16px;
+            gap: 14px;
           }
           .login-hud-panel {
             display: none;
@@ -812,11 +814,12 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
         background: 'rgba(6, 12, 28, 0.94)',
         backdropFilter: 'blur(14px)',
         borderBottom: '1px solid rgba(148, 163, 184, 0.22)',
-        padding: '10px 0',
+        padding: '6px 0',
         display: 'flex',
         alignItems: 'center',
         overflow: 'hidden',
         whiteSpace: 'nowrap',
+        flexShrink: 0,
         boxShadow: '0 4px 20px rgba(0, 0, 0, 0.35)'
       }}>
         {/* Selo fixo à esquerda para identificar claramente os indicadores */}
@@ -824,20 +827,20 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
           display: 'inline-flex',
           alignItems: 'center',
           gap: 7,
-          padding: '4px 14px',
-          marginLeft: 14,
-          marginRight: 14,
-          borderRadius: 8,
+          padding: '3px 12px',
+          marginLeft: 12,
+          marginRight: 12,
+          borderRadius: 7,
           background: 'rgba(16, 185, 129, 0.16)',
           border: '1px solid rgba(16, 185, 129, 0.38)',
           color: '#34d399',
-          fontSize: 11,
+          fontSize: 10.5,
           fontWeight: 800,
           letterSpacing: '0.06em',
           flexShrink: 0,
           zIndex: 2
         }}>
-          <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px #10b981' }} />
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px #10b981' }} />
           INDICADORES BRASIL
         </div>
 
@@ -849,22 +852,22 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: 10,
-                  paddingRight: 40,
-                  fontSize: 13,
+                  gap: 9,
+                  paddingRight: 36,
+                  fontSize: 12.5,
                   fontWeight: 700,
                   letterSpacing: '0.02em',
                   WebkitFontSmoothing: 'antialiased'
                 }}
               >
                 <span style={{ color: '#cbd5e1', fontWeight: 700 }}>{item.symbol}</span>
-                <span style={{ color: '#ffffff', fontWeight: 800, fontSize: 13.5, background: 'rgba(30, 41, 59, 0.75)', padding: '2px 8px', borderRadius: 6, border: '1px solid rgba(148, 163, 184, 0.2)' }}>
+                <span style={{ color: '#ffffff', fontWeight: 800, fontSize: 13, background: 'rgba(30, 41, 59, 0.75)', padding: '1.5px 7px', borderRadius: 6, border: '1px solid rgba(148, 163, 184, 0.2)' }}>
                   {item.val}
                 </span>
                 <span style={{
-                  padding: '2.5px 8px',
+                  padding: '2px 7px',
                   borderRadius: 6,
-                  fontSize: 11,
+                  fontSize: 10.5,
                   fontWeight: 700,
                   background: item.up ? 'rgba(16, 185, 129, 0.18)' : 'rgba(239, 68, 68, 0.18)',
                   color: item.up ? '#34d399' : '#f87171',
@@ -872,7 +875,7 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
                 }}>
                   {item.up ? '▲' : '▼'} {item.chg}
                 </span>
-                <span style={{ color: 'rgba(148, 163, 184, 0.35)', marginLeft: 10 }}>•</span>
+                <span style={{ color: 'rgba(148, 163, 184, 0.35)', marginLeft: 8 }}>•</span>
               </div>
             ))}
           </div>
@@ -889,31 +892,32 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
         background: 'rgba(5, 10, 24, 0.78)',
         backdropFilter: 'blur(10px)',
         borderTop: '1px solid rgba(148, 163, 184, 0.12)',
-        padding: '10px 24px',
+        padding: '6px 20px',
         display: 'flex',
         flexWrap: 'wrap',
         alignItems: 'center',
         justifyContent: 'space-between',
-        gap: 12,
-        fontSize: 11,
-        color: '#64748b'
+        gap: 10,
+        fontSize: 10.5,
+        color: '#64748b',
+        flexShrink: 0
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#94a3b8', fontWeight: 600 }}>
-            <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px #10b981' }} />
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px #10b981' }} />
             TERMINAL OPERACIONAL ATIVO
           </span>
           <span>•</span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-            <ShieldCheck size={13} color="#38bdf8" /> Criptografia Bancária TLS 1.3 / AES-256
+            <ShieldCheck size={12} color="#38bdf8" /> Criptografia Bancária TLS 1.3 / AES-256
           </span>
           <span>•</span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-            <Cpu size={13} color="#a78bfa" /> Motor IA Financeiro Preditivo v4.0
+            <Cpu size={12} color="#a78bfa" /> Motor IA Financeiro Preditivo v4.0
           </span>
         </div>
         <div style={{ fontFamily: 'monospace', fontSize: 10, color: '#475569' }}>
-          {nomeSistema.toUpperCase()} • v3.8.0 P:{typeof window !== 'undefined' && localStorage.getItem('app_pin_code') ? '1' : '0'} E:{typeof window !== 'undefined' && localStorage.getItem('saved_email_apk') ? '1' : '0'} M:{modo}
+          {nomeSistema.toUpperCase()} • v3.8.1 P:{typeof window !== 'undefined' && localStorage.getItem('app_pin_code') ? '1' : '0'} E:{typeof window !== 'undefined' && localStorage.getItem('saved_email_apk') ? '1' : '0'} M:{modo}
         </div>
       </div>
     </div>
@@ -1174,18 +1178,18 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
       <div className="login-hud-panel">
         {/* Badge Superior Institucional */}
         <div style={{
-          display: 'inline-flex', alignItems: 'center', gap: 10, alignSelf: 'flex-start',
-          padding: '7px 14px', borderRadius: 999,
+          display: 'inline-flex', alignItems: 'center', gap: 8, alignSelf: 'flex-start',
+          padding: '4px 12px', borderRadius: 999,
           background: 'rgba(15, 23, 42, 0.78)',
           border: '1px solid rgba(56, 189, 248, 0.32)',
-          boxShadow: '0 0 20px rgba(56, 189, 248, 0.12)'
+          boxShadow: '0 0 16px rgba(56, 189, 248, 0.12)'
         }}>
           <span style={{
-            width: 8, height: 8, borderRadius: '50%',
+            width: 7, height: 7, borderRadius: '50%',
             background: '#10b981',
-            boxShadow: '0 0 10px #10b981'
+            boxShadow: '0 0 8px #10b981'
           }} />
-          <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.07em', color: '#38bdf8', textTransform: 'uppercase' }}>
+          <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.07em', color: '#38bdf8', textTransform: 'uppercase' }}>
             INDICADORES ECONÔMICOS BRASIL • BCB, IBGE & B3
           </span>
         </div>
@@ -1193,12 +1197,12 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
         {/* Headline Principal White-Label */}
         <div>
           <h2 style={{
-            fontSize: 'clamp(28px, 3.3vw, 42px)',
+            fontSize: 'clamp(22px, 2.5vw, 32px)',
             fontWeight: 900,
             lineHeight: 1.12,
             letterSpacing: '-0.02em',
             color: '#ffffff',
-            marginBottom: 12
+            marginBottom: 6
           }}>
             {nomeSistema}
             <span style={{
@@ -1206,13 +1210,13 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
               background: 'linear-gradient(90deg, #38bdf8 0%, #34d399 55%, #a78bfa 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
-              fontSize: 'clamp(19px, 2.2vw, 27px)',
-              marginTop: 6
+              fontSize: 'clamp(16px, 1.75vw, 22px)',
+              marginTop: 4
             }}>
               Gestão de Caixa, Custos Fixos & Inteligência Financeira
             </span>
           </h2>
-          <p style={{ color: '#cbd5e1', fontSize: 14.5, lineHeight: 1.6, maxWidth: 560, margin: 0 }}>
+          <p style={{ color: '#cbd5e1', fontSize: 13, lineHeight: 1.45, maxWidth: 560, margin: 0 }}>
             Controle completo de receitas a receber, despesas fixas e variáveis, ponto de equilíbrio mensal e leitura automática de boletos com IA.
           </p>
         </div>
@@ -1221,112 +1225,112 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
         <div style={{
           background: 'linear-gradient(145deg, rgba(15, 23, 42, 0.9) 0%, rgba(9, 14, 28, 0.95) 100%)',
           backdropFilter: 'blur(20px)',
-          borderRadius: 22,
+          borderRadius: 18,
           border: '1px solid rgba(148, 163, 184, 0.2)',
-          padding: '22px 24px',
-          boxShadow: '0 20px 50px -12px rgba(0, 0, 0, 0.65)',
+          padding: '15px 18px',
+          boxShadow: '0 16px 40px -12px rgba(0, 0, 0, 0.65)',
           position: 'relative',
           overflow: 'hidden'
         }}>
           {/* Cabeçalho do Painel */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
               <div style={{
-                width: 38, height: 38, borderRadius: 11,
+                width: 32, height: 32, borderRadius: 9,
                 background: 'rgba(16, 185, 129, 0.16)',
                 border: '1px solid rgba(16, 185, 129, 0.35)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 color: '#34d399'
               }}>
-                <TrendingUp size={20} />
+                <TrendingUp size={17} />
               </div>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 800, color: '#ffffff', letterSpacing: '0.02em' }}>
+                <div style={{ fontSize: 12, fontWeight: 800, color: '#ffffff', letterSpacing: '0.02em' }}>
                   TERMÔMETRO ECONÔMICO BRASIL (TAXAS & ÍNDICES OFICIAIS)
                 </div>
-                <div style={{ fontSize: 11.5, color: '#94a3b8' }}>
+                <div style={{ fontSize: 10.5, color: '#94a3b8' }}>
                   Referências para custo de crédito, aplicações financeiras e correção de contratos
                 </div>
               </div>
             </div>
             <div style={{
-              padding: '5px 11px', borderRadius: 8,
+              padding: '4px 9px', borderRadius: 7,
               background: 'rgba(56, 189, 248, 0.14)',
               border: '1px solid rgba(56, 189, 248, 0.32)',
-              color: '#38bdf8', fontSize: 11, fontWeight: 800
+              color: '#38bdf8', fontSize: 10, fontWeight: 800
             }}>
               BANCO CENTRAL / B3
             </div>
           </div>
 
           {/* 4 Cards Principais dos Indicadores Brasileiros */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 16 }}>
-            <div style={{ background: 'rgba(30, 41, 59, 0.65)', padding: '11px 12px', borderRadius: 12, border: '1px solid rgba(148, 163, 184, 0.16)' }}>
-              <div style={{ fontSize: 10, color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase' }}>TAXA SELIC</div>
-              <div style={{ fontSize: 17, fontWeight: 900, color: '#34d399', marginTop: 3 }}>11,25%</div>
-              <div style={{ fontSize: 10, color: '#cbd5e1', marginTop: 2 }}>ao ano (COPOM)</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 12 }}>
+            <div style={{ background: 'rgba(30, 41, 59, 0.65)', padding: '8px 10px', borderRadius: 10, border: '1px solid rgba(148, 163, 184, 0.16)' }}>
+              <div style={{ fontSize: 9.5, color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase' }}>TAXA SELIC</div>
+              <div style={{ fontSize: 15.5, fontWeight: 900, color: '#34d399', marginTop: 2 }}>11,25%</div>
+              <div style={{ fontSize: 9.5, color: '#cbd5e1', marginTop: 1 }}>ao ano (COPOM)</div>
             </div>
-            <div style={{ background: 'rgba(30, 41, 59, 0.65)', padding: '11px 12px', borderRadius: 12, border: '1px solid rgba(148, 163, 184, 0.16)' }}>
-              <div style={{ fontSize: 10, color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase' }}>CDI ATUAL</div>
-              <div style={{ fontSize: 17, fontWeight: 900, color: '#38bdf8', marginTop: 3 }}>11,15%</div>
-              <div style={{ fontSize: 10, color: '#cbd5e1', marginTop: 2 }}>0,92% ao mês</div>
+            <div style={{ background: 'rgba(30, 41, 59, 0.65)', padding: '8px 10px', borderRadius: 10, border: '1px solid rgba(148, 163, 184, 0.16)' }}>
+              <div style={{ fontSize: 9.5, color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase' }}>CDI ATUAL</div>
+              <div style={{ fontSize: 15.5, fontWeight: 900, color: '#38bdf8', marginTop: 2 }}>11,15%</div>
+              <div style={{ fontSize: 9.5, color: '#cbd5e1', marginTop: 1 }}>0,92% ao mês</div>
             </div>
-            <div style={{ background: 'rgba(30, 41, 59, 0.65)', padding: '11px 12px', borderRadius: 12, border: '1px solid rgba(148, 163, 184, 0.16)' }}>
-              <div style={{ fontSize: 10, color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase' }}>IPCA (12 MESES)</div>
-              <div style={{ fontSize: 17, fontWeight: 900, color: '#fbbf24', marginTop: 3 }}>4,76%</div>
-              <div style={{ fontSize: 10, color: '#cbd5e1', marginTop: 2 }}>Inflação IBGE</div>
+            <div style={{ background: 'rgba(30, 41, 59, 0.65)', padding: '8px 10px', borderRadius: 10, border: '1px solid rgba(148, 163, 184, 0.16)' }}>
+              <div style={{ fontSize: 9.5, color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase' }}>IPCA (12 MESES)</div>
+              <div style={{ fontSize: 15.5, fontWeight: 900, color: '#fbbf24', marginTop: 2 }}>4,76%</div>
+              <div style={{ fontSize: 9.5, color: '#cbd5e1', marginTop: 1 }}>Inflação IBGE</div>
             </div>
-            <div style={{ background: 'rgba(30, 41, 59, 0.65)', padding: '11px 12px', borderRadius: 12, border: '1px solid rgba(148, 163, 184, 0.16)' }}>
-              <div style={{ fontSize: 10, color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase' }}>DÓLAR PTAX</div>
-              <div style={{ fontSize: 17, fontWeight: 900, color: '#f8fafc', marginTop: 3 }}>R$ 5,74</div>
-              <div style={{ fontSize: 10, color: '#cbd5e1', marginTop: 2 }}>Ibov: 129.845 pts</div>
+            <div style={{ background: 'rgba(30, 41, 59, 0.65)', padding: '8px 10px', borderRadius: 10, border: '1px solid rgba(148, 163, 184, 0.16)' }}>
+              <div style={{ fontSize: 9.5, color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase' }}>DÓLAR PTAX</div>
+              <div style={{ fontSize: 15.5, fontWeight: 900, color: '#f8fafc', marginTop: 2 }}>R$ 5,74</div>
+              <div style={{ fontSize: 9.5, color: '#cbd5e1', marginTop: 1 }}>Ibov: 129.845 pts</div>
             </div>
           </div>
 
           {/* Gráfico Comparativo Direto e Fácil de Entender: Rendimento de Caixa vs Inflação */}
           <div style={{
             background: 'rgba(15, 23, 42, 0.72)',
-            borderRadius: 14,
-            padding: '13px 15px',
+            borderRadius: 12,
+            padding: '10px 13px',
             border: '1px solid rgba(148, 163, 184, 0.14)',
-            marginBottom: 14
+            marginBottom: 10
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-              <span style={{ fontSize: 11, fontWeight: 800, color: '#e2e8f0', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 7 }}>
+              <span style={{ fontSize: 10.5, fontWeight: 800, color: '#e2e8f0', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 Comparativo Anual: Rendimento de Caixa vs. Inflação
               </span>
-              <span style={{ fontSize: 10.5, fontWeight: 700, color: '#34d399' }}>
+              <span style={{ fontSize: 10, fontWeight: 700, color: '#34d399' }}>
                 Ganho Real CDI: +6,39% a.a.
               </span>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, marginBottom: 4 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 3 }}>
                   <span style={{ color: '#cbd5e1', fontWeight: 600 }}>Aplicação 100% do CDI (Renda Fixa / Caixa)</span>
                   <strong style={{ color: '#34d399' }}>11,15% a.a.</strong>
                 </div>
-                <div style={{ height: 7, borderRadius: 99, background: 'rgba(148, 163, 184, 0.15)', overflow: 'hidden' }}>
+                <div style={{ height: 5.5, borderRadius: 99, background: 'rgba(148, 163, 184, 0.15)', overflow: 'hidden' }}>
                   <div style={{ width: '92%', height: '100%', borderRadius: 99, background: 'linear-gradient(90deg, #10b981, #34d399)' }} />
                 </div>
               </div>
 
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, marginBottom: 4 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 3 }}>
                   <span style={{ color: '#cbd5e1', fontWeight: 600 }}>Poupança Oficial (TR + 6,17% a.a.)</span>
                   <strong style={{ color: '#38bdf8' }}>7,28% a.a.</strong>
                 </div>
-                <div style={{ height: 7, borderRadius: 99, background: 'rgba(148, 163, 184, 0.15)', overflow: 'hidden' }}>
+                <div style={{ height: 5.5, borderRadius: 99, background: 'rgba(148, 163, 184, 0.15)', overflow: 'hidden' }}>
                   <div style={{ width: '62%', height: '100%', borderRadius: 99, background: 'linear-gradient(90deg, #0284c7, #38bdf8)' }} />
                 </div>
               </div>
 
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, marginBottom: 4 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 3 }}>
                   <span style={{ color: '#cbd5e1', fontWeight: 600 }}>Inflação Oficial IPCA (Perda do Poder de Compra)</span>
                   <strong style={{ color: '#fbbf24' }}>4,76% a.a.</strong>
                 </div>
-                <div style={{ height: 7, borderRadius: 99, background: 'rgba(148, 163, 184, 0.15)', overflow: 'hidden' }}>
+                <div style={{ height: 5.5, borderRadius: 99, background: 'rgba(148, 163, 184, 0.15)', overflow: 'hidden' }}>
                   <div style={{ width: '42%', height: '100%', borderRadius: 99, background: 'linear-gradient(90deg, #d97706, #fbbf24)' }} />
                 </div>
               </div>
@@ -1334,40 +1338,40 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
           </div>
 
           {/* 3 Módulos Essenciais do Sistema */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
-            <div style={{ background: 'rgba(15, 23, 42, 0.65)', padding: '9px 11px', borderRadius: 11, border: '1px solid rgba(148, 163, 184, 0.12)' }}>
-              <div style={{ fontSize: 9.5, color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', marginBottom: 3 }}>Fluxo Diário & Mensal</div>
-              <div style={{ fontSize: 12, fontWeight: 800, color: '#34d399', display: 'flex', alignItems: 'center', gap: 5 }}>
-                <BarChart3 size={13} /> Fixas x Variáveis
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+            <div style={{ background: 'rgba(15, 23, 42, 0.65)', padding: '7px 10px', borderRadius: 9, border: '1px solid rgba(148, 163, 184, 0.12)' }}>
+              <div style={{ fontSize: 9, color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', marginBottom: 2 }}>Fluxo Diário & Mensal</div>
+              <div style={{ fontSize: 11.5, fontWeight: 800, color: '#34d399', display: 'flex', alignItems: 'center', gap: 5 }}>
+                <BarChart3 size={12} /> Fixas x Variáveis
               </div>
             </div>
-            <div style={{ background: 'rgba(15, 23, 42, 0.65)', padding: '9px 11px', borderRadius: 11, border: '1px solid rgba(148, 163, 184, 0.12)' }}>
-              <div style={{ fontSize: 9.5, color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', marginBottom: 3 }}>Automação Inteligente</div>
-              <div style={{ fontSize: 12, fontWeight: 800, color: '#38bdf8', display: 'flex', alignItems: 'center', gap: 5 }}>
-                <Sparkles size={13} /> Leitor Boleto/NF IA
+            <div style={{ background: 'rgba(15, 23, 42, 0.65)', padding: '7px 10px', borderRadius: 9, border: '1px solid rgba(148, 163, 184, 0.12)' }}>
+              <div style={{ fontSize: 9, color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', marginBottom: 2 }}>Automação Inteligente</div>
+              <div style={{ fontSize: 11.5, fontWeight: 800, color: '#38bdf8', display: 'flex', alignItems: 'center', gap: 5 }}>
+                <Sparkles size={12} /> Leitor Boleto/NF IA
               </div>
             </div>
-            <div style={{ background: 'rgba(15, 23, 42, 0.65)', padding: '9px 11px', borderRadius: 11, border: '1px solid rgba(148, 163, 184, 0.12)' }}>
-              <div style={{ fontSize: 9.5, color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', marginBottom: 3 }}>Proteção Bancária</div>
-              <div style={{ fontSize: 12, fontWeight: 800, color: '#e2e8f0', display: 'flex', alignItems: 'center', gap: 5 }}>
-                <ShieldCheck size={13} color="#a78bfa" /> Criptografia 256-Bit
+            <div style={{ background: 'rgba(15, 23, 42, 0.65)', padding: '7px 10px', borderRadius: 9, border: '1px solid rgba(148, 163, 184, 0.12)' }}>
+              <div style={{ fontSize: 9, color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', marginBottom: 2 }}>Proteção Bancária</div>
+              <div style={{ fontSize: 11.5, fontWeight: 800, color: '#e2e8f0', display: 'flex', alignItems: 'center', gap: 5 }}>
+                <ShieldCheck size={12} color="#a78bfa" /> Criptografia 256-Bit
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* COLUNA DIREITA: CARD DE AUTENTICAÇÃO GLASSMORPHIC 3D */}
+      {/* COLUNA DIREITA: CARD DE AUTENTICAÇÃO GLASSMORPHIC 3D COMPACTO */}
       <div style={{
         width: '100%',
-        maxWidth: 440,
+        maxWidth: 400,
         margin: '0 auto',
         background: 'linear-gradient(165deg, rgba(15, 23, 42, 0.88) 0%, rgba(8, 13, 26, 0.94) 100%)',
         backdropFilter: 'blur(24px)',
-        borderRadius: 28,
+        borderRadius: 22,
         border: '1px solid rgba(148, 163, 184, 0.2)',
-        boxShadow: '0 30px 70px -15px rgba(0, 0, 0, 0.8), 0 0 40px color-mix(in srgb, var(--primary, #2563eb) 18%, transparent)',
-        padding: '36px 34px 32px',
+        boxShadow: '0 24px 55px -15px rgba(0, 0, 0, 0.8), 0 0 32px color-mix(in srgb, var(--primary, #2563eb) 18%, transparent)',
+        padding: '22px 26px 18px',
         textAlign: 'center',
         position: 'relative',
         overflow: 'hidden'
@@ -1382,44 +1386,44 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
         <div style={{ position: 'relative', zIndex: 2 }}>
           {/* TENANT LOGO HALO (White-Label fotoPerfil) */}
           <div style={{
-            width: 86, height: 86, borderRadius: '24px',
+            width: 64, height: 64, borderRadius: '18px',
             background: 'linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(241,245,249,0.92) 100%)',
             border: `2px solid color-mix(in srgb, ${primaryColor} 55%, rgba(255,255,255,0.5))`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            margin: '0 auto 16px',
-            boxShadow: `0 12px 32px -6px rgba(0, 0, 0, 0.5), 0 0 28px color-mix(in srgb, ${primaryColor} 40%, transparent)`,
+            margin: '0 auto 10px',
+            boxShadow: `0 8px 24px -6px rgba(0, 0, 0, 0.5), 0 0 22px color-mix(in srgb, ${primaryColor} 40%, transparent)`,
             position: 'relative'
           }}>
-            <img src={finalLogo} alt="Logo" style={{ width: 62, height: 62, borderRadius: 14, objectFit: 'contain' }} />
+            <img src={finalLogo} alt="Logo" style={{ width: 46, height: 46, borderRadius: 11, objectFit: 'contain' }} />
             <div style={{
-              position: 'absolute', bottom: -4, right: -4,
-              width: 22, height: 22, borderRadius: '50%',
+              position: 'absolute', bottom: -3, right: -3,
+              width: 18, height: 18, borderRadius: '50%',
               background: '#0f172a', border: '2px solid #10b981',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#10b981', boxShadow: '0 0 10px rgba(16,185,129,0.5)'
+              color: '#10b981', boxShadow: '0 0 8px rgba(16,185,129,0.5)'
             }} title="Conexão Criptografada e Motor IA Ativo">
-              <Activity size={11} />
+              <Activity size={9} />
             </div>
           </div>
 
           {/* TENANT SYSTEM NAME (White-Label nomeSistema) */}
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: '#ffffff', marginBottom: 8, letterSpacing: '-0.01em', lineHeight: 1.25 }}>
+          <h1 style={{ fontSize: 19, fontWeight: 800, color: '#ffffff', marginBottom: 6, letterSpacing: '-0.01em', lineHeight: 1.2 }}>
             {nomeSistema}
           </h1>
 
           {/* TIMESTAMP PILL */}
           <div style={{
-            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-            padding: '5px 12px', borderRadius: 999,
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+            padding: '3.5px 10px', borderRadius: 999,
             background: 'rgba(30, 41, 59, 0.75)',
             border: '1px solid rgba(148, 163, 184, 0.18)',
-            fontSize: 11, color: '#38bdf8', fontWeight: 700, marginBottom: 14
+            fontSize: 10.5, color: '#38bdf8', fontWeight: 700, marginBottom: 8
           }}>
-            <Clock size={12} />
+            <Clock size={11} />
             <span>Último Acesso: {new Date().toLocaleDateString('pt-BR')} às {new Date().getHours().toString().padStart(2, '0')}:{new Date().getMinutes().toString().padStart(2, '0')}</span>
           </div>
 
-          <p style={{ color: '#94a3b8', fontSize: 13, marginBottom: 22, lineHeight: 1.5 }}>
+          <p style={{ color: '#94a3b8', fontSize: 12, marginBottom: 14, lineHeight: 1.4 }}>
             {modo === 'login'
               ? 'Autentique suas credenciais para acessar o terminal financeiro.'
               : modo === 'recuperar'
@@ -1429,7 +1433,7 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
 
           {/* BIOMETRIA BUTTON */}
           {modo === 'login' && temBiometria && (
-            <div style={{ marginBottom: 22 }}>
+            <div style={{ marginBottom: 14 }}>
               <button
                 type="button"
                 onClick={handleBiometricLogin}
@@ -1439,27 +1443,27 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: 10,
-                  padding: '15px',
-                  borderRadius: 14,
+                  gap: 8,
+                  padding: '11px',
+                  borderRadius: 12,
                   background: `linear-gradient(135deg, ${primaryColor} 0%, color-mix(in srgb, ${primaryColor} 75%, #0284c7) 100%)`,
                   color: 'white',
                   fontWeight: 800,
-                  fontSize: 15,
+                  fontSize: 13.5,
                   border: '1px solid rgba(255,255,255,0.2)',
                   cursor: 'pointer',
-                  boxShadow: `0 10px 25px color-mix(in srgb, ${primaryColor} 40%, transparent)`,
+                  boxShadow: `0 8px 20px color-mix(in srgb, ${primaryColor} 40%, transparent)`,
                   transition: 'transform 0.2s, box-shadow 0.2s'
                 }}
                 className="hover:scale-[1.02] active:scale-95"
               >
-                <Fingerprint size={22} />
+                <Fingerprint size={18} />
                 Desbloqueio Biométrico IA
               </button>
 
-              <div style={{ display: 'flex', alignItems: 'center', margin: '18px 0', gap: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', margin: '10px 0', gap: 10 }}>
                 <div style={{ flex: 1, height: 1, background: 'rgba(148, 163, 184, 0.16)' }} />
-                <span style={{ fontSize: 10, color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Ou credencial padrão</span>
+                <span style={{ fontSize: 9.5, color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Ou credencial padrão</span>
                 <div style={{ flex: 1, height: 1, background: 'rgba(148, 163, 184, 0.16)' }} />
               </div>
             </div>
@@ -1469,29 +1473,29 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
           <form onSubmit={handleAuth}>
             {modo === 'cadastro' && (
               <>
-                <div style={{ marginBottom: 14, textAlign: 'left', position: 'relative' }}>
-                  <User size={18} color="#64748b" style={{ position: 'absolute', left: 16, top: 15, zIndex: 2 }} />
+                <div style={{ marginBottom: 8, textAlign: 'left', position: 'relative' }}>
+                  <User size={16} color="#64748b" style={{ position: 'absolute', left: 14, top: 12, zIndex: 2 }} />
                   <input
                     type="text" value={nome} onChange={e => { setNome(e.target.value); setErro(''); }}
                     placeholder="Nome completo" className="fintech-input" required
                   />
                 </div>
-                <div style={{ marginBottom: 14, textAlign: 'left', position: 'relative' }}>
-                  <CreditCard size={18} color="#64748b" style={{ position: 'absolute', left: 16, top: 15, zIndex: 2 }} />
+                <div style={{ marginBottom: 8, textAlign: 'left', position: 'relative' }}>
+                  <CreditCard size={16} color="#64748b" style={{ position: 'absolute', left: 14, top: 12, zIndex: 2 }} />
                   <input
                     type="text" value={cpf} onChange={e => { setCpf(e.target.value); setErro(''); }}
                     placeholder="CPF (Opcional)" className="fintech-input"
                   />
                 </div>
-                <div style={{ marginBottom: 14, textAlign: 'left', position: 'relative' }}>
-                  <Phone size={18} color="#64748b" style={{ position: 'absolute', left: 16, top: 15, zIndex: 2 }} />
+                <div style={{ marginBottom: 8, textAlign: 'left', position: 'relative' }}>
+                  <Phone size={16} color="#64748b" style={{ position: 'absolute', left: 14, top: 12, zIndex: 2 }} />
                   <input
                     type="text" value={telefone} onChange={e => { setTelefone(e.target.value); setErro(''); }}
                     placeholder="Telefone / WhatsApp" className="fintech-input" required
                   />
                 </div>
-                <div style={{ marginBottom: 14, textAlign: 'left', position: 'relative' }}>
-                  <Building size={18} color="#64748b" style={{ position: 'absolute', left: 16, top: 15, zIndex: 2 }} />
+                <div style={{ marginBottom: 8, textAlign: 'left', position: 'relative' }}>
+                  <Building size={16} color="#64748b" style={{ position: 'absolute', left: 14, top: 12, zIndex: 2 }} />
                   <input
                     type="text" value={empresa} onChange={e => { setEmpresa(e.target.value); setErro(''); }}
                     placeholder="Empresa (Opcional)" className="fintech-input"
@@ -1500,11 +1504,11 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
               </>
             )}
 
-            <div style={{ marginBottom: 14, textAlign: 'left', position: 'relative' }}>
+            <div style={{ marginBottom: 10, textAlign: 'left', position: 'relative' }}>
               {modo === 'recuperar' ? (
-                <Mail size={18} color="#38bdf8" style={{ position: 'absolute', left: 16, top: 15, zIndex: 2 }} />
+                <Mail size={16} color="#38bdf8" style={{ position: 'absolute', left: 14, top: 12, zIndex: 2 }} />
               ) : (
-                <User size={18} color="#38bdf8" style={{ position: 'absolute', left: 16, top: 15, zIndex: 2 }} />
+                <User size={16} color="#38bdf8" style={{ position: 'absolute', left: 14, top: 12, zIndex: 2 }} />
               )}
               <input
                 type="text" value={email} onChange={e => { setEmail(e.target.value); setErro(''); }}
@@ -1515,16 +1519,16 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
             </div>
 
             {modo !== 'recuperar' && (
-              <div style={{ marginBottom: 20, textAlign: 'left' }}>
+              <div style={{ marginBottom: 14, textAlign: 'left' }}>
                 <div style={{ position: 'relative' }}>
-                  <Lock size={18} color="#38bdf8" style={{ position: 'absolute', left: 16, top: 15, zIndex: 2 }} />
+                  <Lock size={16} color="#38bdf8" style={{ position: 'absolute', left: 14, top: 12, zIndex: 2 }} />
                   <input
                     type={mostrarSenha ? 'text' : 'password'}
                     value={senha}
                     onChange={e => { setSenha(e.target.value); setErro(''); }}
                     placeholder="Sua senha secreta"
                     className="fintech-input"
-                    style={{ paddingRight: 44 }}
+                    style={{ paddingRight: 40 }}
                     required
                     minLength={modo === 'cadastro' ? 8 : 6}
                   />
@@ -1533,29 +1537,29 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
                     onClick={() => setMostrarSenha(v => !v)}
                     tabIndex={-1}
                     style={{
-                      position: 'absolute', right: 12, top: 12, zIndex: 3,
+                      position: 'absolute', right: 10, top: 9, zIndex: 3,
                       background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: 4
                     }}
                     title={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
                   >
-                    {mostrarSenha ? <EyeOff size={17} /> : <Eye size={17} />}
+                    {mostrarSenha ? <EyeOff size={15} /> : <Eye size={15} />}
                   </button>
                 </div>
 
                 {modo === 'cadastro' && senha.length > 0 && (
-                  <div style={{ marginTop: 8 }}>
-                    <div style={{ display: 'flex', gap: 4, height: 4, marginBottom: 4 }}>
+                  <div style={{ marginTop: 6 }}>
+                    <div style={{ display: 'flex', gap: 4, height: 3.5, marginBottom: 3 }}>
                       {[1, 2, 3, 4, 5].map(i => (
                         <div key={i} style={{ flex: 1, background: forca >= i ? coresForca[forca] : 'rgba(148,163,184,0.2)', borderRadius: 2 }} />
                       ))}
                     </div>
-                    <span style={{ fontSize: 11, color: coresForca[forca] }}>{textosForca[forca]}</span>
+                    <span style={{ fontSize: 10, color: coresForca[forca] }}>{textosForca[forca]}</span>
                   </div>
                 )}
 
                 {modo === 'cadastro' && (
-                  <div style={{ position: 'relative', marginTop: 14 }}>
-                    <Key size={18} color="#38bdf8" style={{ position: 'absolute', left: 16, top: 15, zIndex: 2 }} />
+                  <div style={{ position: 'relative', marginTop: 8 }}>
+                    <Key size={16} color="#38bdf8" style={{ position: 'absolute', left: 14, top: 12, zIndex: 2 }} />
                     <input
                       type={mostrarSenha ? 'text' : 'password'}
                       value={confirmarSenha}
@@ -1568,14 +1572,14 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
                 )}
 
                 {modo === 'login' && (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
-                    <span style={{ fontSize: 11, color: '#64748b', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                      <ShieldCheck size={13} color="#10b981" /> Sessão Criptografada
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
+                    <span style={{ fontSize: 10.5, color: '#64748b', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      <ShieldCheck size={12} color="#10b981" /> Sessão Criptografada
                     </span>
                     <button
                       type="button"
                       onClick={() => { setModo('recuperar'); setErro(''); setSucesso(''); }}
-                      style={{ background: 'none', border: 'none', color: '#38bdf8', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                      style={{ background: 'none', border: 'none', color: '#38bdf8', fontSize: 11.5, fontWeight: 600, cursor: 'pointer' }}
                     >
                       Esqueci minha senha
                     </button>
@@ -1586,18 +1590,18 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
 
             {erro && (
               <div style={{
-                padding: '10px 14px', borderRadius: 12,
+                padding: '8px 12px', borderRadius: 10,
                 background: 'rgba(239, 68, 68, 0.14)', border: '1px solid rgba(239, 68, 68, 0.3)',
-                color: '#fca5a5', fontSize: 12, fontWeight: 600, marginBottom: 16, textAlign: 'center'
+                color: '#fca5a5', fontSize: 11.5, fontWeight: 600, marginBottom: 10, textAlign: 'center'
               }}>
                 {erro}
               </div>
             )}
             {sucesso && (
               <div style={{
-                padding: '10px 14px', borderRadius: 12,
+                padding: '8px 12px', borderRadius: 10,
                 background: 'rgba(16, 185, 129, 0.14)', border: '1px solid rgba(16, 185, 129, 0.3)',
-                color: '#6ee7b7', fontSize: 12, fontWeight: 600, marginBottom: 16, textAlign: 'center'
+                color: '#6ee7b7', fontSize: 11.5, fontWeight: 600, marginBottom: 10, textAlign: 'center'
               }}>
                 {sucesso}
               </div>
@@ -1611,50 +1615,50 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: 10,
-                padding: '15px 20px',
-                borderRadius: 14,
-                fontSize: 15,
+                gap: 8,
+                padding: '12px 18px',
+                borderRadius: 12,
+                fontSize: 13.5,
                 fontWeight: 800,
                 letterSpacing: '0.04em',
                 textTransform: 'uppercase',
                 color: '#ffffff',
                 background: `linear-gradient(180deg, color-mix(in srgb, ${primaryColor} 92%, #38bdf8) 0%, ${primaryColor} 100%)`,
                 border: '1px solid rgba(255, 255, 255, 0.22)',
-                boxShadow: `0 6px 0 color-mix(in srgb, ${primaryColor} 65%, #020617), 0 14px 30px color-mix(in srgb, ${primaryColor} 40%, transparent)`,
+                boxShadow: `0 4px 0 color-mix(in srgb, ${primaryColor} 65%, #020617), 0 10px 24px color-mix(in srgb, ${primaryColor} 40%, transparent)`,
                 cursor: (loading || !email || (modo !== 'recuperar' && !senha)) ? 'not-allowed' : 'pointer',
                 opacity: (loading || !email || (modo !== 'recuperar' && !senha)) ? 0.65 : 1,
                 transition: 'all 0.18s ease'
               }}
-              className="active:translate-y-[3px]"
+              className="active:translate-y-[2px]"
             >
               {loading ? (
-                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Unlock size={18} /> Autenticando Terminal...</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}><Unlock size={16} /> Autenticando Terminal...</span>
               ) : modo === 'login' ? (
-                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Lock size={18} /> Entrar no Sistema</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}><Lock size={16} /> Entrar no Sistema</span>
               ) : modo === 'recuperar' ? (
-                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Mail size={18} /> Recuperar Credencial</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}><Mail size={16} /> Recuperar Credencial</span>
               ) : (
-                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><UserPlus size={18} /> Solicitar Credencial</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}><UserPlus size={16} /> Solicitar Credencial</span>
               )}
             </button>
           </form>
 
           {/* RODAPÉ DO CARD */}
-          <div style={{ marginTop: 22, paddingTop: 16, borderTop: '1px solid rgba(148, 163, 184, 0.14)' }}>
+          <div style={{ marginTop: 14, paddingTop: 11, borderTop: '1px solid rgba(148, 163, 184, 0.14)' }}>
             {modo === 'recuperar' ? (
               <button
                 type="button"
                 onClick={() => { setModo('login'); setErro(''); setSucesso(''); }}
-                style={{ background: 'none', border: 'none', color: '#38bdf8', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, margin: '0 auto' }}
+                style={{ background: 'none', border: 'none', color: '#38bdf8', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, margin: '0 auto' }}
               >
-                <ArrowLeft size={15} /> Voltar para o Terminal de Login
+                <ArrowLeft size={14} /> Voltar para o Terminal de Login
               </button>
             ) : (
               <button
                 type="button"
                 onClick={() => { setModo(modo === 'login' ? 'cadastro' : 'login'); setErro(''); setSucesso(''); }}
-                style={{ background: 'none', border: 'none', color: '#cbd5e1', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                style={{ background: 'none', border: 'none', color: '#cbd5e1', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
               >
                 {modo === 'login' ? (
                   <>Não possui credencial? <span style={{ color: '#38bdf8', fontWeight: 700 }}>Solicite seu cadastro</span></>
