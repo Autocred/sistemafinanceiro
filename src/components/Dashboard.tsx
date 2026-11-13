@@ -5,7 +5,8 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, BarChart, Bar, Legend
 } from 'recharts';
-import { formatarMoeda, subscribeTransacoes, subscribeTransacoesByMes, subscribeContas, subscribeFaturas, getTenantId } from '@/lib/storage';
+import { formatarMoeda, subscribeTransacoes, subscribeTransacoesByMes, subscribeContas, subscribeFaturas, getTenantId, salvarTransacao } from '@/lib/storage';
+import { getComportamentoTransacao } from './ExtratoBancario';
 import { Transacao, Conta, Fatura } from '@/lib/types';
 import { getValorFinal, normalizeDate, isContaAPagarValida, isFaturaAPagarValida } from '@/lib/financialEngine';
 import { format, subDays, startOfWeek, endOfWeek } from 'date-fns';
@@ -60,13 +61,34 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
     } catch (e) {}
   }, []);
 
-  const toggleClassificacaoCusto = (chave: string, atual: 'fixa' | 'variavel') => {
+  const toggleClassificacaoCusto = async (chave: string, atual: 'fixa' | 'variavel', idEspecifico?: string) => {
     const novoTipo: 'fixa' | 'variavel' = atual === 'fixa' ? 'variavel' : 'fixa';
     const atualizado = { ...overridesCustos, [chave]: novoTipo };
     setOverridesCustos(atualizado);
     try {
       localStorage.setItem('cfo_override_custos_fixos', JSON.stringify(atualizado));
     } catch (e) {}
+
+    // Persiste a alteração diretamente nas transações correspondentes no sistema/banco
+    try {
+      const alvos = todasTransacoes.filter(t => {
+        if (t.tipo !== 'despesa') return false;
+        if (idEspecifico && t.id === idEspecifico) return true;
+        const nomeRaw = t.fornecedorNome || t.descricao || t.categoriaNome || 'despesa';
+        const ch = nomeRaw.trim().toLowerCase()
+          .replace(/\s+(jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez|\d{2}\/\d{2,4}|\d{4}-\d{2})\b/gi, '')
+          .replace(/\s+/g, ' ')
+          .trim();
+        return ch === chave;
+      });
+      for (const tx of alvos) {
+        if (tx.comportamento !== novoTipo) {
+          await salvarTransacao({ ...tx, comportamento: novoTipo });
+        }
+      }
+    } catch (e) {
+      console.error('Erro ao persistir comportamento da despesa:', e);
+    }
   };
 
   const ano = mesSelecionado.getFullYear();
@@ -417,10 +439,9 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
     ];
 
     const classificarItem = (
+      txOuFatura: Transacao | null,
       nomeRaw: string,
       catRaw: string,
-      comportamento?: 'fixa' | 'variavel',
-      recorrente?: boolean,
       isFaturaCartao?: boolean
     ): { tipo: 'fixa' | 'variavel'; motivo: string; chave: string } => {
       const chave = (nomeRaw || catRaw || 'despesa').trim().toLowerCase()
@@ -435,19 +456,21 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
           chave
         };
       }
-      if (comportamento === 'fixa') return { tipo: 'fixa', motivo: 'Cadastro Fixo', chave };
-      if (comportamento === 'variavel') return { tipo: 'variavel', motivo: 'Cadastro Variável', chave };
-      if (recorrente) return { tipo: 'fixa', motivo: 'Lançamento Recorrente', chave };
-      if (isFaturaCartao) return { tipo: 'variavel', motivo: 'Fatura de Cartão', chave };
+      if (isFaturaCartao || !txOuFatura) return { tipo: 'variavel', motivo: 'Fatura de Cartão', chave };
 
-      const textoBusca = `${chave} ${(catRaw || '').toLowerCase()}`;
-      if (KEYWORDS_FIXO.some(kw => textoBusca.includes(kw))) {
-        return { tipo: 'fixa', motivo: 'Despesa Estrutural Fixa', chave };
+      const compCalculado = getComportamentoTransacao(txOuFatura);
+      if (compCalculado === 'fixa') {
+        return {
+          tipo: 'fixa',
+          motivo: txOuFatura.comportamento === 'fixa' ? 'Despesa Fixa Cadastrada' : 'Despesa Estrutural Fixa',
+          chave
+        };
       }
-      if ((mesesPorEntidade[chave]?.size || 0) >= 2) {
-        return { tipo: 'fixa', motivo: `Recorrente (${mesesPorEntidade[chave].size} meses)`, chave };
-      }
-      return { tipo: 'variavel', motivo: 'Gasto Variável / Pontual', chave };
+      return {
+        tipo: 'variavel',
+        motivo: txOuFatura.comportamento === 'variavel' ? 'Despesa Variável Cadastrada' : 'Gasto Variável / Operacional',
+        chave
+      };
     };
 
     // 2. Coletar rigorosamente todas as despesas que compõem o mês (Pagas + A Pagar)
@@ -467,7 +490,7 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
       const val = getValorFinal(t);
       if (val <= 0) return;
       const nome = t.fornecedorNome || t.descricao || 'Despesa';
-      const info = classificarItem(nome, t.categoriaNome || '', t.comportamento, t.recorrente, false);
+      const info = classificarItem(t, nome, t.categoriaNome || '', false);
       itensAuditados.push({
         id: t.id,
         nome,
@@ -487,7 +510,7 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
       const val = getValorFinal(t);
       if (val <= 0) return;
       const nome = t.fornecedorNome || t.descricao || 'Conta a Pagar';
-      const info = classificarItem(nome, t.categoriaNome || '', t.comportamento, t.recorrente, false);
+      const info = classificarItem(t, nome, t.categoriaNome || '', false);
       itensAuditados.push({
         id: t.id,
         nome,
@@ -506,7 +529,7 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
       const val = Math.max(0, (f.valorTotal || 0) - pago);
       if (val <= 0) return;
       const nome = `Fatura ${f.cartaoNome}`;
-      const info = classificarItem(nome, 'Cartão de Crédito', undefined, false, true);
+      const info = classificarItem(null, nome, 'Cartão de Crédito', true);
       itensAuditados.push({
         id: f.id,
         nome,
@@ -2176,7 +2199,7 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
                       {fmt(item.valor)}
                     </span>
                     <button
-                      onClick={() => toggleClassificacaoCusto(item.chave, item.tipo)}
+                      onClick={() => toggleClassificacaoCusto(item.chave, item.tipo, item.id)}
                       style={{
                         padding: '5px 10px',
                         borderRadius: 8,

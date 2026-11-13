@@ -1847,10 +1847,23 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
     entidadeNome?: string,
     recorrente?: boolean
   ): 'fixa' | 'variavel' => {
+    const textoAnalise = `${desc || ''} ${entidadeNome || ''}`.toLowerCase();
+
+    // Exceções explícitas que sempre são variáveis (ex: retirada pessoal ou bônus de pessoa que recebe pró-labore/salário)
+    if (
+      textoAnalise.includes('retirada') ||
+      textoAnalise.includes('impulsionamento') ||
+      textoAnalise.includes('trafego pago') ||
+      textoAnalise.includes('tarifa avulsa') ||
+      textoAnalise.includes('bonus') ||
+      textoAnalise.includes('bônus') ||
+      textoAnalise.includes('bonificação')
+    ) {
+      return 'variavel';
+    }
+
     if (compSugerido === 'fixa' || compSugerido === 'variavel') return compSugerido;
     if (recorrente) return 'fixa';
-    
-    const textoAnalise = `${desc || ''} ${entidadeNome || ''}`.toLowerCase();
     
     const isFixa = 
       textoAnalise.includes('diferid') ||
@@ -1862,8 +1875,25 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
       textoAnalise.includes('aluguel') ||
       textoAnalise.includes('salario') ||
       textoAnalise.includes('salário') ||
+      textoAnalise.includes('pro labore') ||
+      textoAnalise.includes('pró labore') ||
+      textoAnalise.includes('pró-labore') ||
       textoAnalise.includes('condomin') ||
       textoAnalise.includes('internet') ||
+      textoAnalise.includes('energia') ||
+      textoAnalise.includes('celesc') ||
+      textoAnalise.includes('vivo') ||
+      textoAnalise.includes('contaseg') ||
+      textoAnalise.includes('honorários') ||
+      textoAnalise.includes('fgts') ||
+      textoAnalise.includes('inss') ||
+      textoAnalise.includes('simples nacional') ||
+      textoAnalise.includes('financiamento') ||
+      textoAnalise.includes('capital de giro') ||
+      textoAnalise.includes('estacionamento') ||
+      textoAnalise.includes('vale transporte') ||
+      textoAnalise.includes('medicina do trabalho') ||
+      textoAnalise.includes('sistema de gestão') ||
       textoAnalise.includes('iptu') ||
       textoAnalise.includes('ipva') ||
       textoAnalise.includes('seguro');
@@ -1876,10 +1906,19 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
   // Prioridade: 1) Usuário manual > 2) Palavras-chave na descrição > 3) Sugestão por entidade (já aplicada)
   const handleDescricaoChange = (val: string, fromScanner = false) => {
     const lower = val.toLowerCase();
-    // Palavras-chave que indicam FIXA (comissão diferida/recorrente)
-    const isFixaKeyword = lower.includes('diferida') || lower.includes('mensal') || lower.includes('fixa') || lower.includes('recorrente') || lower.includes('parcel');
-    // Palavras-chave que indicam VARIÁVEL (comissão à vista/spot)
-    const isVariavelKeyword = lower.includes('à vista') || lower.includes('a vista') || lower.includes('spot') || lower.includes('pontual') || lower.includes('avulso');
+    // Palavras-chave que indicam FIXA (comissão diferida/recorrente/obrigações fixas)
+    const isFixaKeyword =
+      lower.includes('diferida') || lower.includes('mensal') || lower.includes('fixa') ||
+      lower.includes('recorrente') || lower.includes('parcel') || lower.includes('aluguel') ||
+      lower.includes('salário') || lower.includes('salario') || lower.includes('pró labore') ||
+      lower.includes('pro labore') || lower.includes('fgts') || lower.includes('inss') ||
+      lower.includes('honorários') || lower.includes('vale transporte') || lower.includes('capital de giro');
+    // Palavras-chave que indicam VARIÁVEL (comissão à vista/spot/retirada/impulsionamento)
+    const isVariavelKeyword =
+      lower.includes('à vista') || lower.includes('a vista') || lower.includes('spot') ||
+      lower.includes('pontual') || lower.includes('avulso') || lower.includes('retirada') ||
+      lower.includes('impulsionamento') || lower.includes('tarifa avulsa') || lower.includes('bonus') ||
+      lower.includes('bônus');
 
     setForm(f => ({
       ...f,

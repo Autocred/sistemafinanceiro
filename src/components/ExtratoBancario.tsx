@@ -22,36 +22,142 @@ export function getComportamentoTransacao(t: Transacao): 'fixa' | 'variavel' {
   if (comp === 'fixa') return 'fixa';
   if (comp === 'variavel' || comp === 'variável') return 'variavel';
 
-  // Se for recorrente ou tiver frequência/grupo de recorrência, é considerada FIXA
-  if (t.recorrente === true || !!t.frequenciaRecorrencia || !!t.grupoRecorrencia) {
-    return 'fixa';
-  }
-
-  // Detecção inteligente por Subcategoria, Descrição ou Observações
-  const sub = (((t as any).subcategoria || '') as string).toLowerCase().trim();
+  const forn = ((t.fornecedorNome || '') as string).toLowerCase().trim();
   const desc = ((t.descricao || '') as string).toLowerCase().trim();
+  const cat = ((t.categoriaNome || '') as string).toLowerCase().trim();
+  const sub = (((t as any).subcategoria || '') as string).toLowerCase().trim();
   const obs = ((t.observacoes || '') as string).toLowerCase().trim();
 
-  // Diferida é fixa por excelência (recebimento recorrente de comissão bancária)
-  if (sub.includes('diferida') || desc.includes('diferida') || obs.includes('diferida')) {
+  if (t.tipo === 'receita') {
+    if (sub.includes('diferida') || desc.includes('diferida') || obs.includes('diferida')) {
+      return 'fixa';
+    }
+    return 'variavel';
+  }
+
+  // Capital de giro / Financiamento veicular são obrigações fixas mensais
+  if (desc.includes('capital de giro') || cat === 'financiamento veicular') {
     return 'fixa';
   }
 
-  // Palavras-chave recorrentes/fixas
+  // Exceções explícitas que SEMPRE são VARIÁVEIS
   if (
-    sub.includes('mensal') ||
-    sub.includes('trimestral') ||
-    sub.includes('anual') ||
-    sub.includes('parcelas mensais') ||
-    sub.includes('condominio') ||
-    sub.includes('condomínio') ||
-    sub.includes('contabilidade') ||
-    sub.includes('fone internet') ||
-    desc.includes('fixa') ||
-    desc.includes('fixo') ||
-    sub.includes('fixa') ||
-    sub.includes('fixo')
+    desc.includes('retirada') ||
+    cat.includes('retirada pessoal') ||
+    cat === 'pessoal' ||
+    desc.includes('mercado pessoal') ||
+    desc.includes('compra pessoal') ||
+    desc.includes('alimentação pessoal') ||
+    desc.includes('despesa pessoal') ||
+    desc.includes('energia eletrica pessoal') ||
+    desc.includes('exame') ||
+    desc.includes('blazer') ||
+    desc.includes('defletor') ||
+    desc.includes('abridor') ||
+    desc.includes('interuptores') ||
+    desc.includes('material de escritório') ||
+    desc.includes('material de escritorio') ||
+    desc.includes('bonus') ||
+    desc.includes('bônus') ||
+    desc.includes('bonificação') ||
+    desc.includes('bonificacao') ||
+    desc.includes('devolução') ||
+    desc.includes('devolucao') ||
+    desc.includes('reembolso') ||
+    cat.includes('reembolso') ||
+    cat.includes('pagamento de comissões') ||
+    cat.includes('pagamento de comissoes') ||
+    desc.includes('pagamento de comissão') ||
+    desc.includes('pagamento de comissao') ||
+    forn.includes('lisyane') ||
+    forn.includes('waldir roberto') ||
+    cat.includes('indicação') ||
+    cat.includes('indicacao') ||
+    desc.includes('indicação') ||
+    desc.includes('estorno de comissão') ||
+    cat.includes('estorno de comissão') ||
+    forn.includes('facebook') ||
+    cat.includes('marketing') ||
+    desc.includes('impulsionamento') ||
+    desc.includes('trafego pago') ||
+    desc.includes('midia digital') ||
+    desc.includes('tarifa avulsa') ||
+    desc.includes('tarifa saque') ||
+    desc.includes('tarifa de saque') ||
+    desc.includes('ajuste de saldo') ||
+    desc.includes('recarga') ||
+    desc.includes('lavagem') ||
+    cat.includes('lavagem') ||
+    desc.includes('créditos carteira 2tech') ||
+    cat.includes('uniformes') ||
+    forn.includes('uniformes')
   ) {
+    return 'variavel';
+  }
+
+  // Despesas estruturais fixas (Folha, Pró-labore, Aluguel, Contabilidade, Energia, Internet, Sistemas, Impostos Fixos)
+  const isFixaEstrutural =
+    cat === 'salário' ||
+    cat === 'salario' ||
+    cat === 'folha de pagamento' ||
+    cat === 'vale transporte' ||
+    cat === 'férias' ||
+    cat === 'ferias' ||
+    cat === 'adiantamento décimo' ||
+    cat === 'aluguel e condomínio' ||
+    cat === 'energia elétrica' ||
+    cat === 'água e esgoto' ||
+    cat === 'internet e telefonia' ||
+    cat === 'honorários contábeis' ||
+    cat === 'medicina do trabalho' ||
+    cat === 'assinaturas e serviços de streaming' ||
+    cat === 'estacionamento mensal' ||
+    cat === 'cesta de serviços mensal' ||
+    cat === 'empréstimo' ||
+    cat === 'fgts' ||
+    cat === 'inss' ||
+    cat === 'parcelamento simples nacional' ||
+    cat === 'parcelamento inss' ||
+    cat === 'simples nacional' ||
+    cat === 'ipva' ||
+    cat === 'licenciamento anual' ||
+    cat === 'seguros' ||
+    desc.includes('salário') ||
+    desc.includes('salario') ||
+    desc.includes('pró labore') ||
+    desc.includes('pro labore') ||
+    desc.includes('pró-labore') ||
+    desc.includes('vale transporte') ||
+    desc.includes('férias') ||
+    desc.includes('cesta mensal') ||
+    desc.includes('cesta recebafacil') ||
+    desc.includes('manutencao conta corrente') ||
+    desc.includes('manut cartao debito') ||
+    desc.includes('locação impressora') ||
+    desc.includes('estacionamento mensal') ||
+    forn.includes('imobiliária markize') ||
+    forn.includes('contaseg') ||
+    forn.includes('sigomed') ||
+    forn.includes('operadora vivo') ||
+    forn.includes('celesc') ||
+    forn.includes('2thec') ||
+    forn.includes('zap responder') ||
+    forn.includes('color print') ||
+    forn.includes('spotify') ||
+    forn.includes('marco antonio neres') ||
+    forn.includes('antonio neris') ||
+    forn.includes('caixa económica') ||
+    forn.includes('santander financiamentos') ||
+    forn.includes('bankme') ||
+    forn.includes('receita federal') ||
+    forn.includes('ministério da fazenda') ||
+    forn.includes('secretaria de  estado da fazenda') ||
+    forn.includes('auto viação chapecó') ||
+    forn.includes('registro br');
+
+  if (isFixaEstrutural) return 'fixa';
+
+  if (t.recorrente === true || !!t.frequenciaRecorrencia || !!t.grupoRecorrencia) {
     return 'fixa';
   }
 

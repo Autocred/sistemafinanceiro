@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { getTenantId, deletarTransacao, salvarTransacao, subscribeCategorias, formatarMoeda, subscribeTransacoes, subscribeFaturas, subscribeContas } from '@/lib/storage';
+import { getComportamentoTransacao } from '@/components/ExtratoBancario';
 import { Categoria, Conta, Fatura, Transacao } from '@/lib/types';
 import { calcularTotais, isCartaoPendente, normalizeDate } from '@/lib/financialEngine';
 import { FORMAS_PAGAMENTO_LABELS, STATUS_LABELS } from '@/lib/defaults';
@@ -460,7 +461,7 @@ const openSafeAttachment = (url: string) => {
         const matchCat = !filtroCategoria || t.categoriaNome === filtroCategoria;
         const matchCC = !filtroCC || t.centroCustoNome === filtroCC;
         const matchCont = !filtroContato || t.fornecedorNome === filtroContato || t.clienteNome === filtroContato;
-        const compItem = t.comportamento || (t.recorrente ? 'fixa' : 'variavel');
+        const compItem = getComportamentoTransacao(t);
         const matchComp = !filtroComportamento || compItem === filtroComportamento;
         return naoPeriodo && matchBusca && matchTipo && matchStatus && matchRecorrente && matchCat && matchCC && matchCont && matchComp;
       });
@@ -620,7 +621,7 @@ const openSafeAttachment = (url: string) => {
     for (const id of ids) {
       const transacao = transacoes.find(t => t.id === id);
       if (transacao && transacao.status === 'pendente') {
-        const comp = transacao.comportamento || (transacao.recorrente ? 'fixa' : 'variavel');
+        const comp = getComportamentoTransacao(transacao);
         await salvarTransacao({ ...transacao, status: 'pago', dataPagamento: hoje, comportamento: comp });
       }
     }
@@ -1488,9 +1489,17 @@ const openSafeAttachment = (url: string) => {
                           >
                             <span style={{ borderBottom: '1px dashed transparent' }} className="hover:border-white/30">{t.descricao}</span>
                             {(() => {
-                              const comp = t.comportamento || (t.recorrente ? 'fixa' : 'variavel');
+                              const comp = getComportamentoTransacao(t);
                               return comp ? (
-                                <span style={{ fontSize: '9.5px', padding: '1px 5px', borderRadius: '4px', fontWeight: 700, background: comp === 'fixa' ? 'rgba(59,130,246,0.15)' : 'rgba(245,158,11,0.15)', color: comp === 'fixa' ? '#3b82f6' : '#f59e0b', border: `1px solid ${comp === 'fixa' ? 'rgba(59,130,246,0.3)' : 'rgba(245,158,11,0.3)'}` }}>
+                                <span
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    const novo = comp === 'fixa' ? 'variavel' : 'fixa';
+                                    await salvarTransacao({ ...t, comportamento: novo });
+                                  }}
+                                  title="Clique para alternar entre Fixa e Variável"
+                                  style={{ cursor: 'pointer', fontSize: '9.5px', padding: '1px 5px', borderRadius: '4px', fontWeight: 700, background: comp === 'fixa' ? 'rgba(59,130,246,0.15)' : 'rgba(245,158,11,0.15)', color: comp === 'fixa' ? '#3b82f6' : '#f59e0b', border: `1px solid ${comp === 'fixa' ? 'rgba(59,130,246,0.3)' : 'rgba(245,158,11,0.3)'}` }}
+                                >
                                   {comp === 'fixa' ? '🔒 Fixa' : '⚡ Variável'}
                                 </span>
                               ) : null;
@@ -1778,11 +1787,22 @@ const openSafeAttachment = (url: string) => {
                            <span style={{ background: 'var(--bg-active)', padding: '3px 6px', fontSize: 10.5, borderRadius: 8, fontWeight: 500, whiteSpace: 'nowrap', flexShrink: 0 }}>{FORMAS_PAGAMENTO_LABELS[t.formaPagamento] || t.formaPagamento}</span>
                          </>
                        )}
-                       {['master', '9yxuafoC0AV9BrIKem05ponbmgn2', 'autocred-promotora-de-credito'].includes(getTenantId()) && t.comportamento && (
-                         <span style={{ background: t.comportamento === 'fixa' ? 'rgba(139,92,246,0.15)' : 'rgba(245,158,11,0.15)', color: t.comportamento === 'fixa' ? '#6d28d9' : '#b45309', border: `1px solid ${t.comportamento === 'fixa' ? 'var(--primary)' : '#f59e0b'}`, padding: '3px 6px', fontSize: 10.5 }}>
-                           {t.comportamento === 'fixa' ? 'Fixa' : 'Variável'}
-                         </span>
-                       )}
+                       {(() => {
+                         const compMobile = getComportamentoTransacao(t);
+                         return (
+                           <span
+                             onClick={async (e) => {
+                               e.stopPropagation();
+                               const novo = compMobile === 'fixa' ? 'variavel' : 'fixa';
+                               await salvarTransacao({ ...t, comportamento: novo });
+                             }}
+                             title="Toque para alternar entre Fixa e Variável"
+                             style={{ cursor: 'pointer', borderRadius: 6, fontWeight: 700, background: compMobile === 'fixa' ? 'rgba(59,130,246,0.15)' : 'rgba(245,158,11,0.15)', color: compMobile === 'fixa' ? '#2563eb' : '#b45309', border: `1px solid ${compMobile === 'fixa' ? 'rgba(59,130,246,0.35)' : '#f59e0b'}`, padding: '3px 6px', fontSize: 10.5 }}
+                           >
+                             {compMobile === 'fixa' ? '🔒 Fixa' : '⚡ Variável'}
+                           </span>
+                         );
+                       })()}
                        {(t.fornecedorNome || t.clienteNome) && (
                           <span title={t.fornecedorNome || t.clienteNome} style={{ background: 'var(--bg-active)', padding: '3px 7px', fontSize: 10.5, borderRadius: 6, fontWeight: 600, whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>👤 {t.fornecedorNome || t.clienteNome}</span>
                        )}

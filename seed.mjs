@@ -10,27 +10,27 @@ const app = initializeApp({
 const db = getFirestore(app);
 
 async function run() {
-  const q = query(collection(db, 'saas_releases'), where('versao', '==', 'v3.7.5'));
+  const q = query(collection(db, 'saas_releases'), where('versao', '==', 'v3.7.6'));
   const snap = await getDocs(q);
   if (snap.empty) {
     await addDoc(collection(db, 'saas_releases'), {
-      versao: 'v3.7.5',
-      titulo: 'Terminal de Login FinTech, Bolsa de Valores & Inteligência Artificial',
-      descricao: 'Redesign completo da experiência de autenticação (Login, PIN, Biometria e Cadastro) com estética institucional de Terminal Financeiro, Bolsa de Valores (B3 / Wall Street) e Motor de Inteligência Artificial Preditivo, preservando 100% da identidade White Label de cada licença (Logo, Nome do Sistema e Paleta Primária).',
+      versao: 'v3.7.6',
+      titulo: 'Classificação Estrutural Automática de Despesas Fixas vs. Variáveis',
+      descricao: 'Separação rigorosa e sincronizada em todo o sistema entre Despesas Fixas Estruturais (Aluguel, Salários, Pró-Labore Fixo, FGTS, INSS, Simples Nacional, Parcelamentos Tributários, Contabilidade, Medicina do Trabalho, Energia, Internet, Sistemas, Financiamento e Capital de Giro) e Despesas Variáveis (Comissões, Impulsionamento/Marketing, Alimentação, Combustível, Manutenção, Materiais e Retiradas Avulsas).',
       dataLancamento: new Date().toISOString(),
       status: 'publicado',
       destaque: true,
       notificarTenants: false,
       alvos: 'todos',
       changes: [
-        { tipo: 'novidade', texto: 'Ticker Tape Financeiro ao Vivo (B3 & Global Markets): Barra superior contínua com indicadores financeiros (IBOVESPA, S&P 500, NASDAQ AI, USD/BRL, SELIC, CDI, BTC e SLA do Motor Neural IA).' },
-        { tipo: 'novidade', texto: 'HUD Executivo de Telemetria & Gráfico Candlestick IA: Painel visual de alta tecnologia no desktop com gráfico quantitativo em tempo real e indicadores de segurança institucional.' },
-        { tipo: 'melhoria', texto: 'Card de Autenticação Glassmorphic 3D White-Label: Destaque luminoso para a logomarca e nome do Tenant, campos modernos com ícones dedicados, botão mostrar/ocultar senha e botão físico 3D.' }
+        { tipo: 'novidade', texto: 'Classificação Rigorosa no Banco de Dados: Todos os lançamentos, categorias e fornecedores foram auditados e classificados entre Despesa Fixa (🔒) e Variável (⚡).' },
+        { tipo: 'melhoria', texto: 'Sincronização Total (Dashboard, Lançamentos, Dashboard Mensal e Extrato): Alterar uma conta entre Fixa e Variável no Dashboard ou clicar na etiqueta em Lançamentos atualiza automaticamente o registro no banco.' },
+        { tipo: 'melhoria', texto: 'Inteligência de Pré-Preenchimento: Ao selecionar fornecedores/categorias ou digitar descrições, o sistema distingue automaticamente obrigações fixas (como Pró-Labore e Salário) de retiradas ou bônus variáveis.' }
       ]
     });
-    console.log('Release notes v3.7.5 added!');
+    console.log('Release notes v3.7.6 added!');
   } else {
-    console.log('Release notes v3.7.5 already registered!');
+    console.log('Release notes v3.7.6 already registered!');
   }
   process.exit(0);
 }
