@@ -23,6 +23,7 @@ import {
 import { calcularMotorFinanceiro } from '@/lib/financialEngine';
 import { playSound } from '@/lib/audio';
 import GraficosAutocred from './GraficosAutocred';
+import WaterfallAttribution from './WaterfallAttribution';
 
 
 interface Props {
@@ -2327,6 +2328,19 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
           </div>
         )}
       </div>
+
+      {/* FERRAMENTA AMERICANA (STRIPE SIGMA / WALL STREET): RAIO-X DE DESTINO DE CADA R$ 100,00 */}
+      <WaterfallAttribution
+        transacoes={todasTransacoes}
+        faturas={faturas}
+        mesFormatado={mesFormatado}
+        nomeMes={`${mesesStr[mesSelecionado.getMonth()]} / ${mesSelecionado.getFullYear()}`}
+        receitasRealizadas={motor.receitasRealizadas}
+        receitasAReceber={motor.receitasAReceberTotal || 0}
+        despesasRealizadas={motor.despesasRealizadas}
+        despesasAPagar={motor.despesasAPagarTotal}
+        compactOnDashboard={true}
+      />
 
       
       {/* GRÃFICO PREMIUM: PROJEï¿½!ÃO FUTURA (CASHFLOW) */}

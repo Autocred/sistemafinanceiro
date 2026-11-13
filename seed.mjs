@@ -10,25 +10,27 @@ const app = initializeApp({
 const db = getFirestore(app);
 
 async function run() {
-  const q = query(collection(db, 'saas_releases'), where('versao', '==', 'v3.8.1'));
+  const q = query(collection(db, 'saas_releases'), where('versao', '==', 'v3.8.2'));
   const snap = await getDocs(q);
   if (snap.empty) {
     await addDoc(collection(db, 'saas_releases'), {
-      versao: 'v3.8.1',
-      titulo: 'Tela de Login Compactada em Tela Única (Sem Barra de Rolagem)',
-      descricao: 'Ajuste de altura, espaçamento e proporções da tela de login para caber integralmente em uma única tela (100vh) sem barra de rolagem vertical.',
+      versao: 'v3.8.2',
+      titulo: 'Cash Flow Waterfall & Dollar Attribution: Raio-X de Destino de Cada R$ 100 (Padrão Stripe Sigma / Wall Street)',
+      descricao: 'Implementação da ferramenta americana Cash Flow Waterfall & Attribution no Dashboard e no Resumo Mensal, mostrando exatamente para onde vai cada R$ 100,00 de receita em cascata (Impostos, Folha, Estrutura Fixa, Empréstimos/Parcelamentos, Variáveis e Margem Líquida Livre).',
       dataLancamento: new Date().toISOString(),
       status: 'publicado',
       destaque: true,
       notificarTenants: false,
       alvos: 'todos',
       changes: [
-        { tipo: 'melhoria', texto: 'Login em Tela Única (100vh sem rolagem): Redução proporcional da altura dos cards, textos e campos na tela de login para exibição completa sem barra de rolagem.' }
+        { tipo: 'novidade', texto: 'Fatiamento Visual da Nota de R$ 100,00: Barra multi-segmentada mostrando quantos reais de cada R$ 100 recebidos são consumidos por cada área da empresa.' },
+        { tipo: 'novidade', texto: 'Cascata Passo a Passo (Waterfall Step-Down): Dedução sequencial a partir de R$ 100,00 passando por Impostos, Folha, Estrutura Fixa, Empréstimos Ativos e Variáveis até a Margem Líquida Livre.' },
+        { tipo: 'melhoria', texto: 'Detalhamento Interativo (Drill-Down): Clique em qualquer fatia da cascata para ver exatamente quanto cada conta individual representa a cada R$ 100 de receita.' }
       ]
     });
-    console.log('Release notes v3.8.1 added!');
+    console.log('Release notes v3.8.2 added!');
   } else {
-    console.log('Release notes v3.8.1 already registered!');
+    console.log('Release notes v3.8.2 already registered!');
   }
   process.exit(0);
 }

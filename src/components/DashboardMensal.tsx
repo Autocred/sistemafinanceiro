@@ -14,6 +14,7 @@ import { ptBR } from 'date-fns/locale';
 import { subscribeTransacoes, formatarMoeda } from '@/lib/storage';
 import { getComportamentoTransacao, getInfoSerieParcelamento } from './ExtratoBancario';
 import { normalizeDate, getValorFinal } from '@/lib/financialEngine';
+import WaterfallAttribution from './WaterfallAttribution';
 import { Transacao } from '@/lib/types';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -525,6 +526,18 @@ export default function DashboardMensal() {
         </h3>
         <p style={{ color: 'var(--text-secondary)', fontSize: 15, lineHeight: 1.6 }}>{resumoInteligente}</p>
       </div>
+
+      {/* FERRAMENTA AMERICANA (STRIPE SIGMA / WALL STREET): RAIO-X DE DESTINO DE CADA R$ 100,00 */}
+      <WaterfallAttribution
+        transacoes={transacoes}
+        mesFormatado={`${ano}-${String(mes + 1).padStart(2, '0')}`}
+        nomeMes={`${MESES[mes]} / ${ano}`}
+        receitasRealizadas={totalReceitas}
+        receitasAReceber={0}
+        despesasRealizadas={totalDespesas}
+        despesasAPagar={0}
+        compactOnDashboard={false}
+      />
 
       {/* CHARTS GRID */}
       <div className="bi-charts-grid" style={{ gridTemplateColumns: '1fr' }}>
