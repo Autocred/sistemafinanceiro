@@ -2347,7 +2347,7 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
       <DebtPayoffSimulator
         transacoes={todasTransacoes}
         mesFormatado={mesFormatado}
-        saldoEmCaixa={motor.saldoAtualReal}
+        saldoEmCaixa={motor.saldoAtual}
         compactOnDashboard={true}
       />
 
