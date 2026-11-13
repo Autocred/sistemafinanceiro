@@ -1062,22 +1062,25 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
              />
           )}
 
-          {/* SIDEBAR */}
+          {/* SIDEBAR — DESIGN LEVE E MODERNO */}
           <aside className={`sidebar ${mobileMenuAberto ? 'mobile-open' : ''} ${sidebarCompacta ? 'compacta' : ''}`}>
-            {/* TOPO DA SIDEBAR: BOTÃO RECOLHER/EXPANDIR */}
+            {/* TOPO DA SIDEBAR: CABEÇALHO MINIMALISTA + BOTÃO RECOLHER/EXPANDIR */}
             <div style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: sidebarCompacta ? 'center' : 'space-between',
-              marginBottom: 10,
-              padding: sidebarCompacta ? '4px 0' : '6px 8px',
-              background: 'rgba(255,255,255,0.08)',
-              borderRadius: 10,
-              border: '1px solid rgba(255,255,255,0.15)'
+              marginBottom: 8,
+              padding: sidebarCompacta ? '2px 0' : '2px 4px',
             }}>
               {!sidebarCompacta && (
-                <span style={{ fontSize: '11px', fontWeight: 600, color: '#ffffff', letterSpacing: '0.3px', fontFamily: "'Open Sans', sans-serif" }}>
-                  MENU PRINCIPAL
+                <span style={{
+                  fontSize: '10px',
+                  fontWeight: 700,
+                  color: 'rgba(255,255,255,0.5)',
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase',
+                }}>
+                  Navegação
                 </span>
               )}
               <button
@@ -1086,78 +1089,114 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: 5,
-                  background: 'rgba(255,255,255,0.2)',
-                  border: '1px solid rgba(255,255,255,0.3)',
-                  color: '#ffffff',
-                  borderRadius: 8,
-                  padding: sidebarCompacta ? '6px' : '4px 8px',
+                  gap: 4,
+                  background: 'rgba(255,255,255,0.08)',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  color: 'rgba(255,255,255,0.85)',
+                  borderRadius: 7,
+                  padding: sidebarCompacta ? '6px' : '3px 8px',
                   fontSize: '11px',
-                  fontWeight: 700,
-                  cursor: 'pointer'
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+                onMouseOver={e => {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.15)';
+                  e.currentTarget.style.color = '#ffffff';
+                }}
+                onMouseOut={e => {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
+                  e.currentTarget.style.color = 'rgba(255,255,255,0.85)';
                 }}
               >
-                {sidebarCompacta ? <ChevronsRight size={15} /> : <><ChevronsLeft size={14} /> <span>Recolher</span></>}
+                {sidebarCompacta ? <ChevronsRight size={14} /> : <><ChevronsLeft size={13} /> <span>Recolher</span></>}
               </button>
             </div>
-            <button 
-              className="flex items-center justify-center gap-2 w-full mb-6 py-3.5 px-4 transition-all"
-              style={{
-                background: (!userProfile || !userProfile.tenantId || userProfile.tenantId === 'master' || userProfile.uid === 'clovis-master-bypass') ? 'linear-gradient(180deg, #10b981 0%, #059669 100%)' : 'linear-gradient(180deg, var(--primary) 0%, var(--primary-dark) 100%)',
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: '12px',
-                borderBottom: (!userProfile || !userProfile.tenantId || userProfile.tenantId === 'master' || userProfile.uid === 'clovis-master-bypass') ? '5px solid #047857' : '5px solid color-mix(in srgb, var(--primary-dark) 80%, black)',
-                boxShadow: (!userProfile || !userProfile.tenantId || userProfile.tenantId === 'master' || userProfile.uid === 'clovis-master-bypass') ? '0 4px 20px rgba(16, 185, 129, 0.4)' : '0 4px 20px var(--primary-light)',
-                fontSize: '15px',
-                fontWeight: 900,
-                cursor: 'pointer',
-                letterSpacing: '0.5px',
-                textShadow: '0 1px 2px rgba(0,0,0,0.2)',
-                transform: 'translateY(0)',
-              }}
-              onMouseOver={e => {
-                e.currentTarget.style.filter = 'brightness(1.1)';
-              }}
-              onMouseOut={e => {
-                e.currentTarget.style.filter = 'brightness(1)';
-                e.currentTarget.style.borderBottomWidth = '5px';
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = (!userProfile || !userProfile.tenantId || userProfile.tenantId === 'master' || userProfile.uid === 'clovis-master-bypass') ? '0 4px 20px rgba(16, 185, 129, 0.4)' : '0 4px 20px var(--primary-light)';
-              }}
-              onMouseDown={e => {
-                e.currentTarget.style.borderBottomWidth = '0px';
-                e.currentTarget.style.transform = 'translateY(5px)';
-                e.currentTarget.style.boxShadow = 'none';
-              }}
-              onMouseUp={e => {
-                e.currentTarget.style.borderBottomWidth = '5px';
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = (!userProfile || !userProfile.tenantId || userProfile.tenantId === 'master' || userProfile.uid === 'clovis-master-bypass') ? '0 4px 20px rgba(16, 185, 129, 0.4)' : '0 4px 20px var(--primary-light)';
-              }}
-              onClick={() => { setMobileMenuAberto(false); setTransacaoEditar(null); setModalAberto(true); }}
-            >
-              <PlusCircle size={20} strokeWidth={2.5} />
-              <span>Novo Lançamento</span>
-            </button>
-            <button
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                padding: '10px 14px', borderRadius: '14px',
-                background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(168, 85, 247, 0.2))',
-                border: '1px solid rgba(168, 85, 247, 0.4)',
-                color: '#e9d5ff',
-                fontWeight: 700, fontSize: '13px', cursor: 'pointer',
-                marginBottom: '14px', transition: 'all 0.2s', width: '100%',
-                boxShadow: '0 4px 12px rgba(168, 85, 247, 0.2)'
-              }}
-              onClick={() => { setMobileMenuAberto(false); setModalImportarDocAberto(true); }}
-              title="Importar Boleto, Nota Fiscal ou Recibo com OCR e IA"
-            >
-              <Sparkles size={16} color="#c084fc" />
-              <span>Ler Boleto/NF com IA</span>
-            </button>
-            <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 0, overflowY: 'auto', paddingRight: 2 }}>
+
+            {/* AÇÕES RÁPIDAS: NOVO LANÇAMENTO + LER COM IA */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }}>
+              <button 
+                onClick={() => { setMobileMenuAberto(false); setTransacaoEditar(null); setModalAberto(true); }}
+                title="Novo Lançamento"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  width: '100%',
+                  padding: sidebarCompacta ? '9px 0' : '9px 12px',
+                  background: '#ffffff',
+                  color: 'var(--primary-dark, #0f172a)',
+                  border: '1px solid rgba(255,255,255,0.9)',
+                  borderRadius: '10px',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.12)',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  letterSpacing: '-0.01em',
+                  transition: 'all 0.18s ease',
+                }}
+                onMouseOver={e => {
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.18)';
+                }}
+                onMouseOut={e => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.12)';
+                }}
+              >
+                <PlusCircle size={16} strokeWidth={2.4} style={{ flexShrink: 0, color: 'var(--primary, #1e40af)' }} />
+                {!sidebarCompacta && <span>Novo Lançamento</span>}
+              </button>
+
+              <button
+                onClick={() => { setMobileMenuAberto(false); setModalImportarDocAberto(true); }}
+                title="Importar Boleto, Nota Fiscal ou Recibo com OCR e IA"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 7,
+                  width: '100%',
+                  padding: sidebarCompacta ? '8px 0' : '7px 10px',
+                  borderRadius: '9px',
+                  background: 'rgba(255, 255, 255, 0.07)',
+                  border: '1px solid rgba(255, 255, 255, 0.13)',
+                  color: 'rgba(255, 255, 255, 0.92)',
+                  fontWeight: 500,
+                  fontSize: '12px',
+                  cursor: 'pointer',
+                  transition: 'all 0.18s ease',
+                }}
+                onMouseOver={e => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.13)';
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.24)';
+                }}
+                onMouseOut={e => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.07)';
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.13)';
+                }}
+              >
+                <Sparkles size={14} color="#c4b5fd" style={{ flexShrink: 0 }} />
+                {!sidebarCompacta && (
+                  <>
+                    <span>Ler Boleto/NF</span>
+                    <span style={{
+                      fontSize: '9.5px',
+                      fontWeight: 700,
+                      padding: '1px 5px',
+                      borderRadius: 99,
+                      background: 'rgba(196, 181, 253, 0.2)',
+                      color: '#e9d5ff',
+                      letterSpacing: '0.03em'
+                    }}>IA</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* LISTA DE NAVEGAÇÃO LEVE E MODERNA */}
+            <nav className="sidebar-nav-scroll" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto', paddingRight: 2 }}>
               {(() => {
                 const grupos = navItemsFiltrados.reduce((acc, item) => {
                   const g = item.grupo || 'Outros';
@@ -1175,39 +1214,67 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
                   return idxA - idxB;
                 });
 
+                // Remove emojis pesados do título do grupo para visual mais limpo e moderno
+                const formatarTituloGrupo = (titulo: string) =>
+                  titulo.replace(/^[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\s]+/u, '').trim();
+
                 return chavesOrdenadas.map((nomeGrupo, grupIdx) => {
                   const itens = grupos[nomeGrupo];
-                  const isOpen = gruposExpandidos[nomeGrupo];
+                  const isOpen = sidebarCompacta ? true : gruposExpandidos[nomeGrupo];
+                  const temItemAtivo = itens.some(i => i.id === paginaAtual);
                   return (
                     <div key={nomeGrupo} style={{ marginBottom: 4 }}>
-                      {/* Cabeçalho do grupo */}
-                      <div
-                        onClick={() => toggleGrupo(nomeGrupo)}
-                        style={{
-                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                          padding: '7px 10px', cursor: 'pointer',
-                          color: 'rgba(255,255,255,0.85)',
-                          fontSize: '11px', fontWeight: 500,
-                          fontFamily: "'Open Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
-                          letterSpacing: '0.5px',
-                          textTransform: 'uppercase',
-                          borderRadius: 8,
-                          marginTop: grupIdx > 0 ? 6 : 0,
-                          borderTop: grupIdx > 0 ? '1px solid rgba(255,255,255,0.07)' : 'none',
-                          paddingTop: grupIdx > 0 ? 10 : 7,
-                          userSelect: 'none'
-                        }}
-                        className="transition-colors hover:bg-white/5"
-                      >
-                        <span>{nomeGrupo}</span>
-                        <span style={{ color: 'rgba(255,255,255,0.85)' }}>{isOpen ? <ChevronDown size={13} strokeWidth={1.8} /> : <ChevronRight size={13} strokeWidth={1.8} />}</span>
-                      </div>
+                      {/* Cabeçalho do grupo (oculto no modo compacto) */}
+                      {!sidebarCompacta && (
+                        <div
+                          onClick={() => toggleGrupo(nomeGrupo)}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '6px 8px',
+                            cursor: 'pointer',
+                            color: isOpen || temItemAtivo ? 'rgba(255,255,255,0.72)' : 'rgba(255,255,255,0.48)',
+                            fontSize: '10.5px',
+                            fontWeight: 700,
+                            letterSpacing: '0.07em',
+                            textTransform: 'uppercase',
+                            borderRadius: 7,
+                            marginTop: grupIdx > 0 ? 6 : 0,
+                            borderTop: grupIdx > 0 ? '1px solid rgba(255,255,255,0.06)' : 'none',
+                            paddingTop: grupIdx > 0 ? 10 : 6,
+                            userSelect: 'none',
+                            transition: 'all 0.15s ease'
+                          }}
+                          className="hover:text-white/90"
+                        >
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{
+                              width: 5,
+                              height: 5,
+                              borderRadius: '50%',
+                              background: temItemAtivo ? '#ffffff' : 'rgba(255,255,255,0.3)',
+                              boxShadow: temItemAtivo ? '0 0 6px rgba(255,255,255,0.8)' : 'none',
+                              transition: 'all 0.2s ease'
+                            }} />
+                            <span>{formatarTituloGrupo(nomeGrupo)}</span>
+                          </span>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'rgba(255,255,255,0.5)' }}>
+                            {!isOpen && (
+                              <span style={{ fontSize: '9.5px', fontWeight: 600, opacity: 0.7 }}>{itens.length}</span>
+                            )}
+                            {isOpen ? <ChevronDown size={12} strokeWidth={2} /> : <ChevronRight size={12} strokeWidth={2} />}
+                          </span>
+                        </div>
+                      )}
 
                       {/* Itens do grupo */}
                       <div style={{
-                        display: 'flex', flexDirection: 'column', gap: 1,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 2,
                         overflow: 'hidden',
-                        transition: 'max-height 0.3s cubic-bezier(0.4,0,0.2,1)',
+                        transition: 'max-height 0.25s cubic-bezier(0.4,0,0.2,1)',
                         maxHeight: isOpen ? '800px' : '0px'
                       }}>
                         {itens.map(item => {
@@ -1216,6 +1283,7 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
                           const sub = (item as any).sublabel;
                           return (
                             <button key={item.id}
+                              title={sidebarCompacta ? `${item.label}${sub ? ` — ${sub}` : ''}` : undefined}
                               onClick={() => {
                                 if (item.id === 'licencas') {
                                   window.location.href = '/master';
@@ -1225,52 +1293,91 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
                                 }
                               }}
                               style={{
-                                display: 'flex', alignItems: 'center', gap: 10,
-                                padding: '9px 10px',
-                                borderRadius: 10,
+                                position: 'relative',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: sidebarCompacta ? 'center' : 'flex-start',
+                                gap: 10,
+                                padding: sidebarCompacta ? '8px 0' : '7px 9px',
+                                borderRadius: 9,
                                 cursor: 'pointer',
-                                border: 'none',
-                                width: '100%', textAlign: 'left',
+                                border: isActive ? '1px solid rgba(255,255,255,0.16)' : '1px solid transparent',
+                                width: '100%',
+                                textAlign: 'left',
                                 background: isActive
-                                  ? 'rgba(255,255,255,0.18)'
+                                  ? 'linear-gradient(90deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.08) 100%)'
                                   : 'transparent',
-                                boxShadow: isActive ? 'inset 0 0 0 1px rgba(255,255,255,0.15)' : 'none',
-                                transition: 'all 0.15s ease',
+                                boxShadow: isActive ? '0 2px 10px rgba(0,0,0,0.08)' : 'none',
+                                transition: 'all 0.16s ease',
                                 color: '#ffffff',
                               }}
-                              className={isActive ? '' : 'hover:bg-white/8'}
+                              onMouseOver={e => {
+                                if (!isActive) {
+                                  e.currentTarget.style.background = 'rgba(255,255,255,0.07)';
+                                }
+                              }}
+                              onMouseOut={e => {
+                                if (!isActive) {
+                                  e.currentTarget.style.background = 'transparent';
+                                }
+                              }}
                             >
                               <span style={{
-                                width: 32, height: 32, borderRadius: 8, flexShrink: 0,
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                background: isActive ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.08)',
-                                color: '#ffffff',
-                                transition: 'all 0.15s'
+                                width: 28,
+                                height: 28,
+                                borderRadius: 7,
+                                flexShrink: 0,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                background: isActive ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.06)',
+                                color: isActive ? '#ffffff' : 'rgba(255,255,255,0.8)',
+                                transition: 'all 0.16s ease'
                               }}>
-                                <Icon size={15} />
+                                <Icon size={14} strokeWidth={isActive ? 2.2 : 1.75} />
                               </span>
-                              <span style={{ flex: 1, minWidth: 0 }}>
-                                <span style={{
-                                  display: 'block', fontSize: '13.5px', fontWeight: isActive ? 500 : 400,
-                                  color: '#ffffff',
-                                  fontFamily: "'Open Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
-                                  lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                                  letterSpacing: '0px'
-                                }}>{item.label}</span>
-                                {sub && (
-                                  <span style={{
-                                    display: 'block', fontSize: '11px', color: 'rgba(255,255,255,0.75)',
-                                    fontFamily: "'Open Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
-                                    lineHeight: 1.2, marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                                    fontWeight: 300
-                                  }}>{sub}</span>
-                                )}
-                              </span>
-                              {item.id === 'licencas' && (
-                                <span style={{ background: '#ef4444', color: '#fff', fontSize: 9, padding: '2px 5px', borderRadius: 8, fontWeight: 800, flexShrink: 0 }}>MASTER</span>
-                              )}
-                              {isActive && (
-                                <span style={{ width: 3, height: 18, borderRadius: 2, background: '#ffffff', flexShrink: 0 }} />
+                              {!sidebarCompacta && (
+                                <>
+                                  <span style={{ flex: 1, minWidth: 0 }}>
+                                    <span style={{
+                                      display: 'block',
+                                      fontSize: '12.5px',
+                                      fontWeight: isActive ? 600 : 450,
+                                      color: isActive ? '#ffffff' : 'rgba(255,255,255,0.88)',
+                                      lineHeight: 1.25,
+                                      whiteSpace: 'nowrap',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis',
+                                      letterSpacing: '-0.01em'
+                                    }}>{item.label}</span>
+                                    {sub && (
+                                      <span style={{
+                                        display: 'block',
+                                        fontSize: '10.5px',
+                                        color: isActive ? 'rgba(255,255,255,0.72)' : 'rgba(255,255,255,0.48)',
+                                        lineHeight: 1.2,
+                                        marginTop: 1,
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        fontWeight: 400
+                                      }}>{sub}</span>
+                                    )}
+                                  </span>
+                                  {item.id === 'licencas' && (
+                                    <span style={{ background: '#ef4444', color: '#fff', fontSize: 8.5, padding: '1.5px 5px', borderRadius: 6, fontWeight: 700, flexShrink: 0 }}>MASTER</span>
+                                  )}
+                                  {isActive && (
+                                    <span style={{
+                                      width: 3,
+                                      height: 16,
+                                      borderRadius: 99,
+                                      background: '#ffffff',
+                                      boxShadow: '0 0 8px rgba(255,255,255,0.65)',
+                                      flexShrink: 0
+                                    }} />
+                                  )}
+                                </>
                               )}
                             </button>
                           );
@@ -1282,27 +1389,53 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
               })()}
             </nav>
 
-
-            <div style={{ marginTop: 'auto', paddingTop: 12, borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
+            {/* RODAPÉ LEVE E MODERNO */}
+            <div style={{
+              marginTop: 'auto',
+              paddingTop: 10,
+              borderTop: '1px solid rgba(255,255,255,0.08)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 6,
+              flexShrink: 0
+            }}>
               <button
+                title={sidebarCompacta ? "Sair do Sistema" : undefined}
                 style={{ 
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                  padding: '12px', background: 'rgba(255,255,255,0.2)', color: '#fff', borderRadius: '12px',
-                  fontWeight: 700, fontSize: '13px', cursor: 'pointer', border: 'none',
-                  boxShadow: '0 4px 0 rgba(0,0,0,0.2), 0 4px 10px rgba(0,0,0,0.1)',
-                  transition: 'all 0.1s ease',
-                  marginTop: '4px'
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 7,
+                  padding: sidebarCompacta ? '8px 0' : '8px 12px',
+                  background: 'rgba(255,255,255,0.07)',
+                  color: 'rgba(255,255,255,0.9)',
+                  borderRadius: '9px',
+                  fontWeight: 500,
+                  fontSize: '12px',
+                  cursor: 'pointer',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  transition: 'all 0.18s ease',
                 }}
-                onMouseDown={(e) => { e.currentTarget.style.transform = 'translateY(4px)'; e.currentTarget.style.boxShadow = '0 0px 0 rgba(0,0,0,0.2), 0 2px 4px rgba(0,0,0,0.1)'; }}
-                onMouseUp={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 0 rgba(0,0,0,0.2), 0 4px 10px rgba(0,0,0,0.1)'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 0 rgba(0,0,0,0.2), 0 4px 10px rgba(0,0,0,0.1)'; }}
-                onClick={handleLogout}>
-                <LogOut size={17} color="#fff" />
-                Sair do Sistema
+                onMouseOver={e => {
+                  e.currentTarget.style.background = 'rgba(239, 68, 68, 0.22)';
+                  e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+                  e.currentTarget.style.color = '#ffffff';
+                }}
+                onMouseOut={e => {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.07)';
+                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)';
+                  e.currentTarget.style.color = 'rgba(255,255,255,0.9)';
+                }}
+                onClick={handleLogout}
+              >
+                <LogOut size={14} />
+                {!sidebarCompacta && <span>Sair do Sistema</span>}
               </button>
-              <div style={{ textAlign: 'center', marginTop: 12, fontSize: 10, color: 'rgba(255,255,255,0.5)' }}>
-                FinanceAI v2.0 Ultra &bull; Firebase &bull; Vercel
-              </div>
+              {!sidebarCompacta && (
+                <div style={{ textAlign: 'center', fontSize: 9.5, color: 'rgba(255,255,255,0.38)', letterSpacing: '0.02em' }}>
+                  FinanceAI Ultra &bull; Cloud ERP
+                </div>
+              )}
             </div>
           </aside>
 

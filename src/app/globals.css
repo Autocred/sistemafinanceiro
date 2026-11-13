@@ -682,7 +682,7 @@ select:-webkit-autofill:focus {
   box-shadow: 0 32px 64px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
 }
 
-/* Sidebar */
+/* Sidebar — Leve & Moderno */
 .sidebar {
   width: 240px;
   position: fixed;
@@ -690,25 +690,45 @@ select:-webkit-autofill:focus {
   top: 60px;
   bottom: 24px;
   border-radius: 0;
-  background: var(--primary) !important; border-right: none;
-  backdrop-filter: blur(48px) saturate(200%);
-  -webkit-backdrop-filter: blur(48px) saturate(200%);
-  border: 1px solid rgba(255,255,255,0.9);
-  padding: 24px 16px;
+  background: linear-gradient(180deg, var(--primary) 0%, color-mix(in srgb, var(--primary-dark, var(--primary)) 86%, #020617) 100%) !important;
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+  border: none;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 14px 12px;
   z-index: 100;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
   overflow-y: auto !important;
   overflow-x: hidden;
-  box-shadow: 4px 0 24px rgba(0,0,0,0.02);
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Scrollbar fina e discreta dentro da navegação da sidebar */
+.sidebar-nav-scroll::-webkit-scrollbar,
+.sidebar::-webkit-scrollbar {
+  width: 3px;
+}
+.sidebar-nav-scroll::-webkit-scrollbar-track,
+.sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sidebar-nav-scroll::-webkit-scrollbar-thumb,
+.sidebar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 99px;
+}
+.sidebar-nav-scroll:hover::-webkit-scrollbar-thumb,
+.sidebar:hover::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.28);
 }
 
 [data-theme='dark'] .sidebar {
-  background: #0F172A;
-  border-right: 1px solid rgba(255,255,255,0.05);
-  box-shadow: 4px 0 24px rgba(0,0,0,0.2);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--primary) 88%, #0f172a) 0%, color-mix(in srgb, var(--primary-dark, var(--primary)) 75%, #020617) 100%) !important;
+  border-right: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 4px 0 24px rgba(0,0,0,0.25);
 }
 
 .sidebar-link {
