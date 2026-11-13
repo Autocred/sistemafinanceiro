@@ -114,25 +114,40 @@ export default function WaterfallAttribution({
     const classificarBucket = (desc: string, cat: string, t?: any): string => {
       const texto = `${normalize(desc)} ${normalize(cat)}`;
 
-      // 1. Impostos, Taxas e Encargos Sociais (INSS, FGTS, DAS, Simples, DARF, Imposto)
+      // 1. Empréstimos, Financiamentos e Parcelamentos (inclui parcelamentos de INSS/Simples com a Receita)
+      //    Vem ANTES de impostos para que "Parcelamento INSS/Simples" conte como dívida parcelada.
+      if (
+        /\bparcela\s*\d+/i.test(desc || '') ||
+        Number(t?.totalParcelas) > 1 ||
+        texto.includes('emprestimo') ||
+        texto.includes('financiamento') ||
+        texto.includes('parcelamento') ||
+        texto.includes('consorcio') ||
+        texto.includes('pronampe') ||
+        texto.includes('sispar') ||
+        texto.includes('capital de giro')
+      ) {
+        return 'dividas';
+      }
+
+      // 2. Impostos, Taxas e Encargos Sociais (INSS, FGTS, DAS, Simples, DARF, Imposto)
       if (
         texto.includes('imposto') ||
         texto.includes('simples nacional') ||
-        texto.includes('das ') ||
-        texto.startsWith('das') ||
+        /\bdas\b/.test(texto) ||
         texto.includes('inss') ||
         texto.includes('fgts') ||
         texto.includes('darf') ||
         texto.includes('irpj') ||
         texto.includes('csll') ||
-        texto.includes('iss') ||
+        /\biss\b/.test(texto) ||
         texto.includes('tributo') ||
         texto.includes('taxa fiscal')
       ) {
         return 'impostos';
       }
 
-      // 2. Folha de Pagamento, Pró-Labore, Funcionários e Adiantamentos
+      // 3. Folha de Pagamento, Pró-Labore, Funcionários e Adiantamentos
       if (
         texto.includes('salario') ||
         texto.includes('folha') ||
@@ -147,22 +162,6 @@ export default function WaterfallAttribution({
         texto.includes('rescisao')
       ) {
         return 'folha';
-      }
-
-      // 3. Empréstimos, Financiamentos e Parcelamentos
-      const tempadraoParcela = /\b\d{1,2}\s*\/\s*\d{1,2}\b|\bparcela\s*\d+/i.test(desc || '');
-      if (
-        tempadraoParcela ||
-        t?.isParcelado ||
-        Number(t?.parcelas) > 1 ||
-        texto.includes('emprestimo') ||
-        texto.includes('financiamento') ||
-        texto.includes('parcelamento') ||
-        texto.includes('consorcio') ||
-        texto.includes('pronampe') ||
-        texto.includes('capital de giro')
-      ) {
-        return 'dividas';
       }
 
       // 4. Estrutura & Custos Fixos Operacionais (Aluguel, Contador, Água, Luz, Internet, Sistemas, Telefonia)

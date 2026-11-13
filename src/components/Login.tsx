@@ -917,7 +917,7 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
           </span>
         </div>
         <div style={{ fontFamily: 'monospace', fontSize: 10, color: '#475569' }}>
-          {nomeSistema.toUpperCase()} • v3.8.6 P:{typeof window !== 'undefined' && localStorage.getItem('app_pin_code') ? '1' : '0'} E:{typeof window !== 'undefined' && localStorage.getItem('saved_email_apk') ? '1' : '0'} M:{modo}
+          {nomeSistema.toUpperCase()} • v3.8.7 P:{typeof window !== 'undefined' && localStorage.getItem('app_pin_code') ? '1' : '0'} E:{typeof window !== 'undefined' && localStorage.getItem('saved_email_apk') ? '1' : '0'} M:{modo}
         </div>
       </div>
     </div>

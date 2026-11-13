@@ -132,14 +132,6 @@ export interface InfoSerieParcelamento {
 
 export function isParcelamentoTransacao(t: Transacao): boolean {
   if (!t || t.tipo !== 'despesa') return false;
-  if (
-    t.parcelado === true ||
-    !!t.grupoParcelamento ||
-    (Number(t.totalParcelas) || 0) > 1 ||
-    (Number(t.parcelaAtual) || 0) > 0
-  ) {
-    return true;
-  }
 
   const desc = ((t.descricao || '') as string).toLowerCase().trim();
   const cat = ((t.categoriaNome || '') as string).toLowerCase().trim();
@@ -156,6 +148,12 @@ export function isParcelamentoTransacao(t: Transacao): boolean {
     return false;
   }
 
+  // Lançamento parcelado de verdade (ex.: compra em 3x / 12x) com total declarado > 1
+  if ((Number(t.totalParcelas) || 0) > 1) return true;
+
+  // ATENÇÃO: as flags `parcelado`, `grupoParcelamento` e `parcelaAtual` também são gravadas em
+  // contas RECORRENTES mensais (FGTS, energia, internet, folha, uniformes, comissões...).
+  // Por isso NÃO bastam sozinhas para caracterizar parcelamento/empréstimo: exige-se palavra-chave.
   return (
     desc.includes('parcelamento') ||
     cat.includes('parcelamento') ||
@@ -178,7 +176,8 @@ export function isParcelamentoTransacao(t: Transacao): boolean {
 }
 
 export function getChaveSerieParcelamento(t: Transacao): string {
-  if (t.grupoParcelamento) return `grp:${t.grupoParcelamento}`;
+  // Não usa grupoParcelamento: em várias séries só parte das parcelas possui esse campo,
+  // o que dividia a mesma série em duas e distorcia a data da última parcela.
   const forn = ((t.fornecedorNome || '') as string).toLowerCase().trim();
   const desc = ((t.descricao || '') as string)
     .toLowerCase()
