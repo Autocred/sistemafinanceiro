@@ -10,27 +10,26 @@ const app = initializeApp({
 const db = getFirestore(app);
 
 async function run() {
-  const q = query(collection(db, 'saas_releases'), where('versao', '==', 'v3.8.4'));
+  const q = query(collection(db, 'saas_releases'), where('versao', '==', 'v3.8.5'));
   const snap = await getDocs(q);
   if (snap.empty) {
     await addDoc(collection(db, 'saas_releases'), {
-      versao: 'v3.8.4',
-      titulo: 'Debt Payoff Snowball vs. Avalanche Simulator & Calendário de Alívio de Caixa (Padrão SoFi / Tally USA)',
-      descricao: 'Implementação do Acelerador Inteligente de Quitação de Parcelamentos & Empréstimos Ativos no Dashboard e Resumo Mensal, com estratégias Snowball, Avalanche e ROI de Alívio Rápido, além do Calendário de Alívio de Caixa e Simulador What-If de antecipação.',
+      versao: 'v3.8.5',
+      titulo: 'Menu Raio-X & Quitação no Menu Lateral e Alinhamento Exato de Despesas Pagas no Gráfico',
+      descricao: 'Adição do atalho dedicado "Raio-X & Quitação" na seção Visão Geral do menu lateral e alinhamento integral do gráfico mensal com o card de Despesas Pagas do Mês (R$ 12.981,14).',
       dataLancamento: new Date().toISOString(),
       status: 'publicado',
-      destaque: true,
+      destaque: false,
       notificarTenants: false,
       alvos: 'todos',
       changes: [
-        { tipo: 'novidade', texto: 'Calendário de Alívio de Caixa: Mostra exatamente em qual mês cada parcelamento ativo termina e quanto de fôlego mensal (+R$/mês) será destravado automaticamente.' },
-        { tipo: 'novidade', texto: '3 Estratégias Americanas de Quitação (ROI Tally, Bola de Neve / Snowball e Avalanche): Ordene seus parcelamentos ativos pela melhor eficiência de liberação de fluxo de caixa.' },
-        { tipo: 'novidade', texto: 'Simulador What-If de Quitação Antecipada: Simule qualquer valor e % de desconto para ver quantos contratos seriam eliminados hoje, quanto caixa mensal destravaria e o payback em meses.' }
+        { tipo: 'novidade', texto: 'Menu Lateral — Raio-X & Quitação: Novo item em Visão Geral para acessar em 1 clique o Raio-X de Cada R$ 100 e o Simulador de Quitação de Parcelamentos.' },
+        { tipo: 'correcao', texto: 'Gráfico Mensal e Indicadores de Despesas Pagas: Alinhamento exato de 100% das despesas efetivamente pagas no mês nos gráficos e cards.' }
       ]
     });
-    console.log('Release notes v3.8.4 added!');
+    console.log('Release notes v3.8.5 added!');
   } else {
-    console.log('Release notes v3.8.4 already registered!');
+    console.log('Release notes v3.8.5 already registered!');
   }
   process.exit(0);
 }

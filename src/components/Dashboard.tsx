@@ -346,13 +346,7 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
       // 1. Deve estar efetivamente pago (recebido é sinônimo para receitas)
       if (t.status !== 'pago') return false;
 
-      // 2. Se for parcelamento já encerrado (quando não tem mais a vencer), retira os valores do Dashboard
-      if (t.tipo === 'despesa') {
-        const infoParc = getInfoSerieParcelamento(t, todasTransacoes);
-        if (infoParc.isParcelamento && infoParc.terminado) return false;
-      }
-
-      // 3. Data de Pagamento: SEMPRE levar em consideração a data real de pagamento
+      // 2. Data de Pagamento: SEMPRE levar em consideração a data real de pagamento
       const dtPag = normalizeDate(t.dataPagamento || t.data || '');
       return dtPag.startsWith(mesFormatado);
     });

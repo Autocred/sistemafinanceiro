@@ -311,14 +311,9 @@ export function calcularMotorFinanceiro(
       return db.startsWith(mesAtualStr);
   });
 
-  // 3. Receitas e Despesas Pagas (do mês - remove parcelamentos encerrados que não têm mais parcelas a vencer)
+  // 3. Receitas e Despesas Pagas (do mês)
   const receitasPagas = transacoesMes.filter(t => t.tipo === 'receita' && t.status === 'pago').reduce((s, t) => s + getValorFinal(t), 0);
-  const despesasPagas = transacoesMes.filter(t => {
-    if (t.tipo !== 'despesa' || t.formaPagamento === 'cartao_credito' || t.status !== 'pago') return false;
-    const infoParc = getInfoSerieParcelamento(t, transacoes);
-    if (infoParc.isParcelamento && infoParc.terminado) return false;
-    return true;
-  }).reduce((s, t) => s + getValorFinal(t), 0);
+  const despesasPagas = transacoesMes.filter(t => t.tipo === 'despesa' && t.formaPagamento !== 'cartao_credito' && t.status === 'pago').reduce((s, t) => s + getValorFinal(t), 0);
 
   // 4. Receitas Pendentes do Mês / A Receber (para cálculo do Previsto e Card Receitas a Receber)
   const receitasPendentesMes = transacoes.filter(t => {

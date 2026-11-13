@@ -212,10 +212,7 @@ export default function WaterfallAttribution({
       if (t.tipo !== 'despesa') return;
       if (t.isTransferencia || t.categoria === 'Transferência' || t.categoria === 'Pagamento de Fatura') return;
       if (t.cartaoId && t.faturaId) return;
-
-      // Se é parcelamento e já terminou (sem parcelas a vencer), ignora do cálculo
-      const infoSerie = getInfoSerieParcelamento(t, transacoes);
-      if (infoSerie.isParcelamento && infoSerie.terminado) return;
+      if (t.formaPagamento === 'cartao_credito') return;
 
       const isPago = t.status === 'pago';
       const dataEfetiva = isPago

@@ -108,13 +108,8 @@ export default function DashboardMensal() {
     return transacoes.filter(t => normalizeDate(t.dataPagamento || t.dataVencimento || t.data || '').startsWith(mesStr));
   }, [transacoes, ano, mes]);
 
-  // Cálculos Básicos (remove parcelamentos já encerrados sem parcelas a vencer)
-  const despesas = txMes.filter(t => {
-    if (t.tipo !== 'despesa' || ((t.status as string) !== 'pago' && (t.status as string) !== 'recebido') || t.formaPagamento === 'cartao_credito') return false;
-    const infoParc = getInfoSerieParcelamento(t, transacoes);
-    if (infoParc.isParcelamento && infoParc.terminado) return false;
-    return true;
-  });
+  // Cálculos Básicos (todas as despesas pagas do mês)
+  const despesas = txMes.filter(t => t.tipo === 'despesa' && ((t.status as string) === 'pago' || (t.status as string) === 'recebido') && t.formaPagamento !== 'cartao_credito');
   const receitas = txMes.filter(t => t.tipo === 'receita' && ((t.status as string) === 'pago' || (t.status as string) === 'recebido'));
   
   const totalDespesas = despesas.reduce((acc, t) => acc + Math.abs(getValorFinal(t)), 0);

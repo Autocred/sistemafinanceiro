@@ -177,7 +177,7 @@ const renderBarra3D = (isDespesa: boolean) => (props: any) => {
 
   const rawVal = props.value;
   const valorFormatado = typeof rawVal === 'number' && rawVal > 0
-    ? (rawVal >= 1000 ? `${(rawVal / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}k` : rawVal.toLocaleString('pt-BR'))
+    ? (rawVal >= 1000 ? `${(Math.floor((rawVal / 1000) * 10) / 10).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}k` : rawVal.toLocaleString('pt-BR'))
     : null;
 
   return (
@@ -286,12 +286,8 @@ export default function GraficosAutocred({ transacoes, faturas = [], contas = []
     for (const t of transacoes) {
       if (t.status !== 'pago' && t.status !== 'recebido') continue;
 
-      // LOGICA ALINHADA COM INDICADORES: Ignorar compras individuais de cartão (pagas na fatura) e parcelamentos já encerrados (sem parcelas a vencer)
-      if (t.tipo === 'despesa') {
-        if (t.formaPagamento === 'cartao_credito' || false) continue;
-        const infoParc = getInfoSerieParcelamento(t, transacoes);
-        if (infoParc.isParcelamento && infoParc.terminado) continue;
-      }
+      // LOGICA ALINHADA COM INDICADORES: Ignorar compras individuais de cartão (pagas na fatura)
+      if (t.tipo === 'despesa' && (t.formaPagamento === 'cartao_credito' || false)) continue;
 
       const raw = normalizeDate(t.dataPagamento || t.dataVencimento || t.data);
       const dt = raw ? raw.substring(0, 10) : '';
@@ -327,12 +323,8 @@ export default function GraficosAutocred({ transacoes, faturas = [], contas = []
     for (const t of transacoes) {
       if (t.status !== 'pago' && t.status !== 'recebido') continue;
 
-      // LOGICA ALINHADA COM INDICADORES: Ignorar compras individuais de cartão (pagas na fatura) e parcelamentos já encerrados (sem parcelas a vencer)
-      if (t.tipo === 'despesa') {
-        if (t.formaPagamento === 'cartao_credito' || false) continue;
-        const infoParc = getInfoSerieParcelamento(t, transacoes);
-        if (infoParc.isParcelamento && infoParc.terminado) continue;
-      }
+      // LOGICA ALINHADA COM INDICADORES: Ignorar compras individuais de cartão (pagas na fatura)
+      if (t.tipo === 'despesa' && (t.formaPagamento === 'cartao_credito' || false)) continue;
 
       const dtFull = normalizeDate(t.dataPagamento || t.dataVencimento || t.data);
       if (!dtFull) continue;

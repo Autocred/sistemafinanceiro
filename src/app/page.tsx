@@ -61,12 +61,14 @@ const AtualizacoesCliente = dynamic(() => import('@/components/AtualizacoesClien
 const RadarDesperdicios  = dynamic(() => import('@/components/RadarDesperdicios'), { ssr: false, loading: () => <div style={{display:'flex',justifyContent:'center',alignItems:'center',height:'100vh',flexDirection:'column'}}><div className='spinner'></div><p style={{marginTop:16,color:'var(--text-muted)'}}>Carregando Radar de Desperdícios...</p></div> });
 const AgingList          = dynamic(() => import('@/components/AgingList').then(m => ({ default: m.AgingList })), { ssr: false, loading: () => <div style={{display:'flex',justifyContent:'center',alignItems:'center',height:'100vh',flexDirection:'column'}}><div className='spinner'></div><p style={{marginTop:16,color:'var(--text-muted)'}}>Carregando módulo...</p></div> });
 const CommandPalette     = dynamic(() => import('@/components/CommandPalette').then(m => ({ default: m.CommandPalette })), { ssr: false });
+const WallStreetSuiteView = dynamic(() => import('@/components/WallStreetSuiteView'), { ssr: false, loading: () => <div style={{display:'flex',justifyContent:'center',alignItems:'center',height:'100vh',flexDirection:'column'}}><div className='spinner'></div><p style={{marginTop:16,color:'var(--text-muted)'}}>Carregando módulo...</p></div> });
 import { gerarPixCopiaECola, gerarUrlQrCodePix } from '@/lib/pix';
 
 const NAV_ITEMS = [
   // ── VISÃO GERAL ─────────────────────────────────────────────────────────
   { id: 'dashboard'         as Pagina, label: 'Dashboard',          sublabel: 'Visão do dia',         icon: LayoutDashboard, grupo: '📊 Visão Geral' },
   { id: 'dashboard_mensal'  as Pagina, label: 'Resumo Mensal',      sublabel: 'Análise mês a mês',    icon: BarChart3,       grupo: '📊 Visão Geral' },
+  { id: 'wall_street'       as any,    label: 'Raio-X & Quitação',  sublabel: 'Cada R$ 100 e Dívidas',icon: Sparkles,        grupo: '📊 Visão Geral' },
   { id: 'lancamentos'       as Pagina, label: 'Lançamentos',        sublabel: 'Receitas e despesas',  icon: ListOrdered,     grupo: '📊 Visão Geral' },
   { id: 'metas'             as Pagina, label: 'Metas & Orçamentos', sublabel: 'Planejamento anual',   icon: Target,          grupo: '📊 Visão Geral' },
 
@@ -151,7 +153,7 @@ export default function Home() {
   });
   const [mobileMenuAberto, setMobileMenuAberto] = useState(false);
   const [sidebarCompacta, setSidebarCompacta] = useState(false);
-  const [versaoSistema, setVersaoSistema] = useState<string>('v3.8.4');
+  const [versaoSistema, setVersaoSistema] = useState<string>('v3.8.5');
 
   useEffect(() => {
     try {
@@ -777,6 +779,7 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
         return false;
       }
       
+      if ((item.id as string) === 'wall_street') return true;
       const menuPermKey = MENU_PERMISSION_MAP[item.id];
       if (!menuPermKey) return false; // Unknown page = hide
       return perms[menuPermKey] === true;
@@ -787,6 +790,7 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
     switch (paginaAtual) {
       case 'dashboard':     return <Dashboard     key={refreshKey} onNovoLancamento={() => { setTransacaoEditar(null); setModalAberto(true); }} onEditarLancamento={(t) => { setTransacaoEditar(t); setModalAberto(true); }} onDuplicarLancamento={(t: any) => { setTransacaoEditar({...t, id: undefined, dataVencimento: new Date().toISOString().split('T')[0], dataPagamento: null, status: 'pendente'}); setModalAberto(true); }} onNavigateToLancamentos={(filtro?: string) => { setFiltroRapidoLancamentos(filtro || ''); setPaginaAtual('lancamentos'); }} onNavigateToCartoes={(id?: string) => { setFaturaDestinoId(id || null); setPaginaAtual('contas'); }} onNavigateToRadar={() => setPaginaAtual('radar_desperdicios')} />;
       case 'dashboard_mensal': return <DashboardMensal key={refreshKey} />;
+      case 'wall_street' as any: return <WallStreetSuiteView key={refreshKey} />;
       case 'cfo':           return <PlanejamentoOrcamentario key={refreshKey} />;
       case 'previsao_ia':   return <PrevisaoFluxoIA key={refreshKey} />;
       case 'extrato':       return <ExtratoBancario key={refreshKey} />;
