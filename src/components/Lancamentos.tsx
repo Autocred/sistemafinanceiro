@@ -1788,6 +1788,7 @@ const openSafeAttachment = (url: string) => {
                          </>
                        )}
                        {(() => {
+                         if (getTenantId() !== 'autocred-promotora-de-credito' && !t.comportamento) return null;
                          const compMobile = getComportamentoTransacao(t);
                          return (
                            <span

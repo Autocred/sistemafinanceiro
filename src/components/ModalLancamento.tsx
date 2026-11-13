@@ -1847,19 +1847,21 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
     entidadeNome?: string,
     recorrente?: boolean
   ): 'fixa' | 'variavel' => {
+    const isAutocredTenant = getTenantId() === 'autocred-promotora-de-credito';
     const textoAnalise = `${desc || ''} ${entidadeNome || ''}`.toLowerCase();
 
-    // Exceções explícitas que sempre são variáveis (ex: retirada pessoal ou bônus de pessoa que recebe pró-labore/salário)
-    if (
-      textoAnalise.includes('retirada') ||
-      textoAnalise.includes('impulsionamento') ||
-      textoAnalise.includes('trafego pago') ||
-      textoAnalise.includes('tarifa avulsa') ||
-      textoAnalise.includes('bonus') ||
-      textoAnalise.includes('bônus') ||
-      textoAnalise.includes('bonificação')
-    ) {
-      return 'variavel';
+    if (isAutocredTenant) {
+      if (
+        textoAnalise.includes('retirada') ||
+        textoAnalise.includes('impulsionamento') ||
+        textoAnalise.includes('trafego pago') ||
+        textoAnalise.includes('tarifa avulsa') ||
+        textoAnalise.includes('bonus') ||
+        textoAnalise.includes('bônus') ||
+        textoAnalise.includes('bonificação')
+      ) {
+        return 'variavel';
+      }
     }
 
     if (compSugerido === 'fixa' || compSugerido === 'variavel') return compSugerido;
@@ -1875,28 +1877,30 @@ function ManualForm({ categorias, centrosCusto, contas, cartoes, fornecedores, c
       textoAnalise.includes('aluguel') ||
       textoAnalise.includes('salario') ||
       textoAnalise.includes('salário') ||
-      textoAnalise.includes('pro labore') ||
-      textoAnalise.includes('pró labore') ||
-      textoAnalise.includes('pró-labore') ||
       textoAnalise.includes('condomin') ||
       textoAnalise.includes('internet') ||
-      textoAnalise.includes('energia') ||
-      textoAnalise.includes('celesc') ||
-      textoAnalise.includes('vivo') ||
-      textoAnalise.includes('contaseg') ||
-      textoAnalise.includes('honorários') ||
-      textoAnalise.includes('fgts') ||
-      textoAnalise.includes('inss') ||
-      textoAnalise.includes('simples nacional') ||
-      textoAnalise.includes('financiamento') ||
-      textoAnalise.includes('capital de giro') ||
-      textoAnalise.includes('estacionamento') ||
-      textoAnalise.includes('vale transporte') ||
-      textoAnalise.includes('medicina do trabalho') ||
-      textoAnalise.includes('sistema de gestão') ||
       textoAnalise.includes('iptu') ||
       textoAnalise.includes('ipva') ||
-      textoAnalise.includes('seguro');
+      textoAnalise.includes('seguro') ||
+      (isAutocredTenant && (
+        textoAnalise.includes('pro labore') ||
+        textoAnalise.includes('pró labore') ||
+        textoAnalise.includes('pró-labore') ||
+        textoAnalise.includes('energia') ||
+        textoAnalise.includes('celesc') ||
+        textoAnalise.includes('vivo') ||
+        textoAnalise.includes('contaseg') ||
+        textoAnalise.includes('honorários') ||
+        textoAnalise.includes('fgts') ||
+        textoAnalise.includes('inss') ||
+        textoAnalise.includes('simples nacional') ||
+        textoAnalise.includes('financiamento') ||
+        textoAnalise.includes('capital de giro') ||
+        textoAnalise.includes('estacionamento') ||
+        textoAnalise.includes('vale transporte') ||
+        textoAnalise.includes('medicina do trabalho') ||
+        textoAnalise.includes('sistema de gestão')
+      ));
 
     if (isFixa) return 'fixa';
     return 'variavel';

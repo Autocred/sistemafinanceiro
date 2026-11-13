@@ -22,6 +22,14 @@ export function getComportamentoTransacao(t: Transacao): 'fixa' | 'variavel' {
   if (comp === 'fixa') return 'fixa';
   if (comp === 'variavel' || comp === 'variável') return 'variavel';
 
+  // Nas demais licenças (fora Autocred Promotora), respeita o comportamento/recorrência próprio de cada licença
+  if (getTenantId() !== 'autocred-promotora-de-credito') {
+    if (t.recorrente === true || !!t.frequenciaRecorrencia || !!t.grupoRecorrencia) {
+      return 'fixa';
+    }
+    return 'variavel';
+  }
+
   const forn = ((t.fornecedorNome || '') as string).toLowerCase().trim();
   const desc = ((t.descricao || '') as string).toLowerCase().trim();
   const cat = ((t.categoriaNome || '') as string).toLowerCase().trim();
