@@ -498,28 +498,30 @@ export default function WaterfallAttribution({
           {analise.buckets.map(b => {
             if (b.valorTotal <= 0) return null;
             const divisor = Math.max(100, analise.consumidoPorCemReais);
-            const widthPct = Math.max(2, (b.porCemReais / divisor) * 100);
+            const widthPct = Math.max(5.5, (b.porCemReais / divisor) * 100);
             return (
               <div
                 key={b.key}
                 title={`${b.label}: ${fmtCem(b.porCemReais)} de cada R$ 100 (${fmt(b.valorTotal)})`}
                 style={{
                   width: `${widthPct}%`,
+                  minWidth: 64,
                   background: b.color,
                   height: '100%',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   color: '#ffffff',
-                  fontSize: 10.5,
+                  fontSize: widthPct < 7.5 ? 9.5 : 10.5,
                   fontWeight: 800,
+                  padding: '0 4px',
                   overflow: 'hidden',
                   whiteSpace: 'nowrap',
                   borderRight: '1px solid rgba(255,255,255,0.25)',
                   transition: 'width 0.3s ease'
                 }}
               >
-                {widthPct >= 9 ? fmtCem(b.porCemReais) : ''}
+                {fmtCem(b.porCemReais)}
               </div>
             );
           })}
@@ -528,19 +530,21 @@ export default function WaterfallAttribution({
               title={`Lucro Livre no Bolso: ${fmtCem(analise.sobraPorCemReais)} de cada R$ 100 (${fmt(analise.resultadoLiquidoReais)})`}
               style={{
                 flex: 1,
+                minWidth: 68,
                 background: 'linear-gradient(90deg, #10b981, #059669)',
                 height: '100%',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: '#ffffff',
-                fontSize: 11,
+                fontSize: 10.5,
                 fontWeight: 900,
+                padding: '0 4px',
                 overflow: 'hidden',
                 whiteSpace: 'nowrap'
               }}
             >
-              {analise.sobraPorCemReais >= 8 ? `LUCRO: ${fmtCem(analise.sobraPorCemReais)}` : ''}
+              {analise.sobraPorCemReais >= 12 ? `LUCRO: ${fmtCem(analise.sobraPorCemReais)}` : fmtCem(analise.sobraPorCemReais)}
             </div>
           )}
         </div>
