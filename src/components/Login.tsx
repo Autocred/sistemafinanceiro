@@ -595,15 +595,16 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
   const nomeSistema = configuracoes?.nomeSistema || 'Sistema Financeiro Pessoal';
 
   const marketTickers = [
-    { symbol: 'IBOVESPA', val: '129.845 pts', chg: '+1.42%', up: true },
-    { symbol: 'S&P 500', val: '5.988,40', chg: '+0.89%', up: true },
-    { symbol: 'NASDAQ AI', val: '19.310,25', chg: '+2.14%', up: true },
-    { symbol: 'USD / BRL', val: 'R$ 5,73', chg: '-0.38%', up: false },
-    { symbol: 'EUR / BRL', val: 'R$ 6,18', chg: '-0.21%', up: false },
-    { symbol: 'SELIC META', val: '11,25% a.a.', chg: 'ESTÁVEL', up: true },
-    { symbol: 'CDI DIÁRIO', val: '11,15% a.a.', chg: '+0.04%', up: true },
-    { symbol: 'BTC / USD', val: '$ 89.450', chg: '+4.35%', up: true },
-    { symbol: 'IA NEURAL INDEX', val: '99.98% SLA', chg: 'ATIVO', up: true },
+    { symbol: 'TAXA SELIC (COPOM)', val: '11,25% a.a.', chg: 'META BCB', up: true },
+    { symbol: 'CDI (CETIP)', val: '11,15% a.a.', chg: '0,92% a.m.', up: true },
+    { symbol: 'IPCA (INFLAÇÃO 12M)', val: '4,76% a.a.', chg: 'IBGE', up: true },
+    { symbol: 'IGP-M (FGV 12M)', val: '5,59% a.a.', chg: '+1,30% mês', up: true },
+    { symbol: 'IBOVESPA (B3)', val: '129.845 pts', chg: '+1,42%', up: true },
+    { symbol: 'DÓLAR COMERCIAL (PTAX)', val: 'R$ 5,74', chg: '-0,35%', up: false },
+    { symbol: 'EURO COMERCIAL', val: 'R$ 6,16', chg: '-0,21%', up: false },
+    { symbol: 'POUPANÇA / TR', val: '0,59% a.m.', chg: '7,28% a.a.', up: true },
+    { symbol: 'INCC-M (CONSTRUÇÃO)', val: '5,84% a.a.', chg: 'FGV', up: true },
+    { symbol: 'SALÁRIO MÍNIMO', val: 'R$ 1.518,00', chg: 'BASE NACIONAL', up: true },
   ];
 
   // Shared high-tech financial & AI background wrapper
@@ -621,9 +622,22 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
       fontFamily: 'Inter, system-ui, -apple-system, sans-serif'
     }}>
       <style>{`
-        @keyframes tickerScroll {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
+        @keyframes tickerScrollSmooth {
+          0% { transform: translate3d(0, 0, 0); }
+          100% { transform: translate3d(-50%, 0, 0); }
+        }
+        .brazil-ticker-track {
+          display: inline-flex;
+          align-items: center;
+          width: max-content;
+          will-change: transform;
+          backface-visibility: hidden;
+          -webkit-backface-visibility: hidden;
+          transform: translate3d(0, 0, 0);
+          animation: tickerScrollSmooth 95s linear infinite;
+        }
+        .brazil-ticker-track:hover {
+          animation-play-state: paused;
         }
         @keyframes pulseGlow {
           0%, 100% { opacity: 0.45; transform: scale(1); }
@@ -791,40 +805,77 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
         </svg>
       </div>
 
-      {/* TOP WALL STREET / B3 LIVE MARKET TICKER BAR */}
+      {/* TOP B3 & BANCO CENTRAL DO BRASIL — BARRA DE INDICADORES ESSENCIAIS */}
       <div style={{
         position: 'relative',
         zIndex: 20,
-        background: 'rgba(5, 10, 24, 0.85)',
-        backdropFilter: 'blur(12px)',
-        borderBottom: '1px solid rgba(148, 163, 184, 0.14)',
-        padding: '8px 0',
+        background: 'rgba(6, 12, 28, 0.94)',
+        backdropFilter: 'blur(14px)',
+        borderBottom: '1px solid rgba(148, 163, 184, 0.22)',
+        padding: '10px 0',
+        display: 'flex',
+        alignItems: 'center',
         overflow: 'hidden',
-        whiteSpace: 'nowrap'
+        whiteSpace: 'nowrap',
+        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.35)'
       }}>
+        {/* Selo fixo à esquerda para identificar claramente os indicadores */}
         <div style={{
           display: 'inline-flex',
           alignItems: 'center',
-          gap: '32px',
-          animation: 'tickerScroll 38s linear infinite'
+          gap: 7,
+          padding: '4px 14px',
+          marginLeft: 14,
+          marginRight: 14,
+          borderRadius: 8,
+          background: 'rgba(16, 185, 129, 0.16)',
+          border: '1px solid rgba(16, 185, 129, 0.38)',
+          color: '#34d399',
+          fontSize: 11,
+          fontWeight: 800,
+          letterSpacing: '0.06em',
+          flexShrink: 0,
+          zIndex: 2
         }}>
-          {[...marketTickers, ...marketTickers].map((item, i) => (
-            <div key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 11, fontWeight: 700, letterSpacing: '0.04em' }}>
-              <span style={{ color: '#94a3b8' }}>{item.symbol}</span>
-              <span style={{ color: '#f8fafc', fontFamily: 'monospace', fontSize: 12 }}>{item.val}</span>
-              <span style={{
-                padding: '2px 6px',
-                borderRadius: 6,
-                fontSize: 10,
-                background: item.up ? 'rgba(16, 185, 129, 0.14)' : 'rgba(239, 68, 68, 0.14)',
-                color: item.up ? '#34d399' : '#f87171',
-                border: `1px solid ${item.up ? 'rgba(16, 185, 129, 0.25)' : 'rgba(239, 68, 68, 0.25)'}`
-              }}>
-                {item.up ? '▲' : '▼'} {item.chg}
-              </span>
-              <span style={{ color: 'rgba(148,163,184,0.25)', marginLeft: 8 }}>|</span>
-            </div>
-          ))}
+          <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px #10b981' }} />
+          INDICADORES BRASIL
+        </div>
+
+        <div style={{ overflow: 'hidden', flex: 1 }}>
+          <div className="brazil-ticker-track">
+            {[...marketTickers, ...marketTickers].map((item, i) => (
+              <div
+                key={i}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  paddingRight: 40,
+                  fontSize: 13,
+                  fontWeight: 700,
+                  letterSpacing: '0.02em',
+                  WebkitFontSmoothing: 'antialiased'
+                }}
+              >
+                <span style={{ color: '#cbd5e1', fontWeight: 700 }}>{item.symbol}</span>
+                <span style={{ color: '#ffffff', fontWeight: 800, fontSize: 13.5, background: 'rgba(30, 41, 59, 0.75)', padding: '2px 8px', borderRadius: 6, border: '1px solid rgba(148, 163, 184, 0.2)' }}>
+                  {item.val}
+                </span>
+                <span style={{
+                  padding: '2.5px 8px',
+                  borderRadius: 6,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  background: item.up ? 'rgba(16, 185, 129, 0.18)' : 'rgba(239, 68, 68, 0.18)',
+                  color: item.up ? '#34d399' : '#f87171',
+                  border: `1px solid ${item.up ? 'rgba(16, 185, 129, 0.35)' : 'rgba(239, 68, 68, 0.35)'}`
+                }}>
+                  {item.up ? '▲' : '▼'} {item.chg}
+                </span>
+                <span style={{ color: 'rgba(148, 163, 184, 0.35)', marginLeft: 10 }}>•</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -862,7 +913,7 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
           </span>
         </div>
         <div style={{ fontFamily: 'monospace', fontSize: 10, color: '#475569' }}>
-          {nomeSistema.toUpperCase()} • v3.7.5 P:{typeof window !== 'undefined' && localStorage.getItem('app_pin_code') ? '1' : '0'} E:{typeof window !== 'undefined' && localStorage.getItem('saved_email_apk') ? '1' : '0'} M:{modo}
+          {nomeSistema.toUpperCase()} • v3.8.0 P:{typeof window !== 'undefined' && localStorage.getItem('app_pin_code') ? '1' : '0'} E:{typeof window !== 'undefined' && localStorage.getItem('saved_email_apk') ? '1' : '0'} M:{modo}
         </div>
       </div>
     </div>
@@ -1119,14 +1170,14 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
 
   return renderFinancialBackdrop(
     <div className="login-grid-layout">
-      {/* COLUNA ESQUERDA (DESKTOP): TERMINAL DE INTELIGÊNCIA FINANCEIRA & BOLSA DE VALORES */}
+      {/* COLUNA ESQUERDA (DESKTOP): CENTRAL DE INDICADORES ECONÔMICOS BRASIL & CONTROLE FINANCEIRO */}
       <div className="login-hud-panel">
         {/* Badge Superior Institucional */}
         <div style={{
           display: 'inline-flex', alignItems: 'center', gap: 10, alignSelf: 'flex-start',
           padding: '7px 14px', borderRadius: 999,
-          background: 'rgba(15, 23, 42, 0.75)',
-          border: '1px solid rgba(56, 189, 248, 0.28)',
+          background: 'rgba(15, 23, 42, 0.78)',
+          border: '1px solid rgba(56, 189, 248, 0.32)',
           boxShadow: '0 0 20px rgba(56, 189, 248, 0.12)'
         }}>
           <span style={{
@@ -1134,8 +1185,8 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
             background: '#10b981',
             boxShadow: '0 0 10px #10b981'
           }} />
-          <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', color: '#38bdf8', textTransform: 'uppercase' }}>
-            AI FINANCIAL QUANT TERMINAL • B3 & GLOBAL MARKETS
+          <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.07em', color: '#38bdf8', textTransform: 'uppercase' }}>
+            INDICADORES ECONÔMICOS BRASIL • BCB, IBGE & B3
           </span>
         </div>
 
@@ -1147,7 +1198,7 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
             lineHeight: 1.12,
             letterSpacing: '-0.02em',
             color: '#ffffff',
-            marginBottom: 14
+            marginBottom: 12
           }}>
             {nomeSistema}
             <span style={{
@@ -1155,131 +1206,151 @@ export function Login({ configuracoes, onLogin }: { configuracoes: ConfiguracaoA
               background: 'linear-gradient(90deg, #38bdf8 0%, #34d399 55%, #a78bfa 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
-              fontSize: 'clamp(20px, 2.3vw, 29px)',
+              fontSize: 'clamp(19px, 2.2vw, 27px)',
               marginTop: 6
             }}>
-              Inteligência Artificial & Alta Performance Financeira
+              Gestão de Caixa, Custos Fixos & Inteligência Financeira
             </span>
           </h2>
-          <p style={{ color: '#94a3b8', fontSize: 15, lineHeight: 1.65, maxWidth: 560, margin: 0 }}>
-            Plataforma executiva de gestão de capital, projeção preditiva de caixa, ponto de equilíbrio em tempo real e auditoria algorítmica de resultados.
+          <p style={{ color: '#cbd5e1', fontSize: 14.5, lineHeight: 1.6, maxWidth: 560, margin: 0 }}>
+            Controle completo de receitas a receber, despesas fixas e variáveis, ponto de equilíbrio mensal e leitura automática de boletos com IA.
           </p>
         </div>
 
-        {/* CARD HUD: GRÁFICO DE MERCADO & TELEMETRIA IA AO VIVO */}
+        {/* CARD HUD: PAINEL DE REFERÊNCIA ECONÔMICA BRASILEIRA (CLARO E EXPLICATIVO) */}
         <div style={{
-          background: 'linear-gradient(145deg, rgba(15, 23, 42, 0.85) 0%, rgba(9, 14, 28, 0.92) 100%)',
+          background: 'linear-gradient(145deg, rgba(15, 23, 42, 0.9) 0%, rgba(9, 14, 28, 0.95) 100%)',
           backdropFilter: 'blur(20px)',
           borderRadius: 22,
-          border: '1px solid rgba(148, 163, 184, 0.16)',
+          border: '1px solid rgba(148, 163, 184, 0.2)',
           padding: '22px 24px',
           boxShadow: '0 20px 50px -12px rgba(0, 0, 0, 0.65)',
           position: 'relative',
           overflow: 'hidden'
         }}>
+          {/* Cabeçalho do Painel */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{
                 width: 38, height: 38, borderRadius: 11,
-                background: 'rgba(16, 185, 129, 0.14)',
-                border: '1px solid rgba(16, 185, 129, 0.3)',
+                background: 'rgba(16, 185, 129, 0.16)',
+                border: '1px solid rgba(16, 185, 129, 0.35)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 color: '#34d399'
               }}>
                 <TrendingUp size={20} />
               </div>
               <div>
-                <div style={{ fontSize: 12, fontWeight: 800, color: '#f8fafc', letterSpacing: '0.03em' }}>
-                  ÍNDICE DE LIQUIDEZ & PROJEÇÃO NEURAL IA
+                <div style={{ fontSize: 13, fontWeight: 800, color: '#ffffff', letterSpacing: '0.02em' }}>
+                  TERMÔMETRO ECONÔMICO BRASIL (TAXAS & ÍNDICES OFICIAIS)
                 </div>
-                <div style={{ fontSize: 11, color: '#64748b' }}>
-                  Monitoramento algorítmico de fluxo financeiro e margem operacional
+                <div style={{ fontSize: 11.5, color: '#94a3b8' }}>
+                  Referências para custo de crédito, aplicações financeiras e correção de contratos
                 </div>
               </div>
             </div>
             <div style={{
               padding: '5px 11px', borderRadius: 8,
-              background: 'rgba(16, 185, 129, 0.14)',
-              border: '1px solid rgba(16, 185, 129, 0.3)',
-              color: '#34d399', fontSize: 12, fontWeight: 800, fontFamily: 'monospace'
+              background: 'rgba(56, 189, 248, 0.14)',
+              border: '1px solid rgba(56, 189, 248, 0.32)',
+              color: '#38bdf8', fontSize: 11, fontWeight: 800
             }}>
-              ▲ +18.4% ALPHA IA
+              BANCO CENTRAL / B3
             </div>
           </div>
 
-          {/* Mini Candlestick + Area Chart Visual inside HUD */}
-          <div style={{ height: 115, width: '100%', position: 'relative', marginBottom: 16 }}>
-            <svg viewBox="0 0 520 115" fill="none" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
-              <defs>
-                <linearGradient id="hudChartFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.32" />
-                  <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
-                </linearGradient>
-              </defs>
-              <line x1="0" y1="25" x2="520" y2="25" stroke="rgba(148,163,184,0.1)" strokeDasharray="4 4" />
-              <line x1="0" y1="60" x2="520" y2="60" stroke="rgba(148,163,184,0.1)" strokeDasharray="4 4" />
-              <line x1="0" y1="95" x2="520" y2="95" stroke="rgba(148,163,184,0.1)" strokeDasharray="4 4" />
-
-              {[
-                { x: 25, h: 78, l: 102, o: 96, c: 82, b: true },
-                { x: 60, h: 70, l: 95, o: 84, c: 74, b: true },
-                { x: 95, h: 72, l: 98, o: 75, c: 88, b: false },
-                { x: 130, h: 60, l: 90, o: 86, c: 65, b: true },
-                { x: 165, h: 52, l: 78, o: 68, c: 56, b: true },
-                { x: 200, h: 55, l: 82, o: 58, c: 70, b: false },
-                { x: 235, h: 44, l: 74, o: 69, c: 48, b: true },
-                { x: 270, h: 38, l: 64, o: 50, c: 42, b: true },
-                { x: 305, h: 42, l: 68, o: 43, c: 54, b: false },
-                { x: 340, h: 30, l: 58, o: 52, c: 34, b: true },
-                { x: 375, h: 24, l: 48, o: 36, c: 28, b: true },
-                { x: 410, h: 26, l: 52, o: 29, c: 38, b: false },
-                { x: 445, h: 16, l: 42, o: 37, c: 20, b: true },
-                { x: 485, h: 10, l: 34, o: 22, c: 12, b: true }
-              ].map((bar, idx) => {
-                const col = bar.b ? '#10b981' : '#f43f5e';
-                const yTop = Math.min(bar.o, bar.c);
-                const hRect = Math.max(Math.abs(bar.c - bar.o), 4);
-                return (
-                  <g key={idx}>
-                    <line x1={bar.x} y1={bar.h} x2={bar.x} y2={bar.l} stroke={col} strokeWidth="1.5" opacity="0.7" />
-                    <rect x={bar.x - 5} y={yTop} width="10" height={hRect} rx="2" fill={col} opacity="0.85" />
-                  </g>
-                );
-              })}
-
-              <path
-                d="M 10 96 C 85 88, 140 62, 210 64 C 280 66, 330 34, 400 32 C 450 30, 480 16, 512 10 L 512 115 L 10 115 Z"
-                fill="url(#hudChartFill)"
-              />
-              <path
-                d="M 10 96 C 85 88, 140 62, 210 64 C 280 66, 330 34, 400 32 C 450 30, 480 16, 512 10"
-                stroke="#38bdf8"
-                strokeWidth="2.5"
-                fill="none"
-              />
-              <circle cx="512" cy="10" r="5" fill="#10b981" />
-              <circle cx="512" cy="10" r="10" fill="#10b981" fillOpacity="0.25" />
-            </svg>
+          {/* 4 Cards Principais dos Indicadores Brasileiros */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 16 }}>
+            <div style={{ background: 'rgba(30, 41, 59, 0.65)', padding: '11px 12px', borderRadius: 12, border: '1px solid rgba(148, 163, 184, 0.16)' }}>
+              <div style={{ fontSize: 10, color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase' }}>TAXA SELIC</div>
+              <div style={{ fontSize: 17, fontWeight: 900, color: '#34d399', marginTop: 3 }}>11,25%</div>
+              <div style={{ fontSize: 10, color: '#cbd5e1', marginTop: 2 }}>ao ano (COPOM)</div>
+            </div>
+            <div style={{ background: 'rgba(30, 41, 59, 0.65)', padding: '11px 12px', borderRadius: 12, border: '1px solid rgba(148, 163, 184, 0.16)' }}>
+              <div style={{ fontSize: 10, color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase' }}>CDI ATUAL</div>
+              <div style={{ fontSize: 17, fontWeight: 900, color: '#38bdf8', marginTop: 3 }}>11,15%</div>
+              <div style={{ fontSize: 10, color: '#cbd5e1', marginTop: 2 }}>0,92% ao mês</div>
+            </div>
+            <div style={{ background: 'rgba(30, 41, 59, 0.65)', padding: '11px 12px', borderRadius: 12, border: '1px solid rgba(148, 163, 184, 0.16)' }}>
+              <div style={{ fontSize: 10, color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase' }}>IPCA (12 MESES)</div>
+              <div style={{ fontSize: 17, fontWeight: 900, color: '#fbbf24', marginTop: 3 }}>4,76%</div>
+              <div style={{ fontSize: 10, color: '#cbd5e1', marginTop: 2 }}>Inflação IBGE</div>
+            </div>
+            <div style={{ background: 'rgba(30, 41, 59, 0.65)', padding: '11px 12px', borderRadius: 12, border: '1px solid rgba(148, 163, 184, 0.16)' }}>
+              <div style={{ fontSize: 10, color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase' }}>DÓLAR PTAX</div>
+              <div style={{ fontSize: 17, fontWeight: 900, color: '#f8fafc', marginTop: 3 }}>R$ 5,74</div>
+              <div style={{ fontSize: 10, color: '#cbd5e1', marginTop: 2 }}>Ibov: 129.845 pts</div>
+            </div>
           </div>
 
-          {/* 3 Mini Telemetry Metrics inside HUD */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, paddingTop: 14, borderTop: '1px solid rgba(148, 163, 184, 0.12)' }}>
-            <div style={{ background: 'rgba(15, 23, 42, 0.6)', padding: '10px 12px', borderRadius: 12, border: '1px solid rgba(148, 163, 184, 0.1)' }}>
-              <div style={{ fontSize: 10, color: '#64748b', fontWeight: 700, textTransform: 'uppercase', marginBottom: 4 }}>Motor Preditivo</div>
-              <div style={{ fontSize: 13, fontWeight: 800, color: '#38bdf8', display: 'flex', alignItems: 'center', gap: 5 }}>
-                <Sparkles size={14} /> IA Neural Ativa
+          {/* Gráfico Comparativo Direto e Fácil de Entender: Rendimento de Caixa vs Inflação */}
+          <div style={{
+            background: 'rgba(15, 23, 42, 0.72)',
+            borderRadius: 14,
+            padding: '13px 15px',
+            border: '1px solid rgba(148, 163, 184, 0.14)',
+            marginBottom: 14
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+              <span style={{ fontSize: 11, fontWeight: 800, color: '#e2e8f0', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Comparativo Anual: Rendimento de Caixa vs. Inflação
+              </span>
+              <span style={{ fontSize: 10.5, fontWeight: 700, color: '#34d399' }}>
+                Ganho Real CDI: +6,39% a.a.
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, marginBottom: 4 }}>
+                  <span style={{ color: '#cbd5e1', fontWeight: 600 }}>Aplicação 100% do CDI (Renda Fixa / Caixa)</span>
+                  <strong style={{ color: '#34d399' }}>11,15% a.a.</strong>
+                </div>
+                <div style={{ height: 7, borderRadius: 99, background: 'rgba(148, 163, 184, 0.15)', overflow: 'hidden' }}>
+                  <div style={{ width: '92%', height: '100%', borderRadius: 99, background: 'linear-gradient(90deg, #10b981, #34d399)' }} />
+                </div>
+              </div>
+
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, marginBottom: 4 }}>
+                  <span style={{ color: '#cbd5e1', fontWeight: 600 }}>Poupança Oficial (TR + 6,17% a.a.)</span>
+                  <strong style={{ color: '#38bdf8' }}>7,28% a.a.</strong>
+                </div>
+                <div style={{ height: 7, borderRadius: 99, background: 'rgba(148, 163, 184, 0.15)', overflow: 'hidden' }}>
+                  <div style={{ width: '62%', height: '100%', borderRadius: 99, background: 'linear-gradient(90deg, #0284c7, #38bdf8)' }} />
+                </div>
+              </div>
+
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, marginBottom: 4 }}>
+                  <span style={{ color: '#cbd5e1', fontWeight: 600 }}>Inflação Oficial IPCA (Perda do Poder de Compra)</span>
+                  <strong style={{ color: '#fbbf24' }}>4,76% a.a.</strong>
+                </div>
+                <div style={{ height: 7, borderRadius: 99, background: 'rgba(148, 163, 184, 0.15)', overflow: 'hidden' }}>
+                  <div style={{ width: '42%', height: '100%', borderRadius: 99, background: 'linear-gradient(90deg, #d97706, #fbbf24)' }} />
+                </div>
               </div>
             </div>
-            <div style={{ background: 'rgba(15, 23, 42, 0.6)', padding: '10px 12px', borderRadius: 12, border: '1px solid rgba(148, 163, 184, 0.1)' }}>
-              <div style={{ fontSize: 10, color: '#64748b', fontWeight: 700, textTransform: 'uppercase', marginBottom: 4 }}>Ponto de Equilíbrio</div>
-              <div style={{ fontSize: 13, fontWeight: 800, color: '#34d399', display: 'flex', alignItems: 'center', gap: 5 }}>
-                <BarChart3 size={14} /> Simulador Live
+          </div>
+
+          {/* 3 Módulos Essenciais do Sistema */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+            <div style={{ background: 'rgba(15, 23, 42, 0.65)', padding: '9px 11px', borderRadius: 11, border: '1px solid rgba(148, 163, 184, 0.12)' }}>
+              <div style={{ fontSize: 9.5, color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', marginBottom: 3 }}>Fluxo Diário & Mensal</div>
+              <div style={{ fontSize: 12, fontWeight: 800, color: '#34d399', display: 'flex', alignItems: 'center', gap: 5 }}>
+                <BarChart3 size={13} /> Fixas x Variáveis
               </div>
             </div>
-            <div style={{ background: 'rgba(15, 23, 42, 0.6)', padding: '10px 12px', borderRadius: 12, border: '1px solid rgba(148, 163, 184, 0.1)' }}>
-              <div style={{ fontSize: 10, color: '#64748b', fontWeight: 700, textTransform: 'uppercase', marginBottom: 4 }}>Segurança de Dados</div>
-              <div style={{ fontSize: 13, fontWeight: 800, color: '#e2e8f0', display: 'flex', alignItems: 'center', gap: 5 }}>
-                <ShieldCheck size={14} color="#a78bfa" /> Vault 256-Bit
+            <div style={{ background: 'rgba(15, 23, 42, 0.65)', padding: '9px 11px', borderRadius: 11, border: '1px solid rgba(148, 163, 184, 0.12)' }}>
+              <div style={{ fontSize: 9.5, color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', marginBottom: 3 }}>Automação Inteligente</div>
+              <div style={{ fontSize: 12, fontWeight: 800, color: '#38bdf8', display: 'flex', alignItems: 'center', gap: 5 }}>
+                <Sparkles size={13} /> Leitor Boleto/NF IA
+              </div>
+            </div>
+            <div style={{ background: 'rgba(15, 23, 42, 0.65)', padding: '9px 11px', borderRadius: 11, border: '1px solid rgba(148, 163, 184, 0.12)' }}>
+              <div style={{ fontSize: 9.5, color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', marginBottom: 3 }}>Proteção Bancária</div>
+              <div style={{ fontSize: 12, fontWeight: 800, color: '#e2e8f0', display: 'flex', alignItems: 'center', gap: 5 }}>
+                <ShieldCheck size={13} color="#a78bfa" /> Criptografia 256-Bit
               </div>
             </div>
           </div>
