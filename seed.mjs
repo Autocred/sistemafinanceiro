@@ -10,25 +10,27 @@ const app = initializeApp({
 const db = getFirestore(app);
 
 async function run() {
-  const q = query(collection(db, 'saas_releases'), where('versao', '==', 'v3.8.3'));
+  const q = query(collection(db, 'saas_releases'), where('versao', '==', 'v3.8.4'));
   const snap = await getDocs(q);
   if (snap.empty) {
     await addDoc(collection(db, 'saas_releases'), {
-      versao: 'v3.8.3',
-      titulo: 'Exibição Garantida de Valores em Todas as Fatias da Barra Waterfall (R$ 100)',
-      descricao: 'Ajuste na barra visual de fatiamento de cada R$ 100,00 para exibir sempre o valor em R$ em todos os segmentos ativos (incluindo Empréstimos & Parcelamentos Ativos).',
+      versao: 'v3.8.4',
+      titulo: 'Debt Payoff Snowball vs. Avalanche Simulator & Calendário de Alívio de Caixa (Padrão SoFi / Tally USA)',
+      descricao: 'Implementação do Acelerador Inteligente de Quitação de Parcelamentos & Empréstimos Ativos no Dashboard e Resumo Mensal, com estratégias Snowball, Avalanche e ROI de Alívio Rápido, além do Calendário de Alívio de Caixa e Simulador What-If de antecipação.',
       dataLancamento: new Date().toISOString(),
       status: 'publicado',
-      destaque: false,
+      destaque: true,
       notificarTenants: false,
       alvos: 'todos',
       changes: [
-        { tipo: 'correcao', texto: 'Barra Cash Flow Waterfall: todos os segmentos ativos agora exibem o valor exato em R$ dentro da barra, sem ocultar valores em fatias menores como Empréstimos & Parcelamentos.' }
+        { tipo: 'novidade', texto: 'Calendário de Alívio de Caixa: Mostra exatamente em qual mês cada parcelamento ativo termina e quanto de fôlego mensal (+R$/mês) será destravado automaticamente.' },
+        { tipo: 'novidade', texto: '3 Estratégias Americanas de Quitação (ROI Tally, Bola de Neve / Snowball e Avalanche): Ordene seus parcelamentos ativos pela melhor eficiência de liberação de fluxo de caixa.' },
+        { tipo: 'novidade', texto: 'Simulador What-If de Quitação Antecipada: Simule qualquer valor e % de desconto para ver quantos contratos seriam eliminados hoje, quanto caixa mensal destravaria e o payback em meses.' }
       ]
     });
-    console.log('Release notes v3.8.3 added!');
+    console.log('Release notes v3.8.4 added!');
   } else {
-    console.log('Release notes v3.8.3 already registered!');
+    console.log('Release notes v3.8.4 already registered!');
   }
   process.exit(0);
 }

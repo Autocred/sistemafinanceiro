@@ -15,6 +15,7 @@ import { subscribeTransacoes, formatarMoeda } from '@/lib/storage';
 import { getComportamentoTransacao, getInfoSerieParcelamento } from './ExtratoBancario';
 import { normalizeDate, getValorFinal } from '@/lib/financialEngine';
 import WaterfallAttribution from './WaterfallAttribution';
+import DebtPayoffSimulator from './DebtPayoffSimulator';
 import { Transacao } from '@/lib/types';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -536,6 +537,13 @@ export default function DashboardMensal() {
         receitasAReceber={0}
         despesasRealizadas={totalDespesas}
         despesasAPagar={0}
+        compactOnDashboard={false}
+      />
+
+      {/* FERRAMENTA AMERICANA (SOFI / TALLY): ACELERADOR DE QUITAÇÃO SNOWBALL VS AVALANCHE & CALENDÁRIO DE ALÍVIO */}
+      <DebtPayoffSimulator
+        transacoes={transacoes}
+        mesFormatado={`${ano}-${String(mes + 1).padStart(2, '0')}`}
         compactOnDashboard={false}
       />
 

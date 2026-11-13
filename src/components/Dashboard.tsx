@@ -24,6 +24,7 @@ import { calcularMotorFinanceiro } from '@/lib/financialEngine';
 import { playSound } from '@/lib/audio';
 import GraficosAutocred from './GraficosAutocred';
 import WaterfallAttribution from './WaterfallAttribution';
+import DebtPayoffSimulator from './DebtPayoffSimulator';
 
 
 interface Props {
@@ -2339,6 +2340,14 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
         receitasAReceber={motor.receitasAReceberTotal || 0}
         despesasRealizadas={motor.despesasRealizadas}
         despesasAPagar={motor.despesasAPagarTotal}
+        compactOnDashboard={true}
+      />
+
+      {/* FERRAMENTA AMERICANA (SOFI / TALLY): ACELERADOR DE QUITAÇÃO SNOWBALL VS AVALANCHE & CALENDÁRIO DE ALÍVIO */}
+      <DebtPayoffSimulator
+        transacoes={todasTransacoes}
+        mesFormatado={mesFormatado}
+        saldoEmCaixa={motor.saldoAtualReal}
         compactOnDashboard={true}
       />
 
