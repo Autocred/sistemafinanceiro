@@ -10,26 +10,25 @@ const app = initializeApp({
 const db = getFirestore(app);
 
 async function run() {
-  const q = query(collection(db, 'saas_releases'), where('versao', '==', 'v3.8.5'));
+  const q = query(collection(db, 'saas_releases'), where('versao', '==', 'v3.8.6'));
   const snap = await getDocs(q);
   if (snap.empty) {
     await addDoc(collection(db, 'saas_releases'), {
-      versao: 'v3.8.5',
-      titulo: 'Menu Raio-X & Quitação no Menu Lateral e Alinhamento Exato de Despesas Pagas no Gráfico',
-      descricao: 'Adição do atalho dedicado "Raio-X & Quitação" na seção Visão Geral do menu lateral e alinhamento integral do gráfico mensal com o card de Despesas Pagas do Mês (R$ 12.981,14).',
+      versao: 'v3.8.6',
+      titulo: 'Descrições Completas e Nítidas no Calendário de Alívio de Caixa',
+      descricao: 'Exibição completa e individualizada (com nome completo e valor liberado de cada item) em todos os cards do Calendário de Alívio de Caixa e do Acelerador de Quitação.',
       dataLancamento: new Date().toISOString(),
       status: 'publicado',
       destaque: false,
       notificarTenants: false,
       alvos: 'todos',
       changes: [
-        { tipo: 'novidade', texto: 'Menu Lateral — Raio-X & Quitação: Novo item em Visão Geral para acessar em 1 clique o Raio-X de Cada R$ 100 e o Simulador de Quitação de Parcelamentos.' },
-        { tipo: 'correcao', texto: 'Gráfico Mensal e Indicadores de Despesas Pagas: Alinhamento exato de 100% das despesas efetivamente pagas no mês nos gráficos e cards.' }
+        { tipo: 'melhoria', texto: 'Calendário de Alívio de Caixa: Lista individual e nítida de todos os lançamentos que acabam em cada mês com seus respectivos valores mensais liberados, sem cortar nomes com reticências (...).' }
       ]
     });
-    console.log('Release notes v3.8.5 added!');
+    console.log('Release notes v3.8.6 added!');
   } else {
-    console.log('Release notes v3.8.5 already registered!');
+    console.log('Release notes v3.8.6 already registered!');
   }
   process.exit(0);
 }

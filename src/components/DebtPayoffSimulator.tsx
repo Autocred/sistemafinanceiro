@@ -86,7 +86,7 @@ export default function DebtPayoffSimulator({
   const [aporteSimulado, setAporteSimulado] = useState<number>(5000);
   const [descontoAntecipacaoPct, setDescontoAntecipacaoPct] = useState<number>(5);
   const [serieExpandida, setSerieExpandida] = useState<string | null>(null);
-  const [mostrarTodosContratos, setMostrarTodosContratos] = useState<boolean>(false);
+  const [mostrarTodosContratos, setMostrarTodosContratos] = useState<boolean>(true);
 
   const fmt = (v: number) =>
     v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 });
@@ -204,7 +204,12 @@ export default function DebtPayoffSimulator({
     // CALENDÁRIO DE ALÍVIO DE CAIXA (Quando cada parcelamento termina e quanto libera no mês)
     const mapaAlivioPorMes = new Map<
       string,
-      { mesAno: string; valorLiberadoNoMes: number; contratosEncerrados: string[] }
+      {
+        mesAno: string;
+        valorLiberadoNoMes: number;
+        contratosEncerrados: string[];
+        detalhesContratos: { titulo: string; valorParcela: number; ultimaData: string }[];
+      }
     >();
 
     seriesAtivas.forEach(s => {
@@ -212,10 +217,16 @@ export default function DebtPayoffSimulator({
       const atual = mapaAlivioPorMes.get(ym) || {
         mesAno: ym,
         valorLiberadoNoMes: 0,
-        contratosEncerrados: []
+        contratosEncerrados: [],
+        detalhesContratos: []
       };
       atual.valorLiberadoNoMes += s.valorParcelaMensal;
       atual.contratosEncerrados.push(s.titulo);
+      atual.detalhesContratos.push({
+        titulo: s.titulo,
+        valorParcela: s.valorParcelaMensal,
+        ultimaData: s.ultimaDataVencimento
+      });
       mapaAlivioPorMes.set(ym, atual);
     });
 
@@ -541,21 +552,22 @@ export default function DebtPayoffSimulator({
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(175px, 1fr))',
-            gap: 10
+            gridTemplateColumns: 'repeat(auto-fit, minmax(255px, 1fr))',
+            gap: 12
           }}
         >
-          {analise.calendarioAlivio.slice(0, 6).map((item, idx) => (
+          {analise.calendarioAlivio.map((item, idx) => (
             <div
               key={item.mesAno}
               style={{
                 background: 'var(--bg-card)',
-                borderRadius: 10,
-                padding: '10px 12px',
-                border: idx === 0 ? '1.5px solid rgba(16, 185, 129, 0.45)' : '1px solid var(--border)',
+                borderRadius: 12,
+                padding: '12px 14px',
+                border: idx === 0 ? '1.5px solid rgba(16, 185, 129, 0.5)' : '1px solid var(--border)',
                 display: 'flex',
                 flexDirection: 'column',
-                justifyContent: 'space-between'
+                justifyContent: 'space-between',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.03)'
               }}
             >
               <div>
@@ -564,51 +576,92 @@ export default function DebtPayoffSimulator({
                     style={{
                       fontSize: 11,
                       fontWeight: 800,
-                      padding: '2px 7px',
-                      borderRadius: 5,
-                      background: idx === 0 ? 'rgba(16, 185, 129, 0.15)' : 'var(--bg-secondary)',
+                      padding: '3px 8px',
+                      borderRadius: 6,
+                      background: idx === 0 ? 'rgba(16, 185, 129, 0.16)' : 'var(--bg-secondary)',
                       color: idx === 0 ? '#10b981' : 'var(--text-title)'
                     }}
                   >
                     Última em {formatarMesAno(item.mesAno)}
                   </span>
-                  <span style={{ fontSize: 10.5, color: 'var(--text-muted)', fontWeight: 700 }}>
-                    {item.contratosEncerrados.length} {item.contratosEncerrados.length === 1 ? 'fim' : 'fins'}
+                  <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 700 }}>
+                    {item.detalhesContratos.length} {item.detalhesContratos.length === 1 ? 'lançamento acaba' : 'lançamentos acabam'}
                   </span>
                 </div>
 
-                <div className="valor-sensivel" style={{ fontSize: 16, fontWeight: 900, color: '#10b981', marginTop: 6 }}>
+                <div className="valor-sensivel" style={{ fontSize: 17, fontWeight: 900, color: '#10b981', marginTop: 8 }}>
                   + {fmt(item.valorLiberadoNoMes)}/mês
                 </div>
 
+                {/* Lista Nítida e Completa de Todos os Lançamentos que Acabam neste Mês */}
                 <div
                   style={{
-                    fontSize: 10.5,
-                    color: 'var(--text-muted)',
-                    marginTop: 3,
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis'
+                    marginTop: 8,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 5
                   }}
-                  title={item.contratosEncerrados.join(', ')}
                 >
-                  Fim de: <strong style={{ color: 'var(--text-title)' }}>{item.contratosEncerrados.join(', ')}</strong>
+                  <div style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                    Lançamentos que acabam e liberam valor:
+                  </div>
+                  {item.detalhesContratos.map((det, dIdx) => (
+                    <div
+                      key={dIdx}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        justifyContent: 'space-between',
+                        gap: 8,
+                        padding: '6px 8px',
+                        borderRadius: 7,
+                        background: 'var(--bg-secondary)',
+                        border: '1px solid var(--border)'
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: 12,
+                          fontWeight: 700,
+                          color: 'var(--text-title)',
+                          lineHeight: 1.35,
+                          wordBreak: 'break-word',
+                          flex: 1
+                        }}
+                      >
+                        • {det.titulo}
+                      </span>
+                      <strong
+                        className="valor-sensivel"
+                        style={{
+                          fontSize: 11.5,
+                          fontWeight: 800,
+                          color: '#10b981',
+                          whiteSpace: 'nowrap',
+                          flexShrink: 0
+                        }}
+                      >
+                        +{fmt(det.valorParcela)}
+                      </strong>
+                    </div>
+                  ))}
                 </div>
               </div>
 
               <div
                 style={{
-                  marginTop: 8,
-                  paddingTop: 6,
+                  marginTop: 10,
+                  paddingTop: 8,
                   borderTop: '1px dashed var(--border)',
-                  fontSize: 10.5,
+                  fontSize: 11,
                   color: 'var(--text-muted)',
                   display: 'flex',
-                  justifyContent: 'space-between'
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
                 }}
               >
-                <span>Alívio Acumulado:</span>
-                <strong className="valor-sensivel" style={{ color: '#059669' }}>
+                <span style={{ fontWeight: 600 }}>Alívio Acumulado:</span>
+                <strong className="valor-sensivel" style={{ color: '#059669', fontSize: 12, fontWeight: 900 }}>
                   + {fmt(item.acumuladoLiberado)}/mês
                 </strong>
               </div>
@@ -817,13 +870,12 @@ export default function DebtPayoffSimulator({
 
                 <div
                   style={{
-                    fontSize: 14,
+                    fontSize: 13.5,
                     fontWeight: 800,
                     color: 'var(--text-title)',
                     marginTop: 8,
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis'
+                    lineHeight: 1.35,
+                    wordBreak: 'break-word'
                   }}
                   title={s.titulo}
                 >
@@ -916,17 +968,25 @@ export default function DebtPayoffSimulator({
                       key={it.id}
                       style={{
                         display: 'flex',
+                        alignItems: 'center',
                         justifyContent: 'space-between',
+                        gap: 8,
                         fontSize: 11,
-                        padding: '4px 6px',
+                        padding: '5px 8px',
                         borderRadius: 6,
-                        background: 'var(--bg-card)'
+                        background: 'var(--bg-card)',
+                        border: '1px solid var(--border)'
                       }}
                     >
-                      <span style={{ color: 'var(--text-muted)' }}>
-                        Venc: <strong>{it.dataVencimento.split('-').reverse().join('/')}</strong>
-                      </span>
-                      <strong className="valor-sensivel" style={{ color: 'var(--text-title)' }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 700, color: 'var(--text-title)', wordBreak: 'break-word' }}>
+                          {it.descricao}
+                        </div>
+                        <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>
+                          Vencimento: <strong>{it.dataVencimento.split('-').reverse().join('/')}</strong>
+                        </div>
+                      </div>
+                      <strong className="valor-sensivel" style={{ color: 'var(--text-title)', whiteSpace: 'nowrap' }}>
                         {fmt(it.valor)}
                       </strong>
                     </div>

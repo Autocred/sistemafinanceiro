@@ -153,7 +153,7 @@ export default function Home() {
   });
   const [mobileMenuAberto, setMobileMenuAberto] = useState(false);
   const [sidebarCompacta, setSidebarCompacta] = useState(false);
-  const [versaoSistema, setVersaoSistema] = useState<string>('v3.8.5');
+  const [versaoSistema, setVersaoSistema] = useState<string>('v3.8.6');
 
   useEffect(() => {
     try {
