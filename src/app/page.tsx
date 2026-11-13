@@ -151,12 +151,35 @@ export default function Home() {
   });
   const [mobileMenuAberto, setMobileMenuAberto] = useState(false);
   const [sidebarCompacta, setSidebarCompacta] = useState(false);
+  const [versaoSistema, setVersaoSistema] = useState<string>('v3.7.9');
 
   useEffect(() => {
     try {
       const saved = localStorage.getItem('sidebar_compacta');
       if (saved === 'true') setSidebarCompacta(true);
+      const cachedVer = localStorage.getItem('cached_versao_sistema');
+      if (cachedVer) setVersaoSistema(cachedVer);
     } catch(e) {}
+
+    let unsub: (() => void) | undefined;
+    (async () => {
+      try {
+        const { getDb } = await import('@/lib/firebase');
+        const { collection, query, orderBy, limit, onSnapshot } = await import('firebase/firestore');
+        const q = query(collection(getDb(), 'saas_releases'), orderBy('dataLancamento', 'desc'), limit(5));
+        unsub = onSnapshot(q, (snap) => {
+          for (const docSnap of snap.docs) {
+            const data = docSnap.data();
+            if (data?.versao && (!data.status || data.status === 'publicado')) {
+              setVersaoSistema(data.versao);
+              try { localStorage.setItem('cached_versao_sistema', data.versao); } catch(e) {}
+              break;
+            }
+          }
+        }, () => {});
+      } catch (e) {}
+    })();
+    return () => { if (unsub) unsub(); };
   }, []);
 
   const toggleSidebar = () => {
@@ -1431,11 +1454,41 @@ const isMasterProfile = !effectiveProfile || !effectiveProfile.tenantId || effec
                 <LogOut size={14} />
                 {!sidebarCompacta && <span>Sair do Sistema</span>}
               </button>
-              {!sidebarCompacta && (
-                <div style={{ textAlign: 'center', fontSize: 9.5, color: 'rgba(255,255,255,0.38)', letterSpacing: '0.02em' }}>
-                  FinanceAI Ultra &bull; Cloud ERP
-                </div>
-              )}
+              <div
+                onClick={() => { setPaginaAtual('atualizacoes'); setMobileMenuAberto(false); }}
+                title={`Versão atual do sistema: ${versaoSistema} (clique para ver novidades)`}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 5,
+                  padding: '3px 6px',
+                  borderRadius: 6,
+                  fontSize: sidebarCompacta ? 9 : 10.5,
+                  fontWeight: 600,
+                  color: 'rgba(255,255,255,0.65)',
+                  letterSpacing: '0.02em',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  userSelect: 'none'
+                }}
+                onMouseOver={e => { e.currentTarget.style.color = '#ffffff'; e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}
+                onMouseOut={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.65)'; e.currentTarget.style.background = 'transparent'; }}
+              >
+                <span style={{
+                  width: 5,
+                  height: 5,
+                  borderRadius: '50%',
+                  background: '#34d399',
+                  boxShadow: '0 0 6px rgba(52, 211, 153, 0.7)',
+                  flexShrink: 0
+                }} />
+                {sidebarCompacta ? (
+                  <span>{versaoSistema}</span>
+                ) : (
+                  <span>Versão {versaoSistema}</span>
+                )}
+              </div>
             </div>
           </aside>
 
