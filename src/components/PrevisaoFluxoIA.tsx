@@ -12,6 +12,7 @@ import {
   Tooltip, CartesianGrid, ReferenceLine
 } from 'recharts';
 import { getTransacoes, getContas, getConfiguracoes } from '@/lib/storage';
+import { getInfoSerieParcelamento } from '@/lib/financialEngine';
 import { Transacao, Conta, ConfiguracaoApp } from '@/lib/types';
 
 interface CenarioSimulacao {
@@ -107,11 +108,14 @@ export default function PrevisaoFluxoIA() {
     dataLimite.setDate(agora.getDate() - 180);
     const limiteStr = dataLimite.toISOString().split('T')[0];
 
-    const historico = transacoes.filter(t => 
-      t.status === 'pago' && 
-      (t.tipo === 'receita' || t.tipo === 'despesa') &&
-      (t.data >= limiteStr)
-    );
+    const historico = transacoes.filter(t => {
+      if (t.status !== 'pago' || (t.tipo !== 'receita' && t.tipo !== 'despesa') || t.data < limiteStr) return false;
+      if (t.tipo === 'despesa') {
+        const infoParc = getInfoSerieParcelamento(t, transacoes);
+        if (infoParc.isParcelamento && infoParc.terminado) return false;
+      }
+      return true;
+    });
 
     const normalizar = (s: string) => {
       return (s || '')

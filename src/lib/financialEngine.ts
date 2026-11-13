@@ -106,6 +106,7 @@ export function isFaturaAPagarValida(f: Fatura, hojeData = new Date()): boolean 
 export interface SaldosFinanceiros {
   saldoEmContas: number; // Saldo físico real atual
   receitasPagas: number;
+  receitasAReceberTotal: number;
   despesasPagas: number;
   despesasPendentesCartao: number;
   despesasPendentesComuns: number;
@@ -117,6 +118,129 @@ export interface SaldosFinanceiros {
 
 export function getValorFinal(t: Transacao): number {
   return Math.max(0, (Number(t.valor) || 0) + (Number(t.juros) || 0) + (Number(t.multa) || 0) - (Number(t.desconto) || 0));
+}
+
+export interface InfoSerieParcelamento {
+  isParcelamento: boolean;
+  chaveSerie: string;
+  totalParcelas: number;
+  parcelasPagas: number;
+  parcelasAVencer: number;
+  ultimaDataVencimento: string;
+  terminado: boolean; // true quando é parcelamento e NÃO tem mais nenhuma parcela a vencer (parcelasAVencer === 0)
+}
+
+export function isParcelamentoTransacao(t: Transacao): boolean {
+  if (!t || t.tipo !== 'despesa') return false;
+  if (
+    t.parcelado === true ||
+    !!t.grupoParcelamento ||
+    (Number(t.totalParcelas) || 0) > 1 ||
+    (Number(t.parcelaAtual) || 0) > 0
+  ) {
+    return true;
+  }
+
+  const desc = ((t.descricao || '') as string).toLowerCase().trim();
+  const cat = ((t.categoriaNome || '') as string).toLowerCase().trim();
+  const forn = ((t.fornecedorNome || '') as string).toLowerCase().trim();
+  const obs = ((t.observacoes || '') as string).toLowerCase().trim();
+
+  if (
+    desc.includes('tarifa') ||
+    desc.includes('pacote de servi') ||
+    desc.includes('manutenção de conta') ||
+    desc.includes('manutencao conta') ||
+    desc.includes('cesta')
+  ) {
+    return false;
+  }
+
+  return (
+    desc.includes('parcelamento') ||
+    cat.includes('parcelamento') ||
+    obs.includes('parcelamento') ||
+    desc.includes('financiamento') ||
+    cat.includes('financiamento') ||
+    forn.includes('financiamento') ||
+    desc.includes('empréstimo') ||
+    desc.includes('emprestimo') ||
+    cat.includes('empréstimo') ||
+    cat.includes('emprestimo') ||
+    desc.includes('capital de giro') ||
+    cat.includes('capital de giro') ||
+    desc.includes('sispar') ||
+    desc.includes('ipva') ||
+    cat.includes('ipva') ||
+    desc.includes('guias que ficaram fora do parcelamento') ||
+    /\bparcela\s*\d+/i.test(desc)
+  );
+}
+
+export function getChaveSerieParcelamento(t: Transacao): string {
+  if (t.grupoParcelamento) return `grp:${t.grupoParcelamento}`;
+  const forn = ((t.fornecedorNome || '') as string).toLowerCase().trim();
+  const desc = ((t.descricao || '') as string)
+    .toLowerCase()
+    .replace(/\bparcela\s*\d+(\s*(de|\/)\s*\d+)?\b/gi, '')
+    .replace(/\(\s*\d{1,2}\s*\/\s*\d{1,2}\s*\)/g, '')
+    .replace(/\s+(jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez)\b/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const cat = ((t.categoriaNome || '') as string).toLowerCase().trim();
+  return `${forn}|${desc || cat}`;
+}
+
+export function getInfoSerieParcelamento(
+  t: Transacao,
+  todasTransacoes?: Transacao[]
+): InfoSerieParcelamento {
+  const isParc = isParcelamentoTransacao(t);
+  if (!isParc) {
+    const st = ((t?.status || '') as string).toLowerCase();
+    const isPago = st === 'pago' || st === 'recebido';
+    return {
+      isParcelamento: false,
+      chaveSerie: '',
+      totalParcelas: 1,
+      parcelasPagas: isPago ? 1 : 0,
+      parcelasAVencer: isPago ? 0 : 1,
+      ultimaDataVencimento: normalizeDate(t?.dataVencimento || t?.data || t?.dataPagamento),
+      terminado: false,
+    };
+  }
+
+  const chave = getChaveSerieParcelamento(t);
+  const baseLista = todasTransacoes && todasTransacoes.length > 0 ? todasTransacoes : [t];
+  const serie = baseLista.filter(
+    x => x.tipo === 'despesa' && isParcelamentoTransacao(x) && getChaveSerieParcelamento(x) === chave
+  );
+
+  const listaSerie = serie.length > 0 ? serie : [t];
+  let pagas = 0;
+  let aVencer = 0;
+  let ultimaData = '';
+
+  listaSerie.forEach(x => {
+    const st = ((x.status || '') as string).toLowerCase();
+    if (st === 'pago' || st === 'recebido') {
+      pagas++;
+    } else {
+      aVencer++;
+    }
+    const dt = normalizeDate(x.dataVencimento || x.data || x.dataPagamento);
+    if (dt && dt > ultimaData) ultimaData = dt;
+  });
+
+  return {
+    isParcelamento: true,
+    chaveSerie: chave,
+    totalParcelas: listaSerie.length,
+    parcelasPagas: pagas,
+    parcelasAVencer: aVencer,
+    ultimaDataVencimento: ultimaData,
+    terminado: aVencer === 0, // Quando NÃO tem mais nenhuma parcela a vencer!
+  };
 }
 
 export function calcularTotais(transacoes: Transacao[], faturas: Fatura[] = []) {
@@ -187,12 +311,24 @@ export function calcularMotorFinanceiro(
       return db.startsWith(mesAtualStr);
   });
 
-  // 3. Receitas e Despesas Pagas (do mês)
+  // 3. Receitas e Despesas Pagas (do mês - remove parcelamentos encerrados que não têm mais parcelas a vencer)
   const receitasPagas = transacoesMes.filter(t => t.tipo === 'receita' && t.status === 'pago').reduce((s, t) => s + getValorFinal(t), 0);
-  const despesasPagas = transacoesMes.filter(t => t.tipo === 'despesa' && t.formaPagamento !== 'cartao_credito' && t.status === 'pago').reduce((s, t) => s + getValorFinal(t), 0);
+  const despesasPagas = transacoesMes.filter(t => {
+    if (t.tipo !== 'despesa' || t.formaPagamento === 'cartao_credito' || t.status !== 'pago') return false;
+    const infoParc = getInfoSerieParcelamento(t, transacoes);
+    if (infoParc.isParcelamento && infoParc.terminado) return false;
+    return true;
+  }).reduce((s, t) => s + getValorFinal(t), 0);
 
-  // 4. Receitas Pendentes do Mês (para cálculo do Previsto)
-  const receitasPendentesMes = transacoesMes.filter(t => t.tipo === 'receita' && t.status !== 'pago').reduce((s, t) => s + getValorFinal(t), 0);
+  // 4. Receitas Pendentes do Mês / A Receber (para cálculo do Previsto e Card Receitas a Receber)
+  const receitasPendentesMes = transacoes.filter(t => {
+    if (t.tipo !== 'receita') return false;
+    const st = ((t.status || '') as string).toLowerCase();
+    if (st === 'pago' || st === 'recebido') return false;
+    const dt = normalizeDate(t.dataVencimento || t.data);
+    return dt.startsWith(mesAtualStr) || (Boolean(dt) && dt < hojeStr);
+  }).reduce((s, t) => s + getValorFinal(t), 0);
+  const receitasAReceberTotal = receitasPendentesMes;
 
   // 5. Contas a Pagar (Validadas pela regra atômica)
   const pendentesComuns = transacoes.filter(t => isContaAPagarValida(t, hojeData));
@@ -268,6 +404,7 @@ export function calcularMotorFinanceiro(
   return {
     saldoEmContas,
     receitasPagas,
+    receitasAReceberTotal,
     despesasPagas,
     despesasPendentesCartao,
     despesasPendentesComuns,

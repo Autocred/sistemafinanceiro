@@ -1,5 +1,5 @@
 import { Transacao } from './types';
-import { normalizeDate } from './financialEngine';
+import { normalizeDate, getInfoSerieParcelamento } from './financialEngine';
 
 export type TipoAlertaVazamento = 
   | 'reajuste_silencioso' 
@@ -345,6 +345,10 @@ export function analisarVazamentosDeCaixa(
     const isRecorrente = temFlagRecorrente || mesesDistintos.size >= 2 || (temKeywordAssinatura && ordenadas.length >= 1);
 
     if (!isRecorrente) return;
+
+    // Se for um parcelamento já encerrado (quando não tem mais a vencer), não exibir como assinatura ativa
+    const infoParc = getInfoSerieParcelamento(maisRecente, transacoes);
+    if (infoParc.isParcelamento && infoParc.terminado) return;
 
     const ultimoValor = Number(maisRecente.valor);
     const somaValores = ordenadas.reduce((s, i) => s + Number(i.valor), 0);

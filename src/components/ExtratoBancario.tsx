@@ -15,9 +15,27 @@ import {
   Building2, User, CreditCard, Layers, DollarSign
 } from 'lucide-react';
 import { format, subDays, startOfMonth, endOfMonth, subMonths } from 'date-fns';
-import { normalizeDate, gerarExtrato } from '@/lib/financialEngine';
+import {
+  normalizeDate,
+  gerarExtrato,
+  InfoSerieParcelamento,
+  isParcelamentoTransacao,
+  getChaveSerieParcelamento,
+  getInfoSerieParcelamento
+} from '@/lib/financialEngine';
 
-export function getComportamentoTransacao(t: Transacao): 'fixa' | 'variavel' {
+export type { InfoSerieParcelamento };
+export { isParcelamentoTransacao, getChaveSerieParcelamento, getInfoSerieParcelamento };
+
+export function getComportamentoTransacao(t: Transacao, todasTransacoes?: Transacao[]): 'fixa' | 'variavel' {
+  // Regra Automática de Parcelamentos: sempre que terminar (quando não tem mais a vencer), deixa de ser custo fixo!
+  if (todasTransacoes && todasTransacoes.length > 0 && t?.tipo === 'despesa') {
+    const infoParc = getInfoSerieParcelamento(t, todasTransacoes);
+    if (infoParc.isParcelamento && infoParc.terminado) {
+      return 'variavel';
+    }
+  }
+
   const comp = ((t.comportamento || '') as string).toLowerCase().trim();
   if (comp === 'fixa') return 'fixa';
   if (comp === 'variavel' || comp === 'variável') return 'variavel';

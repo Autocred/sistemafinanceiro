@@ -10,27 +10,27 @@ const app = initializeApp({
 const db = getFirestore(app);
 
 async function run() {
-  const q = query(collection(db, 'saas_releases'), where('versao', '==', 'v3.7.6'));
+  const q = query(collection(db, 'saas_releases'), where('versao', '==', 'v3.7.7'));
   const snap = await getDocs(q);
   if (snap.empty) {
     await addDoc(collection(db, 'saas_releases'), {
-      versao: 'v3.7.6',
-      titulo: 'Classificação Estrutural Automática de Despesas Fixas vs. Variáveis',
-      descricao: 'Separação rigorosa e sincronizada em todo o sistema entre Despesas Fixas Estruturais (Aluguel, Salários, Pró-Labore Fixo, FGTS, INSS, Simples Nacional, Parcelamentos Tributários, Contabilidade, Medicina do Trabalho, Energia, Internet, Sistemas, Financiamento e Capital de Giro) e Despesas Variáveis (Comissões, Impulsionamento/Marketing, Alimentação, Combustível, Manutenção, Materiais e Retiradas Avulsas).',
+      versao: 'v3.7.7',
+      titulo: 'Dashboard com Receitas a Receber na Mesma Linha e Auto-Remoção de Parcelamentos Quitados',
+      descricao: 'Inclusão do card Receitas a Receber alinhado na mesma linha horizontal dos indicadores principais do Dashboard e remoção automática de parcelamentos/financiamentos/empréstimos sempre que terminarem (quando não houver mais parcelas a vencer).',
       dataLancamento: new Date().toISOString(),
       status: 'publicado',
       destaque: true,
       notificarTenants: false,
       alvos: 'todos',
       changes: [
-        { tipo: 'novidade', texto: 'Classificação Rigorosa no Banco de Dados: Todos os lançamentos, categorias e fornecedores foram auditados e classificados entre Despesa Fixa (🔒) e Variável (⚡).' },
-        { tipo: 'melhoria', texto: 'Sincronização Total (Dashboard, Lançamentos, Dashboard Mensal e Extrato): Alterar uma conta entre Fixa e Variável no Dashboard ou clicar na etiqueta em Lançamentos atualiza automaticamente o registro no banco.' },
-        { tipo: 'melhoria', texto: 'Inteligência de Pré-Preenchimento: Ao selecionar fornecedores/categorias ou digitar descrições, o sistema distingue automaticamente obrigações fixas (como Pró-Labore e Salário) de retiradas ou bônus variáveis.' }
+        { tipo: 'novidade', texto: 'Card Receitas a Receber no Dashboard: Exibido na mesma linha horizontal junto com Saldo em Caixa, Receitas Efetivadas, Despesas Pagas e Despesas a Pagar.' },
+        { tipo: 'novidade', texto: 'Remoção Automática de Parcelamentos Encerrados: Sempre que um parcelamento, financiamento ou empréstimo não tiver mais parcelas a vencer, seus valores saem automaticamente do Dashboard.' },
+        { tipo: 'melhoria', texto: 'Contador de Parcelas Restantes: Nos parcelamentos ainda ativos, o painel exibe quantas parcelas faltam a vencer e a data da última parcela.' }
       ]
     });
-    console.log('Release notes v3.7.6 added!');
+    console.log('Release notes v3.7.7 added!');
   } else {
-    console.log('Release notes v3.7.6 already registered!');
+    console.log('Release notes v3.7.7 already registered!');
   }
   process.exit(0);
 }

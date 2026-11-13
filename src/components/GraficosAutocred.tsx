@@ -6,7 +6,7 @@ import {
   BarChart, Bar, ResponsiveContainer
 } from 'recharts';
 import { getTenantId } from '@/lib/storage';
-import { getValorFinal, normalizeDate } from '@/lib/financialEngine';
+import { getValorFinal, normalizeDate, getInfoSerieParcelamento } from '@/lib/financialEngine';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -286,8 +286,12 @@ export default function GraficosAutocred({ transacoes, faturas = [], contas = []
     for (const t of transacoes) {
       if (t.status !== 'pago' && t.status !== 'recebido') continue;
 
-      // LOGICA ALINHADA COM INDICADORES: Ignorar compras individuais de cartão (pagas na fatura)
-      if (t.tipo === 'despesa' && (t.formaPagamento === 'cartao_credito' || false)) continue;
+      // LOGICA ALINHADA COM INDICADORES: Ignorar compras individuais de cartão (pagas na fatura) e parcelamentos já encerrados (sem parcelas a vencer)
+      if (t.tipo === 'despesa') {
+        if (t.formaPagamento === 'cartao_credito' || false) continue;
+        const infoParc = getInfoSerieParcelamento(t, transacoes);
+        if (infoParc.isParcelamento && infoParc.terminado) continue;
+      }
 
       const raw = normalizeDate(t.dataPagamento || t.dataVencimento || t.data);
       const dt = raw ? raw.substring(0, 10) : '';
@@ -323,8 +327,12 @@ export default function GraficosAutocred({ transacoes, faturas = [], contas = []
     for (const t of transacoes) {
       if (t.status !== 'pago' && t.status !== 'recebido') continue;
 
-      // LOGICA ALINHADA COM INDICADORES: Ignorar compras individuais de cartão (pagas na fatura)
-      if (t.tipo === 'despesa' && (t.formaPagamento === 'cartao_credito' || false)) continue;
+      // LOGICA ALINHADA COM INDICADORES: Ignorar compras individuais de cartão (pagas na fatura) e parcelamentos já encerrados (sem parcelas a vencer)
+      if (t.tipo === 'despesa') {
+        if (t.formaPagamento === 'cartao_credito' || false) continue;
+        const infoParc = getInfoSerieParcelamento(t, transacoes);
+        if (infoParc.isParcelamento && infoParc.terminado) continue;
+      }
 
       const dtFull = normalizeDate(t.dataPagamento || t.dataVencimento || t.data);
       if (!dtFull) continue;

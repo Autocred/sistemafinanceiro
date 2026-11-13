@@ -6,7 +6,7 @@ import {
   PieChart, Pie, Cell, BarChart, Bar, Legend
 } from 'recharts';
 import { formatarMoeda, subscribeTransacoes, subscribeTransacoesByMes, subscribeContas, subscribeFaturas, getTenantId, salvarTransacao } from '@/lib/storage';
-import { getComportamentoTransacao } from './ExtratoBancario';
+import { getComportamentoTransacao, getInfoSerieParcelamento } from './ExtratoBancario';
 import { Transacao, Conta, Fatura } from '@/lib/types';
 import { getValorFinal, normalizeDate, isContaAPagarValida, isFaturaAPagarValida } from '@/lib/financialEngine';
 import { format, subDays, startOfWeek, endOfWeek } from 'date-fns';
@@ -46,7 +46,7 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
   const [somTocado, setSomTocado] = useState(false);
   const [abaIndicadores, setAbaIndicadores] = useState<'todas' | 'pagar' | 'receber'>('todas');
   const [motor, setMotor] = useState({
-    saldoAtual: 0, saldoProjetado: 0, receitasRealizadas: 0, despesasRealizadas: 0, despesasAPagarTotal: 0
+    saldoAtual: 0, saldoProjetado: 0, receitasRealizadas: 0, receitasAReceberTotal: 0, despesasRealizadas: 0, despesasAPagarTotal: 0
   });
 
   const [simulacaoReceitaPct, setSimulacaoReceitaPct] = useState<number>(0);
@@ -147,6 +147,7 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
         saldoAtual: res.saldoEmContas || 0,
         saldoProjetado: res.saldoPrevistoFimMes || 0,
         receitasRealizadas: res.receitasPagas || 0,
+        receitasAReceberTotal: res.receitasAReceberTotal || 0,
         despesasRealizadas: res.despesasPagas || 0,
         despesasAPagarTotal: res.despesasAPagarTotal || 0
       });
@@ -343,7 +344,13 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
       // 1. Deve estar efetivamente pago (recebido é sinônimo para receitas)
       if (t.status !== 'pago') return false;
 
-      // 2. Data de Pagamento: SEMPRE levar em consideração a data real de pagamento
+      // 2. Se for parcelamento já encerrado (quando não tem mais a vencer), retira os valores do Dashboard
+      if (t.tipo === 'despesa') {
+        const infoParc = getInfoSerieParcelamento(t, todasTransacoes);
+        if (infoParc.isParcelamento && infoParc.terminado) return false;
+      }
+
+      // 3. Data de Pagamento: SEMPRE levar em consideração a data real de pagamento
       const dtPag = normalizeDate(t.dataPagamento || t.data || '');
       return dtPag.startsWith(mesFormatado);
     });
@@ -482,6 +489,7 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
     const faturasValidas = faturas.filter(f => isFaturaAPagarValida(f, mesSelecionado));
 
     const itensAuditados: any[] = [];
+    const parcelamentosEncerrados: any[] = [];
     const idsProcessados = new Set<string>();
 
     despesasPagasMes.forEach(t => {
@@ -490,17 +498,33 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
       const val = getValorFinal(t);
       if (val <= 0) return;
       const nome = t.fornecedorNome || t.descricao || 'Despesa';
+      const infoParc = getInfoSerieParcelamento(t, todasTransacoes);
+      if (infoParc.isParcelamento && infoParc.terminado) {
+        parcelamentosEncerrados.push({
+          id: t.id,
+          nome,
+          descricao: t.descricao || '',
+          categoria: t.categoriaNome || 'Geral',
+          valor: val,
+          data: normalizeDate(t.dataPagamento || t.dataVencimento || t.data),
+          totalParcelas: infoParc.totalParcelas,
+          ultimaData: infoParc.ultimaDataVencimento
+        });
+        return;
+      }
       const info = classificarItem(t, nome, t.categoriaNome || '', false);
       itensAuditados.push({
         id: t.id,
         nome,
+        descricao: t.descricao || '',
         categoria: t.categoriaNome || 'Geral',
         valor: val,
         status: 'pago',
         data: normalizeDate(t.dataPagamento || t.dataVencimento || t.data),
         chave: info.chave,
         tipo: info.tipo,
-        motivo: info.motivo
+        motivo: info.motivo,
+        infoParcelamento: infoParc.isParcelamento ? infoParc : null
       });
     });
 
@@ -510,17 +534,33 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
       const val = getValorFinal(t);
       if (val <= 0) return;
       const nome = t.fornecedorNome || t.descricao || 'Conta a Pagar';
+      const infoParc = getInfoSerieParcelamento(t, todasTransacoes);
+      if (infoParc.isParcelamento && infoParc.terminado) {
+        parcelamentosEncerrados.push({
+          id: t.id,
+          nome,
+          descricao: t.descricao || '',
+          categoria: t.categoriaNome || 'Geral',
+          valor: val,
+          data: normalizeDate(t.dataVencimento || t.data),
+          totalParcelas: infoParc.totalParcelas,
+          ultimaData: infoParc.ultimaDataVencimento
+        });
+        return;
+      }
       const info = classificarItem(t, nome, t.categoriaNome || '', false);
       itensAuditados.push({
         id: t.id,
         nome,
+        descricao: t.descricao || '',
         categoria: t.categoriaNome || 'Geral',
         valor: val,
         status: 'pendente',
         data: normalizeDate(t.dataVencimento || t.data),
         chave: info.chave,
         tipo: info.tipo,
-        motivo: info.motivo
+        motivo: info.motivo,
+        infoParcelamento: infoParc.isParcelamento ? infoParc : null
       });
     });
 
@@ -539,7 +579,8 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
         data: normalizeDate(f.dataVencimento),
         chave: info.chave,
         tipo: info.tipo,
-        motivo: info.motivo
+        motivo: info.motivo,
+        infoParcelamento: null
       });
     });
 
@@ -554,7 +595,8 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
     const custoVariavelAPagar = itensVariaveis.filter(i => i.status === 'pendente').reduce((s, i) => s + i.valor, 0);
     const custoVariavelTotal = custoVariavelPago + custoVariavelAPagar;
 
-    const totalDespesas = (motor.despesasRealizadas || 0) + (motor.despesasAPagarTotal || 0);
+    const totalParcelamentosEncerrados = parcelamentosEncerrados.reduce((s, i) => s + i.valor, 0);
+    const totalDespesas = Math.max(0, (motor.despesasRealizadas || 0) + (motor.despesasAPagarTotal || 0));
     const totalReceitasBase = motor.receitasRealizadas || 0;
 
     // Receitas pagas ordenadas cronologicamente para encontrar o dia real do calendário
@@ -656,6 +698,8 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
       isMesAtual,
       itensFixos,
       itensVariaveis,
+      parcelamentosEncerrados,
+      totalParcelamentosEncerrados,
       cenarioReal,
       cenarioAtivo,
       matrizCenarios
@@ -1457,51 +1501,66 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
           </div>
         </div>
 
-        {/* ================= KPI CARDS (RESUMO DO MÊS SELECIONADO) ================= */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
-        {/* Saldo */}
+        {/* ================= KPI CARDS (RESUMO DO MÊS SELECIONADO - 5 CARDS NA MESMA LINHA) ================= */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 24 }}>
+        {/* 1. Saldo em Caixa */}
         <div 
           onClick={() => onNavigateToCartoes && onNavigateToCartoes()}
-          style={{ background: '#1e293b', borderRadius: 8, padding: '20px 24px', color: '#fff', cursor: 'pointer' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-            <Wallet size={18} color="#94a3b8" />
-            <span style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Saldo em Caixa</span>
+          style={{ background: '#1e293b', borderRadius: 10, padding: '16px 18px', color: '#fff', cursor: 'pointer', minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+            <Wallet size={16} color="#94a3b8" style={{ flexShrink: 0 }} />
+            <span style={{ fontSize: 10.5, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Saldo em Caixa</span>
           </div>
-          <div style={{ fontSize: 26, fontWeight: 900 }}><span className="valor-sensivel">{fmt(motor.saldoAtual)}</span></div>
-          <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600, marginTop: 8 }}>Projetado: <span className="valor-sensivel">{fmt(motor.saldoProjetado)}</span></div>
+          <div style={{ fontSize: 21, fontWeight: 900, whiteSpace: 'nowrap' }}><span className="valor-sensivel">{fmt(motor.saldoAtual)}</span></div>
+          <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600, marginTop: 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Projetado: <span className="valor-sensivel">{fmt(motor.saldoProjetado)}</span></div>
         </div>
 
-        {/* Receitas */}
+        {/* 2. Receitas Realizadas */}
         <div 
           onClick={() => onNavigateToLancamentos && onNavigateToLancamentos('receitas_mes')}
-          style={{ background: 'var(--bg-card)', borderRadius: 8, padding: '20px 24px', border: '1px solid var(--border)', cursor: 'pointer' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-            <TrendingUp size={18} color="#16a34a" />
-            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Receitas ({mesesStr[mesSelecionado.getMonth()]})</span>
+          style={{ background: 'var(--bg-card)', borderRadius: 10, padding: '16px 18px', border: '1px solid var(--border)', cursor: 'pointer', minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+            <TrendingUp size={16} color="#16a34a" style={{ flexShrink: 0 }} />
+            <span style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Receitas ({mesesStr[mesSelecionado.getMonth()]})</span>
           </div>
-          <div style={{ fontSize: 26, fontWeight: 900, color: '#16a34a' }}><span className="valor-sensivel">{fmt(motor.receitasRealizadas)}</span></div>
+          <div style={{ fontSize: 21, fontWeight: 900, color: '#16a34a', whiteSpace: 'nowrap' }}><span className="valor-sensivel">{fmt(motor.receitasRealizadas)}</span></div>
+          <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600, marginTop: 6, whiteSpace: 'nowrap' }}>Efetivadas no mês</div>
         </div>
 
-        {/* Despesas Pagas */}
+        {/* 3. Receitas a Receber */}
+        <div 
+          onClick={() => onNavigateToLancamentos && onNavigateToLancamentos('receitas_a_receber')}
+          style={{ background: 'var(--bg-card)', borderRadius: 10, padding: '16px 18px', border: '1px solid var(--border)', cursor: 'pointer', minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+            <ArrowUpCircle size={16} color="#0d9488" style={{ flexShrink: 0 }} />
+            <span style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Receitas a Receber</span>
+          </div>
+          <div style={{ fontSize: 21, fontWeight: 900, color: '#0d9488', whiteSpace: 'nowrap' }}><span className="valor-sensivel">{fmt(motor.receitasAReceberTotal)}</span></div>
+          <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600, marginTop: 6, whiteSpace: 'nowrap' }}>Previstas a entrar</div>
+        </div>
+
+        {/* 4. Despesas Pagas */}
         <div 
           onClick={() => onNavigateToLancamentos && onNavigateToLancamentos('despesas_pagas')}
-          style={{ background: 'var(--bg-card)', borderRadius: 8, padding: '20px 24px', border: '1px solid var(--border)', cursor: 'pointer' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-            <TrendingDown size={18} color="#ef4444" />
-            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Despesas Pagas</span>
+          style={{ background: 'var(--bg-card)', borderRadius: 10, padding: '16px 18px', border: '1px solid var(--border)', cursor: 'pointer', minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+            <TrendingDown size={16} color="#ef4444" style={{ flexShrink: 0 }} />
+            <span style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Despesas Pagas</span>
           </div>
-          <div style={{ fontSize: 26, fontWeight: 900, color: 'var(--text-title)' }}><span className="valor-sensivel">{fmt(motor.despesasRealizadas)}</span></div>
+          <div style={{ fontSize: 21, fontWeight: 900, color: 'var(--text-title)', whiteSpace: 'nowrap' }}><span className="valor-sensivel">{fmt(motor.despesasRealizadas)}</span></div>
+          <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600, marginTop: 6, whiteSpace: 'nowrap' }}>Quitadas no mês</div>
         </div>
 
-        {/* A Pagar */}
+        {/* 5. Despesas a Pagar */}
         <div 
           onClick={() => onNavigateToLancamentos && onNavigateToLancamentos('despesas_a_pagar')}
-          style={{ background: 'var(--bg-card)', borderRadius: 8, padding: '20px 24px', border: '1px solid var(--border)', cursor: 'pointer' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-            <AlertTriangle size={18} color="#f59e0b" />
-            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Despesas a Pagar</span>
+          style={{ background: 'var(--bg-card)', borderRadius: 10, padding: '16px 18px', border: '1px solid var(--border)', cursor: 'pointer', minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+            <AlertTriangle size={16} color="#f59e0b" style={{ flexShrink: 0 }} />
+            <span style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Despesas a Pagar</span>
           </div>
-          <div style={{ fontSize: 26, fontWeight: 900, color: '#f59e0b' }}><span className="valor-sensivel">{fmt(motor.despesasAPagarTotal)}</span></div>
+          <div style={{ fontSize: 21, fontWeight: 900, color: '#f59e0b', whiteSpace: 'nowrap' }}><span className="valor-sensivel">{fmt(motor.despesasAPagarTotal)}</span></div>
+          <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600, marginTop: 6, whiteSpace: 'nowrap' }}>Pendentes a vencer</div>
         </div>
       </div>
 
@@ -1658,6 +1717,40 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
             {mostrarAuditoriaCustos ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>
         </div>
+
+        {/* BANNER AUTOMÁTICO: PARCELAMENTOS ENCERRADOS (QUANDO NÃO TEM MAIS A VENCER) */}
+        {breakEvenData.parcelamentosEncerrados && breakEvenData.parcelamentosEncerrados.length > 0 && (
+          <div style={{
+            background: 'linear-gradient(90deg, rgba(16, 185, 129, 0.09) 0%, rgba(6, 182, 212, 0.07) 100%)',
+            border: '1px solid rgba(16, 185, 129, 0.35)',
+            borderRadius: 10,
+            padding: '10px 14px',
+            marginBottom: 16,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 8
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#065f46', fontWeight: 700, flexWrap: 'wrap' }}>
+              <CheckCircle2 size={16} color="#059669" style={{ flexShrink: 0 }} />
+              <span>
+                <strong>Parcelamentos Finalizados (sem parcelas a vencer):</strong> retirados automaticamente dos custos do Dashboard ({breakEvenData.parcelamentosEncerrados.map((p: any) => `${p.nome}${p.descricao && p.descricao.toLowerCase() !== p.nome.toLowerCase() ? ` - ${p.descricao}` : ''} (${fmt(p.valor)})`).join(', ')}).
+              </span>
+            </div>
+            <span style={{
+              fontSize: 11,
+              fontWeight: 800,
+              background: '#d1fae5',
+              color: '#047857',
+              padding: '3px 9px',
+              borderRadius: 999,
+              whiteSpace: 'nowrap'
+            }}>
+              Economia Fixa: - <span className="valor-sensivel">{fmt(breakEvenData.totalParcelamentosEncerrados)}</span>/mês
+            </span>
+          </div>
+        )}
 
         {/* 2. BARRA DO SIMULADOR DE ESTRESSE ("E SE O FATURAMENTO CAIR 15%, 20%, 30%...?") */}
         <div style={{
@@ -2176,8 +2269,8 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
                   }}
                 >
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-title)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span>{item.nome}</span>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-title)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <span>{item.nome}{item.descricao && item.descricao.toLowerCase() !== item.nome.toLowerCase() ? ` — ${item.descricao}` : ''}</span>
                       <span style={{
                         fontSize: 10,
                         fontWeight: 700,
@@ -2188,6 +2281,19 @@ export default function Dashboard({ onNovoLancamento, onNavigateToLancamentos, o
                       }}>
                         {item.status === 'pago' ? 'Pago' : 'A Pagar'}
                       </span>
+                      {item.infoParcelamento && item.infoParcelamento.parcelasAVencer > 0 && (
+                        <span style={{
+                          fontSize: 10,
+                          fontWeight: 800,
+                          padding: '2px 7px',
+                          borderRadius: 6,
+                          background: 'rgba(37, 99, 235, 0.1)',
+                          color: '#1d4ed8',
+                          border: '1px solid rgba(37, 99, 235, 0.25)'
+                        }}>
+                          ⏳ Faltam {item.infoParcelamento.parcelasAVencer} a vencer{item.infoParcelamento.ultimaDataVencimento ? ` (até ${item.infoParcelamento.ultimaDataVencimento.split('-').reverse().join('/')})` : ''}
+                        </span>
+                      )}
                     </div>
                     <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
                       {item.categoria} • {item.motivo} {item.data ? `• ${item.data.split('-').reverse().join('/')}` : ''}

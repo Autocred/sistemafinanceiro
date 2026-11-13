@@ -12,7 +12,7 @@ import {
 import { format, parseISO, isSameMonth, isSameYear, getMonth, getYear } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { subscribeTransacoes, formatarMoeda } from '@/lib/storage';
-import { getComportamentoTransacao } from './ExtratoBancario';
+import { getComportamentoTransacao, getInfoSerieParcelamento } from './ExtratoBancario';
 import { normalizeDate, getValorFinal } from '@/lib/financialEngine';
 import { Transacao } from '@/lib/types';
 import jsPDF from 'jspdf';
@@ -106,8 +106,13 @@ export default function DashboardMensal() {
     return transacoes.filter(t => normalizeDate(t.dataPagamento || t.dataVencimento || t.data || '').startsWith(mesStr));
   }, [transacoes, ano, mes]);
 
-  // Cálculos Básicos
-  const despesas = txMes.filter(t => t.tipo === 'despesa' && ((t.status as string) === 'pago' || (t.status as string) === 'recebido') && t.formaPagamento !== 'cartao_credito');
+  // Cálculos Básicos (remove parcelamentos já encerrados sem parcelas a vencer)
+  const despesas = txMes.filter(t => {
+    if (t.tipo !== 'despesa' || ((t.status as string) !== 'pago' && (t.status as string) !== 'recebido') || t.formaPagamento === 'cartao_credito') return false;
+    const infoParc = getInfoSerieParcelamento(t, transacoes);
+    if (infoParc.isParcelamento && infoParc.terminado) return false;
+    return true;
+  });
   const receitas = txMes.filter(t => t.tipo === 'receita' && ((t.status as string) === 'pago' || (t.status as string) === 'recebido'));
   
   const totalDespesas = despesas.reduce((acc, t) => acc + Math.abs(getValorFinal(t)), 0);
@@ -127,8 +132,8 @@ export default function DashboardMensal() {
   const totalJurosMultas = totalJurosMes + totalMultasMes;
 
   // Despesas fixas e variáveis
-  const despesasFixas = despesas.filter(t => getComportamentoTransacao(t) === 'fixa');
-  const despesasVariaveis = despesas.filter(t => getComportamentoTransacao(t) === 'variavel');
+  const despesasFixas = despesas.filter(t => getComportamentoTransacao(t, transacoes) === 'fixa');
+  const despesasVariaveis = despesas.filter(t => getComportamentoTransacao(t, transacoes) === 'variavel');
   const totalDespesasFixas = despesasFixas.reduce((acc, t) => acc + Math.abs(getValorFinal(t)), 0);
   const totalDespesasVariaveis = despesasVariaveis.reduce((acc, t) => acc + Math.abs(getValorFinal(t)), 0);
   
@@ -173,7 +178,7 @@ export default function DashboardMensal() {
       const cat = d.categoriaNome || d.categoriaId || 'Outros';
       const atual = mapa.get(cat) || { fixa: 0, variavel: 0, total: 0, qtd: 0 };
       const val = Math.abs(getValorFinal(d));
-      if (getComportamentoTransacao(d) === 'fixa') {
+      if (getComportamentoTransacao(d, transacoes) === 'fixa') {
         mapa.set(cat, { ...atual, fixa: atual.fixa + val, total: atual.total + val, qtd: atual.qtd + 1 });
       } else {
         mapa.set(cat, { ...atual, variavel: atual.variavel + val, total: atual.total + val, qtd: atual.qtd + 1 });
